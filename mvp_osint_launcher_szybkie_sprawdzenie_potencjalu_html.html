@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MVP – OSINT Launcher: Szybkie sprawdzenie potencjału klienta</title>
+  <style>
+    :root { --bg:#0f172a; --card:#111826; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --warn:#f59e0b; --danger:#ef4444; }
+    html,body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--text); }
+    .wrap { max-width:1100px; margin:24px auto 80px; padding:0 16px; }
+    .grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:16px; }
+    .card { background:var(--card); border:1px solid #1f2937; border-radius:14px; padding:16px; }
+    h1 { font-size:22px; margin:0 0 8px; }
+    h2 { font-size:16px; margin:0 0 8px; color:var(--muted); font-weight:600; letter-spacing:.2px; }
+    label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input, select, textarea { width:100%; background:#0b1220; color:var(--text); border:1px solid #243043; border-radius:10px; padding:10px 12px; font-size:14px; outline:none; }
+    input:focus, textarea:focus { border-color:#334155; box-shadow:inset 0 0 0 1px #334155; }
+    button { background:linear-gradient(180deg,#22c55e,#16a34a); color:#061016; border:none; border-radius:12px; padding:10px 14px; font-weight:700; cursor:pointer; }
+    button.secondary { background:#0b1220; color:var(--text); border:1px solid #263247; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+    .pill { display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; background:#0a1222; border:1px solid #22324b; color:#d1d5db; font-size:12px; }
+    .kpi { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px dashed #273349; border-radius:10px; min-width:120px; }
+    .kpi b { font-size:18px; }
+    .score { display:flex; align-items:center; gap:10px; }
+    .bar { height:10px; flex:1; background:#0b1220; border-radius:999px; overflow:hidden; border:1px solid #263247; }
+    .bar > i { display:block; height:100%; background:linear-gradient(90deg,#22c55e,#84cc16); width:0%; }
+    .tier { font-weight:800; letter-spacing:.5px; }
+    .grid-6 { grid-column: span 6; }
+    .grid-12 { grid-column: span 12; }
+    .grid-4 { grid-column: span 4; }
+    .muted { color:var(--muted); font-size:12px; }
+    .table { width:100%; border-collapse: collapse; }
+    .table th, .table td { text-align:left; font-size:13px; padding:8px 6px; border-bottom:1px solid #1f2937; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .footer { position:fixed; bottom:0; left:0; right:0; background:rgba(15,23,42,.7); backdrop-filter: blur(6px); border-top:1px solid #1f2937; }
+    .footer .inner { max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; gap:10px; justify-content:space-between; align-items:center; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .hint { font-size:12px; color:#9ca3af; }
+    .danger { color:var(--danger); }
+    .warn { color:var(--warn); }
+    .ok { color:var(--accent); }
+    @media (max-width: 900px){ .grid-6,.grid-4 { grid-column: span 12; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Ocena potencjału klienta – OSINT Launcher (bez API)</h1>
+    <p class="muted">Wpisz NIP lub nazwę, opcjonalnie miasto i koszyk. Kliknij „Wyszukaj w necie” dla automatycznych zapytań lub wklej znalezione fragmenty. Narzędzie przeliczy scoring offline.</p>
+
+    <div class="card grid grid-12" style="gap:16px; align-items:end;">
+      <div class="grid-4">
+        <label>NIP lub nazwa</label>
+        <input id="q" placeholder="np. 5250001009 lub ACME Sp. z o.o." />
+      </div>
+      <div class="grid-4">
+        <label>Miasto (opcjonalnie)</label>
+        <input id="city" placeholder="np. Warszawa" />
+      </div>
+      <div class="grid-4">
+        <label>Aktualny koszyk (PLN)</label>
+        <input id="basket" type="number" min="0" step="1" placeholder="np. 3000" />
+      </div>
+      <div class="grid-12 row">
+        <button id="checkBtn">Sprawdź</button>
+        <button class="secondary" id="clearBtn">Wyczyść</button>
+        <span class="hint">Zero API. Zero scrapingu. Tylko wyszukiwarka i ręczna wklejka.</span>
+      </div>
+    </div>
+
+    <div class="grid-12 card">
+      <h2>Wyszukiwarka OSINT (otwieranie kart)</h2>
+      <div class="row">
+        <button id="gLinkedin" class="secondary">LinkedIn firmy</button>
+        <button id="gPrzetargi" class="secondary">Przetargi</button>
+        <button id="gEKRS" class="secondary">eKRS</button>
+        <button id="gCEIDG" class="secondary">CEIDG</button>
+        <button id="gStrona" class="secondary">Strona firmowa</button>
+        <button id="gPanorama" class="secondary">Panorama Firm</button>
+      </div>
+      <p class="hint">Przyciski otwierają nowe karty Google z gotowymi zapytaniami opartymi o pole „NIP lub nazwa”.</p>
+      <label style="margin-top:10px;">Wklej dane znalezione w sieci (opcjonalnie)</label>
+      <textarea id="osintPaste" rows="6" class="mono" placeholder="Wklej fragment strony: zakres zatrudnienia (np. 51–200), adres www, słowa kluczowe branży..."></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button id="applyOsint" class="secondary">Zastosuj wklejkę do profilu</button>
+      </div>
+      <p class="hint">Parser uzupełni: domenę, orientacyjny headcount, dopasowanie branżowe → wpływa na scoring.</p>
+    </div>
+
+    <div id="out" class="grid" style="margin-top:16px; display:none;">
+      <div class="grid-6 card">
+        <h2>Wynik i tier</h2>
+        <div class="score">
+          <div class="bar"><i id="barFill"></i></div>
+          <div id="tier" class="tier">—</div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <div class="kpi"><span class="muted">Wynik 0–100</span><b id="score">0</b></div>
+          <div class="kpi"><span class="muted">Szac. potencjał roczny</span><b id="annual"></b><span class="muted">PLN</span></div>
+          <div class="kpi"><span class="muted">Rozrzut</span><b id="band"></b><span class="muted">PLN</span></div>
+        </div>
+        <p class="muted" style="margin-top:8px;">Tier S: priorytet osobisty | A: dedykowany opiekun | B: kampanie targetowane | C: follow-up okazjonalny.</p>
+      </div>
+
+      <div class="grid-6 card">
+        <h2>Rekomendowane kroki</h2>
+        <ol id="actions" style="margin:0 0 0 18px; padding:0; line-height:1.6;"></ol>
+        <div class="chips" id="tags" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="grid-6 card">
+        <h2>Firmografia (offline)</h2>
+        <table class="table" id="firmo"></table>
+        <p class="hint">Dane z heurystyki + wklejki OSINT. Bez połączeń zewnętrznych.</p>
+      </div>
+
+      <div class="grid-6 card">
+        <h2>Dopasowanie oferty</h2>
+        <table class="table" id="offer"></table>
+        <p class="hint">Mapowanie PKD → kategorie materiałów budowlanych. Edytowalne poniżej.</p>
+      </div>
+
+      <div class="grid-12 card">
+        <h2>Konfiguracja scoringu (edytowalne)</h2>
+        <div class="row">
+          <textarea id="cfg" rows="10" aria-label="config" class="mono"></textarea>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button id="applyCfg" class="secondary">Zastosuj konfigurację</button>
+          <span class="hint">Zmiany wpływają od razu. To offline.</span>
+        </div>
+      </div>
+
+      <div class="grid-12 card">
+        <h2>Eksport</h2>
+        <div class="row">
+          <button id="exportCsv" class="secondary">Eksportuj CSV</button>
+          <button id="printBtn" class="secondary">Drukuj / PDF</button>
+          <span class="hint">CSV zawiera najważniejsze pola do CRM.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="inner">
+      <div class="hint">OSINT wersja: 1.0 • Offline. Nie gromadzi danych.</div>
+      <div class="row">
+        <span class="pill"><span>Tryb</span><span class="muted">Wyszukiwarka + wklejka</span></span>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ——— Konfiguracja domyślna ———
+let CONFIG = {
+  weights: {
+    employees: 0.24,
+    revenueBand: 0.26,
+    yearsActive: 0.10,
+    vatStatus: 0.08,
+    pkdFit: 0.16,
+    basketSignal: 0.10,
+    locality: 0.06
+  },
+  revenueBands: [
+    { key: "micro", min: 0, max: 2_000_000, score: 25 },
+    { key: "small", min: 2_000_000, max: 10_000_000, score: 55 },
+    { key: "medium", min: 10_000_000, max: 50_000_000, score: 75 },
+    { key: "large", min: 50_000_000, max: Infinity, score: 92 }
+  ],
+  employeesScale: [
+    { max: 9, score: 20 }, { max: 49, score: 55 }, { max: 249, score: 78 }, { max: Infinity, score: 92 }
+  ],
+  yearsScale: [
+    { max: 1, score: 20 }, { max: 3, score: 40 }, { max: 7, score: 60 }, { max: 12, score: 75 }, { max: Infinity, score: 88 }
+  ],
+  basketCalibration: { alpha: 0.65, pivot: 8000 }, // 0–1 sygnał na tle koszyka
+  localityCities: ["Warszawa","Kraków","Wrocław","Poznań","Gdańsk","Katowice","Łódź"],
+  pkdToCategories: {
+    "41": ["materiały konstrukcyjne","stal","chemia bud.","narzędzia PRO"],
+    "42": ["kruszywa","beton","geowłókniny"],
+    "43": ["wykończeniówka","chemia bud.","elektryka","HVAC"],
+    "46.73": ["hurt budowlany","współpraca B2B","rabaty wolumenowe"],
+    "47.52": ["detal budowlany","POS","szybkie dostawy"],
+    "FALLBACK": ["materiały uniwersalne","transport","usługi cięcia/rozładunku"]
+  },
+  potentialModel: { baseARPU: 18000, multiplierByTier: { S: 30, A: 12, B: 5, C: 2 } }
+};
+
+// ——— Mock enrichment (offline) ———
+function mockEnrich(query){
+  const seed = (query.q + (query.city||"")).toLowerCase().replace(/\D/g,"");
+  const h = hash(seed || Math.random().toString());
+  const emp = [6,18,55,130,320][h % 5];
+  const rev = [1_800_000, 6_200_000, 18_500_000, 74_000_000, 210_000_000][(h>>2) % 5];
+  const pkdPool = ["41","42","43","46.73","47.52"]; const pkd = pkdPool[(h>>4)%pkdPool.length];
+  const yrs = [0.8, 2.5, 5, 9, 14][(h>>6)%5];
+  const cityHit = CONFIG.localityCities.includes((query.city||"").trim());
+  const vat = ["Czynny VAT","Zwolniony","Niepewny"][h % 3];
+  return {
+    name: guessName(query.q),
+    nip: guessNip(query.q),
+    city: query.city || ["Warszawa","Kraków","Wrocław","Poznań","Gdańsk"][h%5],
+    employees: emp,
+    revenuePLN: rev,
+    revenueBand: bandOf(rev),
+    pkd,
+    pkdDesc: pkdDict[pkd]||"działalność budowlana/handel",
+    yearsActive: yrs,
+    vatStatus: vat,
+    localityHit: cityHit,
+    sources: ["offline:heuristic"]
+  };
+}
+
+const pkdDict = { "41":"Roboty budowlane związane ze wznoszeniem budynków",
+  "42":"Roboty związane z budową obiektów inżynierii lądowej i wodnej",
+  "43":"Roboty budowlane specjalistyczne",
+  "46.73":"Sprzedaż hurtowa drewna, materiałów budowlanych i wyposażenia sanitarnego",
+  "47.52":"Sprzedaż detaliczna sprzętu, farb i szkła w wyspecjalizowanych sklepach" };
+
+function bandOf(v){
+  for(const b of CONFIG.revenueBands){ if(v>=b.min && v<b.max) return b.key; }
+  return "micro";
+}
+
+// ——— Scoring ———
+function score(en, basket){
+  const w = CONFIG.weights;
+  const empScore = CONFIG.employeesScale.find(x=>en.employees<=x.max)?.score||50;
+  const revScore = CONFIG.revenueBands.find(x=>x.key===en.revenueBand)?.score||50;
+  const yrsScore = CONFIG.yearsScale.find(x=>en.yearsActive<=x.max)?.score||50;
+  const vatScore = en.vatStatus==="Czynny VAT"?80: en.vatStatus==="Zwolniony"?55:35;
+  const fit = fitScore(en.pkd, en);
+  const basketSignal = Math.min(1, (basket||0)/CONFIG.basketCalibration.pivot) ** CONFIG.basketCalibration.alpha; // 0..1
+  const basketScore = 30 + basketSignal * 60; // 30..90
+  const locScore = en.localityHit? 75: 55;
+  const s = (
+    empScore*w.employees + revScore*w.revenueBand + yrsScore*w.yearsActive +
+    vatScore*w.vatStatus + fit*w.pkdFit + basketScore*w.basketSignal + locScore*w.locality
+  );
+  const score = Math.round(s);
+  const tier = score>=85?"S": score>=70?"A": score>=55?"B":"C";
+  const annual = estAnnual(tier);
+  return { score, tier, annual };
+}
+
+function fitScore(pkd, en){
+  const base = pkd? 70: 50;
+  const sizeAdj = en.employees>200? +12: en.employees>50? +6: +0;
+  return Math.min(92, base + sizeAdj);
+}
+
+function estAnnual(tier){
+  const m = CONFIG.potentialModel;
+  return Math.round(m.baseARPU * (m.multiplierByTier[tier]||1));
+}
+
+// ——— OSINT launcher ———
+let OSINT_OVERRIDES = null;
+function inputQuery(){ const v=document.querySelector('#q').value.trim(); return v; }
+function enc(s){ return encodeURIComponent(s||''); }
+function openSearch(url){ window.open(url, '_blank'); }
+function buildNameOrNip(){ const v=inputQuery(); const nip=(v.match(/\d{10}/)||[])[0]||''; return nip? nip : v; }
+function attachOsintButtons(){
+  const base = ()=> enc(buildNameOrNip());
+  const map = {
+    gLinkedin: ()=> `https://www.google.com/search?q=site%3Alinkedin.com/company+${base()}`,
+    gPrzetargi: ()=> `https://www.google.com/search?q=${base()}+przetarg+ogloszenie+zamowienia` ,
+    gEKRS: ()=> `https://www.google.com/search?q=site%3Aekrs.ms.gov.pl+${base()}`,
+    gCEIDG: ()=> `https://www.google.com/search?q=site%3Aprod.ceidg.gov.pl+${base()}`,
+    gStrona: ()=> `https://www.google.com/search?q=${base()}+oficjalna+strona+kontakt` ,
+    gPanorama: ()=> `https://www.google.com/search?q=site%3Apanoramafirm.pl+${base()}`
+  };
+  Object.entries(map).forEach(([id,fn])=>{ const el=document.getElementById(id); if(el){ el.onclick=()=> openSearch(fn()); }});
+}
+function parseOsint(text){
+  const t=(text||'');
+  const domainMatch = t.match(/https?:\/\/(?:www\.)?([a-z0-9.-]+)\b/i);
+  const empMatch = t.match(/(\d{1,3})\s*[–—-to]+\s*(\d{1,3})/i);
+  const keywords = (t.toLowerCase().match(/[a-ząćęłńóśżź]{4,}/g)||[]).slice(0,200).join(' ');
+  return {
+    domain: domainMatch? domainMatch[1] : '',
+    empMin: empMatch? Number(empMatch[1]) : null,
+    empMax: empMatch? Number(empMatch[2]) : null,
+    keywords
+  };
+}
+function guessPKD(text){
+  const tt=(text||'').toLowerCase();
+  if(/(instal|wykońc|remont|dociepl|elektryk|hydraul)/.test(tt)) return '43';
+  if(/(dewelop|general|budow|konstruk)/.test(tt)) return '41';
+  if(/(inżyni|drog|most|kanaliz|kolej)/.test(tt)) return '42';
+  if(/(hurt|dystryb|dystrybu|wholesale)/.test(tt)) return '46.73';
+  if(/(market|sklep|detal|retail)/.test(tt)) return '47.52';
+  return '';
+}
+function applyOsintOverrides(en){
+  if(!OSINT_OVERRIDES) return en;
+  const out = { ...en };
+  if(OSINT_OVERRIDES.empMin && OSINT_OVERRIDES.empMax){
+    const est = Math.round((OSINT_OVERRIDES.empMin + OSINT_OVERRIDES.empMax)/2);
+    if(est>0) out.employees = Math.max(out.employees||0, est);
+  }
+  if(OSINT_OVERRIDES.domain){ out.website = OSINT_OVERRIDES.domain; }
+  if(OSINT_OVERRIDES.keywords){
+    const pkd = guessPKD(OSINT_OVERRIDES.keywords);
+    if(pkd){ out.pkd = pkd; out.pkdDesc = pkdDict[pkd]||out.pkdDesc; }
+  }
+  return out;
+}
+
+// ——— UI ———
+const $ = (q)=> document.querySelector(q);
+const out = $('#out');
+const barFill = $('#barFill');
+const tierEl = $('#tier');
+const scoreEl = $('#score');
+const annualEl = $('#annual');
+const bandEl = $('#band');
+const actionsEl = $('#actions');
+const tagsEl = $('#tags');
+const firmoEl = $('#firmo');
+const offerEl = $('#offer');
+
+$('#cfg').value = JSON.stringify(CONFIG, null, 2);
+$('#applyCfg').onclick = ()=>{ try{ CONFIG = JSON.parse($('#cfg').value); alert('Zastosowano konfigurację.'); } catch(e){ alert('Błąd JSON.'); } };
+
+function runCheck(){
+  const q = $('#q').value.trim();
+  if(!q){ alert('Podaj NIP lub nazwę.'); return; }
+  const city = $('#city').value.trim();
+  const basket = Number($('#basket').value||0);
+  let en = mockEnrich({ q, city });
+  en = applyOsintOverrides(en);
+  const { score: sc, tier } = score(en, basket);
+  const annual = estAnnual(tier);
+  renderScore(sc, tier, annual);
+  renderActions(en, sc, tier, basket);
+  renderFirmo(en);
+  renderOffer(en);
+  out.style.display = 'grid';
+}
+
+$('#checkBtn').onclick = runCheck;
+$('#clearBtn').onclick = ()=>{ ['#q','#city','#basket','#osintPaste'].forEach(id=> {const el=$(id); if(el) el.value='';}); out.style.display='none'; OSINT_OVERRIDES=null; };
+$('#exportCsv').onclick = exportCsv;
+$('#printBtn').onclick = ()=> window.print();
+
+function renderScore(sc, tier, annual){
+  scoreEl.textContent = sc;
+  tierEl.textContent = `Tier ${tier}`;
+  barFill.style.width = Math.max(0, Math.min(100, sc))+'%';
+  annualEl.textContent = annual.toLocaleString('pl-PL');
+  const low = Math.round(annual*0.7).toLocaleString('pl-PL');
+  const high = Math.round(annual*1.3).toLocaleString('pl-PL');
+  bandEl.textContent = `${low} – ${high}`;
+}
+
+function renderActions(en, sc, tier, basket){
+  actionsEl.innerHTML = '';
+  const steps = [];
+  if(tier==='S') steps.push('Zadzwoń dziś i zaproponuj spotkanie onsite z opiekunem.');
+  if(tier==='A') steps.push('Wyślij ofertę z rabatem wolumenowym i transportem 24–48h.');
+  if(tier==='B') steps.push('Dodaj do kampanii remarketingowej. Follow-up za 7 dni.');
+  if(tier==='C') steps.push('Oznacz jako lead do obserwacji. Follow-up za 30 dni.');
+  steps.push(`Dopasuj ofertę do PKD ${en.pkd} – ${en.pkdDesc}.`);
+  if(en.vatStatus!=="Czynny VAT") steps.push('Zweryfikuj status VAT na Białej Liście MF przed fakturą.');
+  if(basket>0 && basket<3000) steps.push('Propozycja upsell: pakiet startowy PRO + darmowy transport powyżej 5k.');
+  if(en.employees>50) steps.push('Zaproponuj umowę ramową i ceny projektowe.');
+  steps.forEach(t=>{ const li = document.createElement('li'); li.textContent = t; actionsEl.appendChild(li); });
+
+  tagsEl.innerHTML = '';
+  const cats = CONFIG.pkdToCategories[en.pkd] || CONFIG.pkdToCategories.FALLBACK;
+  cats.forEach(c=>{ const s=document.createElement('span'); s.className='pill'; s.textContent=c; tagsEl.appendChild(s); });
+}
+
+function renderFirmo(en){
+  const rows = [
+    ['Nazwa', en.name],
+    ['NIP', en.nip||'–'],
+    ['Miasto', en.city],
+    ['Pracownicy', en.employees],
+    ['Przychód szac.', en.revenuePLN.toLocaleString('pl-PL')+' PLN'],
+    ['Próg wielkości', en.revenueBand],
+    ['PKD', `${en.pkd} – ${en.pkdDesc}`],
+    ['Lata na rynku', en.yearsActive],
+    ['VAT', en.vatStatus],
+    ['WWW', en.website||'—'],
+    ['Źródła', en.sources.join(', ')+(OSINT_OVERRIDES? ', osint:wklejka' : '')]
+  ];
+  firmoEl.innerHTML = '<tr><th>Pole</th><th>Wartość</th></tr>' + rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+}
+
+function renderOffer(en){
+  const cats = CONFIG.pkdToCategories[en.pkd] || CONFIG.pkdToCategories.FALLBACK;
+  const recs = cats.map((c)=>({
+    kategoria: c,
+    SKU_flagowe: sampleSkus(c),
+    argument: offerAngle(c, en)
+  }));
+  offerEl.innerHTML = '<tr><th>Kategoria</th><th>Propozycje SKU</th><th>Kąt sprzedażowy</th></tr>'+
+    recs.map(r=>`<tr><td>${r.kategoria}</td><td>${r.SKU_flagowe.join(', ')}</td><td>${r.argument}</td></tr>`).join('');
+}
+
+function sampleSkus(cat){
+  const dict={
+    'materiały konstrukcyjne':['bloczek 24','cement CEM I 42,5','nadproże 120'],
+    'stal':['#12 żebrowana','strzemiona 25','siatka 5/5'],
+    'chemia bud.':['grunt 10l','klej C2TE','tynk akryl 25kg'],
+    'narzędzia PRO':['niwelator','laser krzyżowy','mieszarka 1400W'],
+    'kruszywa':['podsypka 0–31','żwir 8–16','piasek płukany'],
+    'beton':['C20/25','C25/30','posadzka mixokret'],
+    'geowłókniny':['180g/m²','250g/m²','300g/m²'],
+    'wykończeniówka':['gładź 20kg','farba lateks 10l','listwy przyp.'],
+    'elektryka':['peszel 20','przewód YDYp 3×2,5','gniazda IP44'],
+    'HVAC':['rury preizol','kolana 90°','taśma alu'],
+    'hurt budowlany':['palety mix','cennik projektowy','warunki ramowe'],
+    'współpraca B2B':['kredyt kupiecki','EDI','harmonogram dostaw'],
+    'rabaty wolumenowe':['rabaty progowe 5/10/15%','transport 24h','koszt 0 przy >25k'],
+    'detal budowlany':['POS standy','hity sezonu','pakiety DIY'],
+    'POS':['ekspozytory','etykiety cen.','ulotki techn.'],
+    'szybkie dostawy':['dostawa same day','tracking SMS','okno 2h'],
+    'materiały uniwersalne':['cement 32,5','piana mont.','wkręty 4.2×25'],
+    'transport':['HDS 12t','wywrotka 8t','bus 1.5t'],
+    'usługi cięcia/rozładunku':['cięcie stali','rozładunek HDS','pakietowanie']
+  };
+  return dict[cat] || ['asortyment bazowy','oferta sezonowa','pakiet logistyczny'];
+}
+
+function offerAngle(cat,en){
+  if(cat.includes('hurt')||cat.includes('B2B')) return 'Skalowanie zakupów. Umowa ramowa. Ceny projektowe + SLA dostaw.';
+  if(cat.includes('wykończen')) return 'Szybka rotacja. Dostawy JIT na inwestycję. Paletyzacja i zwroty.';
+  if(cat.includes('stal')) return 'Składowanie + cięcie pod wymiar. Lepsza cena przy stałych wolumenach.';
+  if(cat.includes('chemia')) return 'Dowozy w 24h. Próbki i wsparcie technologa na budowie.';
+  return 'Oferta dopasowana do PKD. Cross-sell z logistyką i finansowaniem.';
+}
+
+function exportCsv(){
+  const rows = Array.from(document.querySelectorAll('#firmo tr')).slice(1).map(tr=>[
+    tr.children[0].textContent, tr.children[1].textContent
+  ]);
+  const extra = [ ['Wynik', $('#score').textContent], ['Tier', $('#tier').textContent], ['Potencjał roczny', $('#annual').textContent+' PLN'] ];
+  const all = rows.concat(extra);
+  const csv = 'Pole,Wartość\n' + all.map(r=> r.map(v=> '"'+ String(v).replaceAll('"','""') +'"').join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lead_potencjal_osint.csv';
+  a.click();
+}
+
+// ——— Helpers ———
+function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; } return Math.abs(h); }
+function guessName(q){ if(/\d{10}/.test(q)) return 'Firma – wg NIP'; return q.replace(/\s+/g,' ').trim(); }
+function guessNip(q){ const m=q.match(/\d{10}/); return m?m[0]:''; }
+
+// init
+(function init(){ attachOsintButtons(); })();
+</script>
+</body>
+</html>
