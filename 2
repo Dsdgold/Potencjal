@@ -1,0 +1,128 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html b/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html
+index 0d36f23b4f5c512cf29ba38539cd42b82dacf691..976feb7d6504da27ef6492c4e453b1faafbb41d2 100644
+--- a/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html
++++ b/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html
+@@ -167,52 +167,54 @@ let CONFIG = {
+     { key: "small", min: 2_000_000, max: 10_000_000, score: 55 },
+     { key: "medium", min: 10_000_000, max: 50_000_000, score: 75 },
+     { key: "large", min: 50_000_000, max: Infinity, score: 92 }
+   ],
+   employeesScale: [
+     { max: 9, score: 20 }, { max: 49, score: 55 }, { max: 249, score: 78 }, { max: Infinity, score: 92 }
+   ],
+   yearsScale: [
+     { max: 1, score: 20 }, { max: 3, score: 40 }, { max: 7, score: 60 }, { max: 12, score: 75 }, { max: Infinity, score: 88 }
+   ],
+   basketCalibration: { alpha: 0.65, pivot: 8000 }, // 0–1 sygnał na tle koszyka
+   localityCities: ["Warszawa","Kraków","Wrocław","Poznań","Gdańsk","Katowice","Łódź"],
+   pkdToCategories: {
+     "41": ["materiały konstrukcyjne","stal","chemia bud.","narzędzia PRO"],
+     "42": ["kruszywa","beton","geowłókniny"],
+     "43": ["wykończeniówka","chemia bud.","elektryka","HVAC"],
+     "46.73": ["hurt budowlany","współpraca B2B","rabaty wolumenowe"],
+     "47.52": ["detal budowlany","POS","szybkie dostawy"],
+     "FALLBACK": ["materiały uniwersalne","transport","usługi cięcia/rozładunku"]
+   },
+   potentialModel: { baseARPU: 18000, multiplierByTier: { S: 30, A: 12, B: 5, C: 2 } }
+ };
+ 
+ // ——— Mock enrichment (offline) ———
+ function mockEnrich(query){
+-  const seed = (query.q + (query.city||"")).toLowerCase().replace(/\D/g,"");
+-  const h = hash(seed || Math.random().toString());
++  const normalized = `${(query.q||'').trim().toLowerCase()}|${(query.city||'').trim().toLowerCase()}`;
++  const numeric = normalized.replace(/\D/g,"");
++  const seed = numeric || normalized || 'offline-osint';
++  const h = hash(seed);
+   const emp = [6,18,55,130,320][h % 5];
+   const rev = [1_800_000, 6_200_000, 18_500_000, 74_000_000, 210_000_000][(h>>2) % 5];
+   const pkdPool = ["41","42","43","46.73","47.52"]; const pkd = pkdPool[(h>>4)%pkdPool.length];
+   const yrs = [0.8, 2.5, 5, 9, 14][(h>>6)%5];
+   const cityHit = CONFIG.localityCities.includes((query.city||"").trim());
+   const vat = ["Czynny VAT","Zwolniony","Niepewny"][h % 3];
+   return {
+     name: guessName(query.q),
+     nip: guessNip(query.q),
+     city: query.city || ["Warszawa","Kraków","Wrocław","Poznań","Gdańsk"][h%5],
+     employees: emp,
+     revenuePLN: rev,
+     revenueBand: bandOf(rev),
+     pkd,
+     pkdDesc: pkdDict[pkd]||"działalność budowlana/handel",
+     yearsActive: yrs,
+     vatStatus: vat,
+     localityHit: cityHit,
+     sources: ["offline:heuristic"]
+   };
+ }
+ 
+ const pkdDict = { "41":"Roboty budowlane związane ze wznoszeniem budynków",
+   "42":"Roboty związane z budową obiektów inżynierii lądowej i wodnej",
+   "43":"Roboty budowlane specjalistyczne",
+diff --git a/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html b/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html
+index 0d36f23b4f5c512cf29ba38539cd42b82dacf691..976feb7d6504da27ef6492c4e453b1faafbb41d2 100644
+--- a/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html
++++ b/mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html
+@@ -322,50 +324,58 @@ const actionsEl = $('#actions');
+ const tagsEl = $('#tags');
+ const firmoEl = $('#firmo');
+ const offerEl = $('#offer');
+ 
+ $('#cfg').value = JSON.stringify(CONFIG, null, 2);
+ $('#applyCfg').onclick = ()=>{ try{ CONFIG = JSON.parse($('#cfg').value); alert('Zastosowano konfigurację.'); } catch(e){ alert('Błąd JSON.'); } };
+ 
+ function runCheck(){
+   const q = $('#q').value.trim();
+   if(!q){ alert('Podaj NIP lub nazwę.'); return; }
+   const city = $('#city').value.trim();
+   const basket = Number($('#basket').value||0);
+   let en = mockEnrich({ q, city });
+   en = applyOsintOverrides(en);
+   const { score: sc, tier } = score(en, basket);
+   const annual = estAnnual(tier);
+   renderScore(sc, tier, annual);
+   renderActions(en, sc, tier, basket);
+   renderFirmo(en);
+   renderOffer(en);
+   out.style.display = 'grid';
+ }
+ 
+ $('#checkBtn').onclick = runCheck;
+ $('#clearBtn').onclick = ()=>{ ['#q','#city','#basket','#osintPaste'].forEach(id=> {const el=$(id); if(el) el.value='';}); out.style.display='none'; OSINT_OVERRIDES=null; };
++$('#applyOsint').onclick = ()=>{
++  const raw = $('#osintPaste').value.trim();
++  OSINT_OVERRIDES = raw? parseOsint(raw) : null;
++  const hasQuery = $('#q').value.trim().length>0;
++  if(hasQuery){ runCheck(); }
++  const msg = OSINT_OVERRIDES ? 'Zastosowano wklejkę OSINT.' : 'Wyczyszczono nadpisania OSINT.';
++  alert(hasQuery ? msg : `${msg} Podaj NIP lub nazwę, aby przeliczyć wynik.`);
++};
+ $('#exportCsv').onclick = exportCsv;
+ $('#printBtn').onclick = ()=> window.print();
+ 
+ function renderScore(sc, tier, annual){
+   scoreEl.textContent = sc;
+   tierEl.textContent = `Tier ${tier}`;
+   barFill.style.width = Math.max(0, Math.min(100, sc))+'%';
+   annualEl.textContent = annual.toLocaleString('pl-PL');
+   const low = Math.round(annual*0.7).toLocaleString('pl-PL');
+   const high = Math.round(annual*1.3).toLocaleString('pl-PL');
+   bandEl.textContent = `${low} – ${high}`;
+ }
+ 
+ function renderActions(en, sc, tier, basket){
+   actionsEl.innerHTML = '';
+   const steps = [];
+   if(tier==='S') steps.push('Zadzwoń dziś i zaproponuj spotkanie onsite z opiekunem.');
+   if(tier==='A') steps.push('Wyślij ofertę z rabatem wolumenowym i transportem 24–48h.');
+   if(tier==='B') steps.push('Dodaj do kampanii remarketingowej. Follow-up za 7 dni.');
+   if(tier==='C') steps.push('Oznacz jako lead do obserwacji. Follow-up za 30 dni.');
+   steps.push(`Dopasuj ofertę do PKD ${en.pkd} – ${en.pkdDesc}.`);
+   if(en.vatStatus!=="Czynny VAT") steps.push('Zweryfikuj status VAT na Białej Liście MF przed fakturą.');
+   if(basket>0 && basket<3000) steps.push('Propozycja upsell: pakiet startowy PRO + darmowy transport powyżej 5k.');
+   if(en.employees>50) steps.push('Zaproponuj umowę ramową i ceny projektowe.');
+   steps.forEach(t=>{ const li = document.createElement('li'); li.textContent = t; actionsEl.appendChild(li); });
+ 
+EOF
+)
