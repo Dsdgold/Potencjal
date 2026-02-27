@@ -1,39 +1,106 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a//dev/null b/README.md
-index 0000000000000000000000000000000000000000..564f43ae03f9a3bf6c8a634da1d6ac488aa5fef3 100644
---- a//dev/null
-+++ b/README.md
-@@ -0,0 +1,30 @@
-+# Potencjał klienta – narzędzie offline
-+
-+Ten repozytorium zawiera pojedynczy plik HTML implementujący narzędzie do szybkiej oceny potencjału klienta z wykorzystaniem heurystyk oraz ręcznie wklejanych danych OSINT.
-+
-+## Uruchomienie
-+
-+1. Otwórz plik `mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html` w przeglądarce (dwuklik lub `open` / `xdg-open`).
-+2. Wpisz nazwę firmy lub NIP, opcjonalnie miasto i wartość aktualnego koszyka.
-+3. Skorzystaj z przycisków wyszukiwania, aby otworzyć dodatkowe karty OSINT.
-+4. Wklej znalezione dane w sekcję „Wklej dane znalezione w sieci” i kliknij „Zastosuj wklejkę do profilu”, aby natychmiast przeliczyć scoring.
-+
-+## Powiązanie z GitHubem
-+
-+Repozytorium można łatwo połączyć z istniejącym projektem na GitHubie, korzystając ze skryptu pomocniczego `scripts/setup_github_remote.sh`.
-+
-+```bash
-+# nadaj url swojego repozytorium oraz (opcjonalnie) nazwę głównej gałęzi
-+scripts/setup_github_remote.sh git@github.com:twoja-firma/potencjal.git main
-+
-+# połączenie gotowe – wypchnij zmiany
-+git push -u origin work
-+```
-+
-+Skrypt:
-+- dodaje lub aktualizuje zdalne `origin`,
-+- próbuje pobrać wskazaną gałąź (ignorując brak),
-+- ustawia śledzenie bieżącej gałęzi względem zdalnej,
-+- informuje jak wypchnąć zmiany.
-+
-+Dzięki temu repozytorium pozostaje zsynchronizowane z GitHubem przy minimalnym nakładzie pracy.
- 
-EOF
-)
+# SIG Potencjał — Company Intelligence & Credit Risk Platform
+
+Production-ready SaaS for Polish/EU company intelligence, credit risk scoring,
+and construction material recommendations.
+
+## Quick Start
+
+```bash
+# 1. Copy env file
+cp .env.example .env
+
+# 2. Start all services
+docker-compose up --build
+
+# 3. Access
+#    - Frontend: http://localhost:3000 (Next.js)
+#    - API docs: http://localhost:8000/docs
+#    - Static landing: index.html (simple deploy)
+```
+
+**Demo credentials**: `demo@sig.pl` / `demo1234` or `admin@sig.pl` / `admin1234`
+
+## Architecture
+
+```
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│  Next.js │  │  FastAPI  │  │  Celery  │
+│  :3000   │──│  :8000   │──│  Worker  │
+└──────────┘  └────┬─────┘  └────┬─────┘
+                   │              │
+         ┌─────────┼──────────────┤
+         │         │              │
+    ┌────▼───┐ ┌───▼────┐  ┌─────▼───┐
+    │Postgres│ │ Redis  │  │ Qdrant  │
+    │  :5432 │ │ :6379  │  │ :6333   │
+    └────────┘ └────────┘  └─────────┘
+```
+
+## Data Providers
+
+| Provider | Auth | Status |
+|----------|------|--------|
+| Biała Lista VAT (MF) | None (public) | Implemented |
+| KRS OpenAPI (MS) | None (public) | Implemented |
+| GUS REGON (BIR1) | API key required | Implemented (needs key) |
+| CEIDG | API key required | Implemented (needs key) |
+| Mock Provider | None | For dev/testing |
+
+### Adding Provider Keys
+
+1. **GUS REGON**: Get key at https://api.stat.gov.pl — set `GUS_API_KEY` in `.env`
+2. **CEIDG**: Get key at https://dane.biznes.gov.pl — set `CEIDG_API_KEY` in `.env`
+3. **Stripe**: Create account at stripe.com — set `STRIPE_*` keys in `.env`
+
+## Scoring Engine (11 components, 0-100)
+
+| Component | Max | Source |
+|-----------|-----|--------|
+| Status VAT | 12 | Biala Lista |
+| Forma prawna | 12 | VAT / KRS |
+| Wiek firmy | 10 | VAT / KRS |
+| Lokalizacja | 8 | VAT / KRS |
+| Rachunki bankowe | 8 | Biala Lista |
+| Rejestry publiczne | 10 | All |
+| Zarzad | 8 | VAT / KRS |
+| Kapital zakladowy | 10 | KRS |
+| Branza PKD | 7 | KRS / CEIDG |
+| Kompletnosc danych | 8 | All |
+| Stabilnosc | 7 | All |
+
+Risk bands: **A** (75+), **B** (55+), **C** (35+), **D** (<35)
+
+## Credit Limits
+
+| Band | Limit | Terms | Discount |
+|------|-------|-------|----------|
+| A | 200K-1M PLN | 60 days | 15% |
+| B | 50K-400K PLN | 45 days | 10% |
+| C | 10K-100K PLN | 30 days | 5% |
+| D | Prepayment | n/a | n/a |
+
+## Material Categories (15)
+
+Cement, insulation, drywall, rebar, aggregates, roofing, facade,
+windows/doors, waterproofing, adhesives, paints, pipes, electrical, HVAC, tools.
+
+## Plans
+
+- **Free**: 10 lookups/month, scoring, credit limit, 1 user
+- **Pro** (299 PLN/mo): 200 lookups, materials, export, CRM, 5 users
+- **Enterprise** (999 PLN/mo): 5000 lookups, API, SSO, unlimited users
+
+## Testing
+
+```bash
+python -m pytest tests/api/ -v   # 17 tests
+```
+
+## Key Assumptions
+
+- In development mode, the mock provider is used automatically
+- VAT Whitelist API is public, rate-limited (~10 req/s)
+- KRS requires a KRS number (obtained from VAT lookup first)
+- GUS and CEIDG require API keys from government portals
+- Stripe is optional; billing degrades gracefully without keys
+- GDPR: snapshots auto-expire per TTL; audit logs are append-only

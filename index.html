@@ -1,485 +1,475 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SIG Potencjal Klienta</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIG Potencjał - Company Intelligence Platform</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#e63946">
   <style>
-    :root { --bg:#0a0a0f; --card:#141420; --muted:#8b8b9e; --text:#e8e8f0; --accent:#e63946; --accent-light:#2a1520; --border:#2a2a3a; }
-    * { box-sizing:border-box; }
-    html,body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); position:relative; }
-    body::before { content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.07;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23ffffff'%3E%3Cpolygon points='25,18 30,28 20,28'/%3E%3Cpolygon points='55,18 60,28 50,28'/%3E%3Ccircle cx='40' cy='36' r='14'/%3E%3Cellipse cx='40' cy='58' rx='12' ry='14'/%3E%3Cellipse cx='33' cy='70' rx='5' ry='3'/%3E%3Cellipse cx='47' cy='70' rx='5' ry='3'/%3E%3C/g%3E%3Ccircle cx='35' cy='33' r='2' fill='%23000000'/%3E%3Ccircle cx='45' cy='33' r='2' fill='%23000000'/%3E%3Cellipse cx='40' cy='37' rx='1.5' ry='1' fill='%23000000'/%3E%3Cpath d='M52,52 Q62,45 58,38' stroke='%23ffffff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-size: 140px 140px;
-    }
-    body > * { position:relative; z-index:1; }
-    .page { display:grid; grid-template-columns:1fr 320px; gap:20px; max-width:1440px; margin:0 auto; padding:24px 16px 80px; }
-    @media (max-width:1100px){ .page { grid-template-columns:1fr; } }
-    .main { min-width:0; }
-    .sidebar { position:sticky; top:24px; align-self:start; }
+    :root { --bg:#0a0a12; --surface:#12121e; --card:#16162a; --border:#252540; --muted:#7878a0; --text:#e8e8f4; --red:#e63946; --red-dark:#b30839; --green:#22c55e; --blue:#3b82f6; --orange:#f59e0b; }
+    * { box-sizing:border-box; margin:0; }
+    html,body { font-family:Inter,system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); }
+    a { color:inherit; text-decoration:none; }
 
-    /* Header */
-    .header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-    .sig { font-size:32px; font-weight:900; color:var(--accent); letter-spacing:2px; text-shadow:0 0 20px rgba(230,57,70,.3); }
-    .header h1 { font-size:20px; margin:0; font-weight:600; }
-    .header p { margin:4px 0 0; font-size:13px; color:var(--muted); }
+    /* Nav */
+    .nav { position:sticky; top:0; z-index:50; border-bottom:1px solid var(--border); background:rgba(18,18,30,.92); backdrop-filter:blur(12px); }
+    .nav .inner { max-width:1200px; margin:0 auto; padding:0 16px; height:56px; display:flex; align-items:center; justify-content:space-between; }
+    .logo { font-size:24px; font-weight:900; color:var(--red); letter-spacing:2px; }
+    .logo-sub { font-size:14px; font-weight:600; margin-left:8px; }
+    .nav-links { display:flex; gap:8px; }
+    .btn { padding:8px 20px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
+    .btn-ghost { background:transparent; color:var(--muted); }
+    .btn-ghost:hover { color:#fff; }
+    .btn-primary { background:linear-gradient(135deg,var(--red),var(--red-dark)); color:#fff; box-shadow:0 4px 16px rgba(230,57,70,.25); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(230,57,70,.35); }
+    .btn-outline { background:var(--card); border:1px solid var(--border); color:var(--text); }
+    .btn-outline:hover { border-color:rgba(230,57,70,.4); }
 
-    /* Card */
-    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,.3); margin-bottom:16px; }
+    /* Hero */
+    .hero { max-width:1200px; margin:0 auto; padding:80px 16px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(32px,5vw,56px); font-weight:900; line-height:1.15; margin-bottom:24px; }
+    .hero h1 span { color:var(--red); }
+    .hero p { font-size:18px; color:var(--muted); max-width:640px; margin:0 auto 40px; line-height:1.6; }
+    .hero-cta { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
 
-    /* Search */
-    .search-bar { display:flex; gap:10px; align-items:stretch; }
-    .search-bar input { flex:1; background:#1a1a2e; border:2px solid var(--border); border-radius:12px; padding:14px 16px; font-size:16px; color:var(--text); outline:none; transition:border .2s; }
-    .search-bar input:focus { border-color:var(--accent); box-shadow:0 0 12px rgba(230,57,70,.2); }
-    .search-bar button { background:linear-gradient(180deg,#e63946,#b30839); color:#fff; border:none; border-radius:12px; padding:14px 28px; font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:0 2px 12px rgba(230,57,70,.3); }
-    .search-bar button:hover { transform:scale(1.02); }
-    .search-bar button:disabled { opacity:.5; cursor:wait; }
+    /* Features */
+    .section { max-width:1200px; margin:0 auto; padding:60px 16px; }
+    .section-title { font-size:28px; font-weight:900; text-align:center; margin-bottom:48px; }
+    .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+    .feature { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; transition:border-color .2s; }
+    .feature:hover { border-color:rgba(230,57,70,.3); }
+    .feature-icon { font-size:28px; margin-bottom:12px; }
+    .feature h3 { font-size:16px; font-weight:700; margin-bottom:8px; }
+    .feature p { font-size:13px; color:var(--muted); line-height:1.6; }
 
-    /* Status */
-    .status-msg { text-align:center; padding:20px; color:var(--muted); font-size:14px; }
-    .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:8px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .error-msg { color:#fca5a5; background:#2a1520; border:1px solid #5c2030; border-radius:10px; padding:12px 16px; font-size:14px; }
+    /* Scoring demo */
+    .demo-section { background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+    .demo { max-width:1200px; margin:0 auto; padding:60px 16px; }
+    .demo-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center; }
+    @media(max-width:768px){ .demo-grid { grid-template-columns:1fr; } }
+    .demo-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+    .score-gauge { text-align:center; padding:20px 0; }
+    .score-number { font-size:64px; font-weight:900; }
+    .component { margin-bottom:12px; }
+    .component-header { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; }
+    .component-bar { height:6px; background:#1a1a2e; border-radius:3px; overflow:hidden; }
+    .component-fill { height:100%; border-radius:3px; transition:width .6s; }
 
-    /* Results grid */
-    .results { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    @media (max-width:900px){ .results { grid-template-columns:1fr; } }
-    .results .full { grid-column:1/-1; }
+    /* Pricing */
+    .pricing { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; }
+    .plan { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; }
+    .plan.featured { border-color:var(--red); box-shadow:0 0 40px rgba(230,57,70,.1); }
+    .plan-badge { font-size:11px; font-weight:700; color:var(--red); text-transform:uppercase; margin-bottom:8px; }
+    .plan h3 { font-size:20px; font-weight:700; margin-bottom:4px; }
+    .plan .price { font-size:32px; font-weight:900; margin:8px 0 16px; }
+    .plan .price span { font-size:14px; font-weight:400; color:var(--muted); }
+    .plan ul { list-style:none; padding:0; margin:0 0 20px; }
+    .plan ul li { font-size:13px; color:var(--muted); padding:4px 0; }
+    .plan ul li::before { content:"✓ "; color:var(--green); }
 
-    /* Company header */
-    .company-header { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-    .company-header h2 { font-size:20px; margin:0; flex:1; }
-    .vat-badge { padding:6px 14px; border-radius:8px; font-weight:700; font-size:13px; }
-    .vat-active { background:#0a2e1a; color:#4ade80; border:1px solid #166534; }
-    .vat-inactive { background:#2a1520; color:#fca5a5; border:1px solid #5c2030; }
-    .company-address { font-size:14px; color:var(--muted); margin:8px 0 0; }
-
-    /* Data table */
-    h3 { font-size:15px; margin:0 0 12px; color:var(--accent); }
-    .dtable { width:100%; border-collapse:collapse; }
-    .dtable td { padding:8px 0; font-size:13px; border-bottom:1px solid var(--border); }
-    .dtable td:first-child { color:var(--muted); width:140px; }
-
-    /* Score */
-    .score-display { text-align:center; padding:10px 0; }
-    .score-number { font-size:48px; font-weight:900; color:var(--accent); }
-    .score-label { font-size:13px; color:var(--muted); }
-    .tier-display { font-size:22px; font-weight:800; margin-top:4px; }
-    .bar-wrap { height:10px; background:#1a1a2e; border-radius:99px; overflow:hidden; margin:12px 0; border:1px solid var(--border); }
-    .bar-fill { height:100%; background:linear-gradient(90deg,#e63946,#ff6b81); border-radius:99px; transition:width .6s ease; box-shadow:0 0 8px rgba(230,57,70,.4); }
-
-    /* KPI row */
-    .kpi-row { display:flex; gap:12px; flex-wrap:wrap; }
-    .kpi { flex:1; min-width:100px; text-align:center; padding:12px; border:1px dashed var(--border); border-radius:10px; }
-    .kpi .val { font-size:18px; font-weight:700; }
-    .kpi .lbl { font-size:11px; color:var(--muted); margin-top:4px; }
-
-    /* Actions */
-    .action-list { margin:0; padding:0 0 0 18px; }
-    .action-list li { font-size:13px; line-height:1.7; }
-    .pill { display:inline-block; padding:4px 10px; border-radius:99px; background:var(--accent-light); color:#ff6b81; font-size:12px; font-weight:600; margin:3px 3px 3px 0; border:1px solid #3a1525; }
-
-    /* Quick links */
-    .links-row { display:flex; gap:8px; flex-wrap:wrap; }
-    .link-btn { background:#1a1a2e; border:1px solid var(--border); border-radius:10px; padding:8px 14px; font-size:13px; color:var(--text); cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:all .15s; }
-    .link-btn:hover { background:var(--accent-light); border-color:var(--accent); }
-
-    /* Sidebar legend */
-    .legend h3 { font-size:13px; color:var(--accent); margin:0 0 6px; font-weight:700; }
-    .legend p, .legend li { font-size:12px; color:var(--muted); line-height:1.5; margin:0; }
-    .legend ul { margin:4px 0 0 16px; padding:0; }
-    .legend ul li { margin-bottom:4px; }
-    .legend section { margin-bottom:14px; }
-    .tier-badge { display:inline-block; padding:2px 8px; border-radius:6px; font-weight:700; font-size:11px; margin-right:4px; }
-    .tier-s { background:#22c55e22; color:#22c55e; border:1px solid #22c55e44; }
-    .tier-a { background:#3b82f622; color:#3b82f6; border:1px solid #3b82f644; }
-    .tier-b { background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b44; }
-    .tier-c { background:#94a3b822; color:#94a3b8; border:1px solid #94a3b844; }
-    .wb { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
-    .wb .lbl { font-size:11px; color:var(--muted); width:80px; }
-    .wb .fill { height:6px; border-radius:3px; background:linear-gradient(90deg,#e63946,#ff6b81); }
-    .wb .pct { font-size:10px; }
-
-    /* History */
-    .hist-item { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border:1px solid var(--border); border-radius:10px; margin-bottom:6px; cursor:pointer; transition:background .15s; }
-    .hist-item:hover { background:var(--accent-light); }
-    .hist-name { font-size:14px; font-weight:600; }
-    .hist-meta { font-size:12px; color:var(--muted); }
-    .btn-sm { background:#1a1a2e; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; }
-    .btn-sm:hover { background:var(--accent-light); border-color:var(--accent); }
-    .btn-export { background:linear-gradient(180deg,#e63946,#b30839); color:#fff; border:none; border-radius:8px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 8px rgba(230,57,70,.3); }
+    /* Registers */
+    .registers { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:32px; }
+    .reg-badge { display:flex; align-items:center; gap:8px; padding:10px 18px; background:var(--card); border:1px solid var(--border); border-radius:12px; font-size:13px; }
+    .reg-dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
 
     /* Footer */
-    .footer { position:fixed; bottom:0; left:0; right:0; background:rgba(10,10,15,.92); backdrop-filter:blur(6px); border-top:1px solid var(--border); }
-    .footer .inner { max-width:1440px; margin:0 auto; padding:8px 16px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted); }
+    .footer { border-top:1px solid var(--border); padding:24px 16px; text-align:center; font-size:12px; color:var(--muted); }
+
+    /* Search bar (functional) */
+    .search-section { max-width:600px; margin:0 auto; }
+    .search-bar { display:flex; gap:10px; }
+    .search-bar input { flex:1; background:var(--surface); border:2px solid var(--border); border-radius:12px; padding:14px 18px; font-size:16px; color:var(--text); outline:none; transition:border .2s; }
+    .search-bar input:focus { border-color:var(--red); box-shadow:0 0 16px rgba(230,57,70,.15); }
+    .search-bar button { background:linear-gradient(135deg,var(--red),var(--red-dark)); color:#fff; border:none; border-radius:12px; padding:14px 32px; font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; }
+
+    /* Results */
+    #results { display:none; max-width:1200px; margin:32px auto 0; padding:0 16px; }
+    .results-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media(max-width:768px){ .results-grid { grid-template-columns:1fr; } }
+    .results-grid .full { grid-column:1/-1; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
+    .card h3 { font-size:14px; color:var(--red); margin:0 0 12px; font-weight:700; }
+    .dtable { width:100%; border-collapse:collapse; }
+    .dtable td { padding:6px 0; font-size:13px; border-bottom:1px solid rgba(37,37,64,.5); }
+    .dtable td:first-child { color:var(--muted); width:160px; }
+    .kpi { text-align:center; padding:12px; }
+    .kpi .val { font-size:22px; font-weight:800; }
+    .kpi .lbl { font-size:11px; color:var(--muted); margin-top:4px; }
+    .pill { display:inline-block; padding:3px 10px; border-radius:99px; font-size:12px; font-weight:600; margin:2px; }
+    .pill-green { background:rgba(34,197,94,.12); color:var(--green); border:1px solid rgba(34,197,94,.25); }
+    .pill-red { background:rgba(239,68,68,.12); color:#ef4444; border:1px solid rgba(239,68,68,.25); }
+    .pill-blue { background:rgba(59,130,246,.12); color:var(--blue); border:1px solid rgba(59,130,246,.25); }
+    .mat-bar { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .mat-label { font-size:12px; width:120px; }
+    .mat-track { flex:1; height:8px; background:#1a1a2e; border-radius:4px; overflow:hidden; }
+    .mat-fill { height:100%; background:var(--red); border-radius:4px; }
+    .mat-pct { font-size:11px; color:var(--muted); width:32px; text-align:right; }
+    .error { color:#fca5a5; background:rgba(42,21,32,.8); border:1px solid #5c2030; border-radius:10px; padding:12px; font-size:14px; text-align:center; }
+    .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--border); border-top-color:var(--red); border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:8px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .flag { font-size:13px; padding:3px 0; }
   </style>
 </head>
 <body>
 
-<div class="page">
-<div class="main">
-  <!-- Header -->
-  <div class="header">
-    <span class="sig">SIG</span>
-    <div>
-      <h1>Potencjal Klienta</h1>
-      <p>Wpisz NIP firmy. Dane pobierane z rejestrow panistwowych (Biala Lista VAT).</p>
-    </div>
-  </div>
-
-  <!-- Search -->
-  <div class="card">
-    <div class="search-bar">
-      <input id="q" placeholder="Wpisz NIP (np. 5250001009) lub nazwe firmy" autofocus />
-      <button id="searchBtn">Sprawdz</button>
-    </div>
-  </div>
-
-  <!-- Status / Loading -->
-  <div id="status"></div>
-
-  <!-- Results -->
-  <div id="results" style="display:none;">
-
-    <!-- Company info -->
-    <div class="card full" id="companyCard">
-      <div class="company-header">
-        <h2 id="companyName"></h2>
-        <span id="vatBadge" class="vat-badge"></span>
-      </div>
-      <p class="company-address" id="companyAddress"></p>
-    </div>
-
-    <div class="results">
-      <!-- Scoring -->
-      <div class="card">
-        <h3>Scoring potencjalu</h3>
-        <div class="score-display">
-          <div class="score-number" id="scoreVal">0</div>
-          <div class="score-label">punktow na 100</div>
-          <div class="tier-display" id="tierVal"></div>
-        </div>
-        <div class="bar-wrap"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
-        <div class="kpi-row">
-          <div class="kpi"><div class="val" id="annualVal">-</div><div class="lbl">Potencjal roczny PLN</div></div>
-          <div class="kpi"><div class="val" id="bandVal">-</div><div class="lbl">Rozrzut (+/-30%)</div></div>
-        </div>
-      </div>
-
-      <!-- Company data -->
-      <div class="card">
-        <h3>Dane rejestrowe</h3>
-        <table class="dtable" id="dataTable"></table>
-      </div>
-
-      <!-- Recommendations -->
-      <div class="card">
-        <h3>Rekomendacje</h3>
-        <ol class="action-list" id="actionList"></ol>
-        <div id="tagsContainer" style="margin-top:10px;"></div>
-      </div>
-
-      <!-- Quick links -->
-      <div class="card">
-        <h3>Szybkie wyszukiwanie</h3>
-        <div class="links-row" id="linksRow"></div>
-      </div>
-
-      <!-- Export -->
-      <div class="card full">
-        <div style="display:flex; gap:10px; align-items:center;">
-          <button class="btn-export" id="exportCsv">Eksportuj CSV</button>
-          <button class="btn-sm" id="printBtn">Drukuj / PDF</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- History -->
-  <div class="card" style="margin-top:8px;">
-    <h3>Historia sprawdzen</h3>
-    <div id="history"><div class="status-msg">Brak zapisanych sprawdzen.</div></div>
-    <div style="margin-top:8px;"><button class="btn-sm" id="clearHistory">Wyczysc historie</button></div>
-  </div>
-</div>
-
-<!-- Sidebar -->
-<div class="sidebar">
-  <div class="card legend">
-    <h3 style="font-size:16px; color:var(--text); margin-bottom:14px;">Jak to dziala?</h3>
-
-    <section>
-      <h3>1. Wpisz NIP</h3>
-      <p>Podaj 10-cyfrowy NIP. System pobierze dane z Bialej Listy VAT (Ministerstwo Finansow).</p>
-    </section>
-
-    <section>
-      <h3>2. Automatyczny scoring</h3>
-      <p>Wynik 0-100 na podstawie danych rejestrowych:</p>
-      <div style="margin-top:6px;">
-        <div class="wb"><span class="lbl">Status VAT</span><div class="fill" style="width:60px;"></div><span class="pct">30%</span></div>
-        <div class="wb"><span class="lbl">Typ spolki</span><div class="fill" style="width:50px;"></div><span class="pct">25%</span></div>
-        <div class="wb"><span class="lbl">Lokalizacja</span><div class="fill" style="width:36px;"></div><span class="pct">20%</span></div>
-        <div class="wb"><span class="lbl">Rachunki</span><div class="fill" style="width:30px;"></div><span class="pct">15%</span></div>
-        <div class="wb"><span class="lbl">Kompletnosc</span><div class="fill" style="width:20px;"></div><span class="pct">10%</span></div>
-      </div>
-    </section>
-
-    <section>
-      <h3>3. Klasyfikacja tier</h3>
-      <ul style="list-style:none; margin:6px 0 0 0; padding:0;">
-        <li><span class="tier-badge tier-s">S</span> 80+ pkt</li>
-        <li><span class="tier-badge tier-a">A</span> 65-79 pkt</li>
-        <li><span class="tier-badge tier-b">B</span> 50-64 pkt</li>
-        <li><span class="tier-badge tier-c">C</span> &lt;50 pkt</li>
-      </ul>
-    </section>
-
-    <section>
-      <h3>4. Potencjal roczny</h3>
-      <ul>
-        <li><b>S:</b> 540 000 PLN</li>
-        <li><b>A:</b> 216 000 PLN</li>
-        <li><b>B:</b> 90 000 PLN</li>
-        <li><b>C:</b> 36 000 PLN</li>
-      </ul>
-    </section>
-
-    <section>
-      <h3>5. Zrodla danych</h3>
-      <p>Biala Lista VAT (MF), eKRS, CEIDG, LinkedIn, Panorama Firm - linki do dalszego researchu.</p>
-    </section>
-  </div>
-</div>
-</div>
-
-<div class="footer">
+<!-- Nav -->
+<nav class="nav">
   <div class="inner">
-    <span>SIG Potencjal v3.0 &bull; Dane z rejestrow panstwowych</span>
-    <span class="pill" style="font-size:11px;">API: Biala Lista VAT</span>
+    <div style="display:flex;align-items:center;">
+      <span class="logo">SIG</span>
+      <span class="logo-sub">Potencjał</span>
+    </div>
+    <div class="nav-links">
+      <a href="#pricing" class="btn btn-ghost">Cennik</a>
+      <a href="#search" class="btn btn-primary">Sprawdź firmę</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>Inteligencja kredytowa<br><span>dla firm budowlanych</span></h1>
+  <p>Wpisz NIP — w sekundę otrzymasz scoring ryzyka, sugerowany limit kredytowy i rekomendacje produktowe. Dane z rejestrów państwowych.</p>
+  <div id="search" class="search-section">
+    <div class="search-bar">
+      <input id="q" placeholder="Wpisz 10-cyfrowy NIP firmy" autofocus>
+      <button id="searchBtn">Sprawdź</button>
+    </div>
+    <div id="status" style="margin-top:12px;"></div>
+  </div>
+</section>
+
+<!-- Results (hidden until search) -->
+<div id="results">
+  <div class="results-grid">
+    <!-- Company header -->
+    <div class="card full">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 id="companyName" style="font-size:20px;margin:0;"></h2>
+          <p id="companyAddr" style="font-size:13px;color:var(--muted);margin:6px 0 0;"></p>
+          <div id="badges" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+        </div>
+        <div id="vatBadge"></div>
+      </div>
+    </div>
+
+    <!-- Score -->
+    <div class="card">
+      <h3>Scoring ryzyka</h3>
+      <div class="score-gauge">
+        <svg viewBox="0 0 200 110" width="180">
+          <path d="M10,100 A85,85 0 0,1 190,100" fill="none" stroke="#1a1a2e" stroke-width="14" stroke-linecap="round"/>
+          <path id="gaugeArc" d="M10,100 A85,85 0 0,1 190,100" fill="none" stroke="var(--red)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 267"/>
+        </svg>
+        <div style="margin-top:-40px;">
+          <div id="scoreVal" class="score-number" style="color:var(--red);">0</div>
+          <div style="font-size:12px;color:var(--muted);">punktów na 100</div>
+          <div id="bandLabel" style="font-size:16px;font-weight:700;margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Credit Limit -->
+    <div class="card">
+      <h3>Limit kredytowy</h3>
+      <div class="kpi"><div class="val" id="creditVal">—</div><div class="lbl">Sugerowany limit</div></div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;">
+        <div class="kpi" style="flex:1;"><div class="val" style="font-size:14px;" id="creditMin">—</div><div class="lbl">Min</div></div>
+        <div class="kpi" style="flex:1;"><div class="val" style="font-size:14px;" id="creditMax">—</div><div class="lbl">Max</div></div>
+      </div>
+      <div id="creditTerms" style="display:flex;gap:8px;justify-content:center;margin-top:12px;"></div>
+    </div>
+
+    <!-- Components -->
+    <div class="card">
+      <h3>Komponenty scoringu (11)</h3>
+      <div id="components"></div>
+    </div>
+
+    <!-- Materials -->
+    <div class="card" id="materialsCard">
+      <h3>Rekomendacja materiałów budowlanych</h3>
+      <div id="materials"></div>
+      <p id="materialsExpl" style="font-size:12px;color:var(--muted);margin-top:8px;"></p>
+    </div>
+
+    <!-- Flags -->
+    <div class="card">
+      <h3>Atuty i ryzyka</h3>
+      <div id="greenFlags"></div>
+      <div id="redFlags" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- Data table -->
+    <div class="card">
+      <h3>Dane rejestrowe</h3>
+      <table class="dtable" id="dataTable"></table>
+    </div>
+
+    <!-- Sources -->
+    <div class="card full">
+      <h3>Źródła danych</h3>
+      <div id="sources" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    </div>
   </div>
 </div>
+
+<!-- Features -->
+<section class="section">
+  <h2 class="section-title">Pełna platforma Sales Intelligence</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">📊</div>
+      <h3>11-komponentowy scoring</h3>
+      <p>Status VAT, forma prawna, wiek, lokalizacja, kapitał zakładowy, zarząd, branża PKD, rachunki bankowe, rejestry, kompletność danych i stabilność.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">💳</div>
+      <h3>Limit kredytowy z uzasadnieniem</h3>
+      <p>Automatyczna sugestia limitu (min/max), terminów płatności i rabatu handlowego. Dostosowywany do profilu ryzyka.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🧱</div>
+      <h3>Mapa materiałów budowlanych</h3>
+      <p>15 kategorii: cement, izolacje, drywall, stal, kruszywa, dach, elewacja, okna, hydroizolacja, kleje, farby, instalacje wod-kan, elektryczne, HVAC, narzędzia.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🏛️</div>
+      <h3>Multi-rejestr: 4+ źródła</h3>
+      <p>Biała Lista VAT, KRS (OpenAPI), GUS REGON (BIR1), CEIDG. Każde pole ma źródło i timestamp.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <h3>SaaS z RBAC i multi-tenancy</h3>
+      <p>Organizacje, użytkownicy, role (viewer/member/admin/superadmin). Plany: Free, Pro, Enterprise. Stripe billing.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📋</div>
+      <h3>CRM wbudowany</h3>
+      <p>Notatki, zadania, watchlisty, alerty zmian. Audit log ze wszystkimi operacjami. Eksport CSV/PDF.</p>
+    </div>
+  </div>
+  <div class="registers">
+    <div class="reg-badge"><div class="reg-dot"></div>Biała Lista VAT (MF)</div>
+    <div class="reg-badge"><div class="reg-dot"></div>KRS (MS)</div>
+    <div class="reg-badge"><div class="reg-dot" style="background:var(--orange);"></div>GUS REGON</div>
+    <div class="reg-badge"><div class="reg-dot" style="background:var(--orange);"></div>CEIDG</div>
+    <div class="reg-badge"><div class="reg-dot" style="background:var(--blue);"></div>Qdrant (Vector DB)</div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="demo-section" id="pricing">
+  <div class="section" style="padding-top:48px;padding-bottom:48px;">
+    <h2 class="section-title">Plany cenowe</h2>
+    <div class="pricing">
+      <div class="plan">
+        <h3>Free</h3>
+        <div class="price">0 PLN<span>/mies.</span></div>
+        <ul><li>10 zapytań/mies.</li><li>Scoring ryzyka</li><li>Limit kredytowy</li><li>1 użytkownik</li></ul>
+        <a href="#search" class="btn btn-outline" style="width:100%;justify-content:center;">Zacznij</a>
+      </div>
+      <div class="plan featured">
+        <div class="plan-badge">Najpopularniejszy</div>
+        <h3>Pro</h3>
+        <div class="price">299 PLN<span>/mies.</span></div>
+        <ul><li>200 zapytań/mies.</li><li>Scoring + limit kredytowy</li><li>Rekomendacja materiałów</li><li>Eksport PDF</li><li>CRM (notatki, zadania)</li><li>Do 5 użytkowników</li></ul>
+        <a href="#search" class="btn btn-primary" style="width:100%;justify-content:center;">Wybierz Pro</a>
+      </div>
+      <div class="plan">
+        <h3>Enterprise</h3>
+        <div class="price">999 PLN<span>/mies.</span></div>
+        <ul><li>5000 zapytań/mies.</li><li>Wszystko z Pro</li><li>API REST</li><li>Własne konektory</li><li>SSO</li><li>Bez limitu użytkowników</li></ul>
+        <a href="#search" class="btn btn-outline" style="width:100%;justify-content:center;">Kontakt</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>SIG Potencjał v1.0 — Dane z rejestrów państwowych RP</p>
+  <p style="margin-top:4px;">Biała Lista VAT · KRS · REGON · CEIDG · Scoring 11-komponentowy · Docker Compose</p>
+</footer>
 
 <script>
-const $ = q => document.querySelector(q);
-const HISTORY_KEY = 'potencjal_history_v3';
+const $ = s => document.querySelector(s);
 const TODAY = new Date().toISOString().slice(0,10);
-const MAJOR_CITIES = ['warszawa','krakow','wroclaw','poznan','gdansk','katowice','lodz','szczecin','lublin','bydgoszcz'];
-const ARPU = { S:540000, A:216000, B:90000, C:36000 };
+const WEIGHTS = [6,5,7,2,3,4,5,6,7];
+const MAJOR_CITIES = ['warszawa','kraków','wrocław','poznań','gdańsk','katowice','łódź','szczecin','lublin','bydgoszcz','gdynia','białystok','częstochowa','radom','toruń'];
+const CONSTR_PKD = ['41','42','43','71.1','23.5','23.6','46.73'];
+const BANDS = {A:{min:75,label:'Niskie ryzyko',color:'#22c55e'},B:{min:55,label:'Umiarkowane ryzyko',color:'#3b82f6'},C:{min:35,label:'Podwyższone ryzyko',color:'#f59e0b'},D:{min:0,label:'Wysokie ryzyko',color:'#ef4444'}};
+const CREDIT = {A:{base:500000,min:200000,max:1000000,days:60,disc:15},B:{base:200000,min:50000,max:400000,days:45,disc:10},C:{base:50000,min:10000,max:100000,days:30,disc:5},D:{base:0,min:0,max:15000,days:0,disc:0}};
+const MATERIALS = {
+  cement:{n:'Cement i spoiwa',k:['cement','beton','zaprawa']},insulation:{n:'Izolacje termiczne',k:['izolacja','styropian','wełna']},
+  drywall:{n:'Sucha zabudowa',k:['gips','karton-gips']},rebar:{n:'Stal zbrojeniowa',k:['stal','zbrojenie']},
+  aggregates:{n:'Kruszywa',k:['kruszywo','piasek','żwir']},roofing:{n:'Pokrycia dachowe',k:['dach','dachówka','papa']},
+  facade:{n:'Elewacje',k:['elewacja','tynk','fasada']},windows_doors:{n:'Okna i drzwi',k:['okno','drzwi','stolarka']},
+  waterproofing:{n:'Hydroizolacja',k:['hydroizolacja','folia','membrana']},adhesives:{n:'Kleje / chemia',k:['klej','silikon','pianka']},
+  paints:{n:'Farby i lakiery',k:['farba','lakier','emulsja']},pipes:{n:'Instalacje wod-kan',k:['rura','wod-kan']},
+  electrical:{n:'Inst. elektryczne',k:['kabel','elektryka']},hvac:{n:'HVAC',k:['ogrzewanie','wentylacja','pompa ciepła']},
+  tools:{n:'Narzędzia',k:['narzędzie','wiertarka']}
+};
+const PKD_MAP = {'41.20':['cement','rebar','aggregates','insulation','drywall','roofing','facade','windows_doors','paints'],'42.11':['aggregates','rebar','cement','pipes'],'43.22':['pipes','hvac','tools'],'43.31':['facade','paints','adhesives','insulation'],'43.91':['roofing','insulation','waterproofing'],'46.73':['cement','insulation','drywall','roofing','facade','adhesives','paints','pipes','tools']};
 
-// --- API ---
-async function fetchByNip(nip) {
-  const res = await fetch('/api/vat/nip/' + nip + '?date=' + TODAY);
-  if (!res.ok) throw new Error('Blad API: ' + res.status);
-  const data = await res.json();
-  if (data.result && data.result.subject) return data.result.subject;
-  if (data.result && data.result.subjects && data.result.subjects.length > 0) return data.result.subjects[0];
-  throw new Error('Nie znaleziono firmy o NIP: ' + nip);
+function validateNip(n){
+  if(n.length!==10||!/^\d{10}$/.test(n)||n==='0000000000')return false;
+  const d=n.split('').map(Number);
+  const c=d.slice(0,9).reduce((s,v,i)=>s+v*WEIGHTS[i],0)%11;
+  return c<10&&c===d[9];
+}
+function fmtPLN(v){return v.toLocaleString('pl-PL')+' PLN';}
+function fmtNIP(n){return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6,8)+'-'+n.slice(8);}
+
+async function fetchVAT(nip){
+  const r=await fetch(`/api/vat/nip/${nip}?date=${TODAY}`);
+  if(!r.ok)throw new Error('Błąd API VAT: '+r.status);
+  const d=await r.json();
+  const s=d.result?.subject||d.result?.subjects?.[0];
+  if(!s)throw new Error('Nie znaleziono firmy');
+  return s;
 }
 
-async function fetchByName(name) {
-  // Try treating as potential NIP with dashes
-  const cleaned = name.replace(/[\s\-]/g, '');
-  if (/^\d{10}$/.test(cleaned)) return fetchByNip(cleaned);
-  throw new Error('Wpisz 10-cyfrowy NIP firmy (wyszukiwanie po nazwie wymaga NIP).');
+function scoreCompany(s){
+  const comps=[];const rf=[];const gf=[];
+  // 1 VAT 12
+  let p=0;if(s.statusVat==='Czynny'){p=12;gf.push('Czynny VAT');}else if(s.statusVat==='Zwolniony')p=6;else{rf.push('Brak czynnego VAT');}
+  comps.push({n:'Status VAT',p,m:12,e:s.statusVat||'brak'});
+  // 2 Legal 12
+  const nm=(s.name||'').toUpperCase();
+  p=4;if(nm.includes('S.A.')||nm.includes('AKCYJNA')){p=12;gf.push('Spółka akcyjna');}else if(nm.includes('Z O.O.')){p=10;gf.push('Sp. z o.o.');}else if(nm.includes('KOMANDYTOWA'))p=8;else if(nm.includes('JAWNA'))p=7;
+  comps.push({n:'Forma prawna',p,m:12,e:''});
+  // 3 Age 10
+  let years=null;if(s.registrationLegalDate){try{years=Math.floor((Date.now()-new Date(s.registrationLegalDate))/31557600000);}catch{}}
+  p=years?years>15?10:years>10?8:years>5?6:years>2?4:2:2;
+  if(years>10)gf.push(years+' lat na rynku');if(years&&years<2)rf.push('Młoda firma');
+  comps.push({n:'Wiek firmy',p,m:10,e:years?years+' lat':'brak danych'});
+  // 4 Location 8
+  const addr=(s.workingAddress||s.residenceAddress||'').toLowerCase();
+  p=0;if(MAJOR_CITIES.slice(0,5).some(c=>addr.includes(c)))p=8;else if(MAJOR_CITIES.some(c=>addr.includes(c)))p=6;else if(addr.length>5)p=3;
+  comps.push({n:'Lokalizacja',p,m:8,e:addr.split(',').pop()?.trim()||''});
+  // 5 Bank 8
+  const ba=(s.accountNumbers||[]).length;
+  p=ba>=10?8:ba>=5?6:ba>=2?4:ba>=1?2:0;
+  if(ba>=10)gf.push(ba+' rachunków');if(ba===0)rf.push('Brak rachunków');
+  comps.push({n:'Rachunki bankowe',p,m:8,e:ba+' szt.'});
+  // 6 Registries 10
+  const hasKrs=!!s.krs,hasRegon=!!s.regon,hasVat=s.statusVat==='Czynny';
+  const rc=(hasKrs?1:0)+(hasRegon?1:0)+(hasVat?1:0);
+  p=Math.round(rc/3*10);if(hasKrs)gf.push('Wpis w KRS');
+  comps.push({n:'Rejestry publiczne',p,m:10,e:rc+'/3 rejestrów'});
+  // 7 Mgmt 8
+  const reps=(s.representatives||[]).length;
+  p=reps>=3?8:reps>=2?6:reps>=1?4:0;if(!reps)rf.push('Brak danych o zarządzie');
+  comps.push({n:'Zarząd',p,m:8,e:reps+' osób'});
+  // 8 Capital 10 (not available from VAT alone)
+  comps.push({n:'Kapitał zakładowy',p:hasKrs?5:0,m:10,e:hasKrs?'Wymaga KRS':'Brak danych'});
+  // 9 PKD 7
+  comps.push({n:'Branża PKD',p:3,m:7,e:'Z Białej Listy: brak PKD'});
+  // 10 Data quality 8
+  const fields=[s.name,s.nip,s.regon,s.statusVat,s.workingAddress||s.residenceAddress,s.registrationLegalDate,s.krs];
+  const filled=fields.filter(Boolean).length;
+  p=Math.round(filled/fields.length*8);
+  comps.push({n:'Kompletność danych',p,m:8,e:Math.round(filled/fields.length*100)+'%'});
+  // 11 Stability 7
+  p=s.statusVat==='Czynny'?5:0;if(years&&years>5)p=7;if(s.statusVat!=='Czynny')p=0;
+  comps.push({n:'Stabilność',p,m:7,e:s.statusVat==='Czynny'?'Aktywna':'Nieaktywna'});
+
+  const total=Math.min(100,comps.reduce((a,c)=>a+c.p,0));
+  let band='D';for(const b of ['A','B','C','D'])if(total>=BANDS[b].min){band=b;break;}
+  return {score:total,band,comps,rf,gf};
 }
 
-// --- Scoring ---
-function scoreCompany(subj) {
-  let score = 0;
-
-  // VAT status (30%)
-  if (subj.statusVat === 'Czynny') score += 30;
-  else if (subj.statusVat === 'Zwolniony') score += 15;
-
-  // Company type - has KRS = larger company (25%)
-  if (subj.krs) score += 25;
-  else if (subj.regon) score += 15;
-  else score += 5;
-
-  // Location - major city (20%)
-  const addr = (subj.workingAddress || subj.residenceAddress || '').toLowerCase();
-  if (MAJOR_CITIES.some(c => addr.includes(c))) score += 20;
-  else if (addr.length > 5) score += 10;
-
-  // Bank accounts - more = more established (15%)
-  const accounts = (subj.accountNumbers || []).length;
-  if (accounts >= 5) score += 15;
-  else if (accounts >= 2) score += 10;
-  else if (accounts >= 1) score += 5;
-
-  // Data completeness (10%)
-  let completeness = 0;
-  if (subj.name) completeness += 2;
-  if (subj.nip) completeness += 2;
-  if (subj.regon) completeness += 2;
-  if (subj.workingAddress || subj.residenceAddress) completeness += 2;
-  if (subj.representatives && subj.representatives.length > 0) completeness += 2;
-  score += completeness;
-
-  score = Math.min(100, Math.max(0, score));
-  const tier = score >= 80 ? 'S' : score >= 65 ? 'A' : score >= 50 ? 'B' : 'C';
-  const annual = ARPU[tier];
-  return { score, tier, annual };
+function creditLimit(score,band,s){
+  const l=CREDIT[band];
+  let mult=1;
+  return {suggested:Math.round(l.base*mult/1000)*1000,min:l.min,max:l.max,days:l.days,disc:l.disc};
 }
 
-// --- Render ---
-function renderResults(subj, result) {
-  // Company header
-  $('#companyName').textContent = subj.name || '-';
-  const badge = $('#vatBadge');
-  if (subj.statusVat === 'Czynny') {
-    badge.textContent = 'VAT Czynny';
-    badge.className = 'vat-badge vat-active';
-  } else {
-    badge.textContent = 'VAT: ' + (subj.statusVat || 'Brak danych');
-    badge.className = 'vat-badge vat-inactive';
+function materialRec(s){
+  const scores={};const reasons={};
+  for(const k in MATERIALS){scores[k]=0;reasons[k]=[];}
+  // Keyword matching from name
+  const text=(s.name||'').toLowerCase();
+  for(const[k,v]of Object.entries(MATERIALS))for(const kw of v.k)if(text.includes(kw)){scores[k]=Math.min(1,scores[k]+.3);reasons[k].push(kw);}
+  // If construction-related name
+  if(['budow','construc','montaż','instalac','remont'].some(w=>text.includes(w))){
+    for(const k in scores)scores[k]=Math.max(scores[k],.15);
+    // Common materials for construction
+    ['cement','rebar','aggregates','insulation','adhesives','paints'].forEach(k=>{scores[k]=Math.min(1,scores[k]+.2);});
   }
-  $('#companyAddress').textContent = subj.workingAddress || subj.residenceAddress || '-';
+  const results=Object.entries(scores).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({code:k,name:MATERIALS[k].n,conf:v,reason:reasons[k].join(', ')||'profil ogólny'}));
+  return results;
+}
 
-  // Score
-  $('#scoreVal').textContent = result.score;
-  $('#tierVal').textContent = 'Tier ' + result.tier;
-  $('#tierVal').style.color = {S:'#22c55e',A:'#3b82f6',B:'#f59e0b',C:'#94a3b8'}[result.tier];
-  $('#barFill').style.width = result.score + '%';
-  $('#annualVal').textContent = result.annual.toLocaleString('pl-PL');
-  const low = Math.round(result.annual * 0.7).toLocaleString('pl-PL');
-  const high = Math.round(result.annual * 1.3).toLocaleString('pl-PL');
-  $('#bandVal').textContent = low + ' - ' + high;
+function render(subj){
+  const sc=scoreCompany(subj);const cr=creditLimit(sc.score,sc.band,subj);const mats=materialRec(subj);
+  // Company header
+  $('#companyName').textContent=subj.name||'—';
+  $('#companyAddr').textContent=subj.workingAddress||subj.residenceAddress||'';
+  const bHtml=[];
+  if(subj.nip)bHtml.push(`<span class="pill pill-blue">NIP: ${fmtNIP(subj.nip)}</span>`);
+  if(subj.regon)bHtml.push(`<span class="pill pill-blue">REGON: ${subj.regon}</span>`);
+  if(subj.krs)bHtml.push(`<span class="pill pill-blue">KRS: ${subj.krs}</span>`);
+  $('#badges').innerHTML=bHtml.join('');
+  $('#vatBadge').innerHTML=subj.statusVat==='Czynny'?'<span class="pill pill-green" style="font-size:14px;">VAT Czynny</span>':'<span class="pill pill-red" style="font-size:14px;">VAT: '+(subj.statusVat||'brak')+'</span>';
+
+  // Score gauge
+  const color=BANDS[sc.band].color;
+  $('#gaugeArc').setAttribute('stroke',color);
+  $('#gaugeArc').setAttribute('stroke-dasharray',`${(sc.score/100)*267} 267`);
+  $('#scoreVal').textContent=sc.score;$('#scoreVal').style.color=color;
+  $('#bandLabel').textContent='Pasmo '+sc.band+' — '+BANDS[sc.band].label;$('#bandLabel').style.color=color;
+
+  // Credit
+  $('#creditVal').textContent=cr.suggested>0?fmtPLN(cr.suggested):'Przedpłata';
+  $('#creditMin').textContent=fmtPLN(cr.min);$('#creditMax').textContent=fmtPLN(cr.max);
+  let terms='';if(cr.days)terms+=`<span class="pill pill-blue">${cr.days} dni</span>`;if(cr.disc)terms+=`<span class="pill pill-green">Rabat ${cr.disc}%</span>`;
+  $('#creditTerms').innerHTML=terms;
+
+  // Components
+  $('#components').innerHTML=sc.comps.map(c=>{
+    const pct=c.m?Math.round(c.p/c.m*100):0;
+    const clr=pct>=70?'var(--green)':pct>=40?'var(--orange)':'var(--red)';
+    return `<div class="component"><div class="component-header"><span>${c.n}</span><span style="color:var(--muted)">${c.p}/${c.m}</span></div><div class="component-bar"><div class="component-fill" style="width:${pct}%;background:${clr};"></div></div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${c.e}</div></div>`;
+  }).join('');
+
+  // Materials
+  if(mats.length){
+    $('#materialsCard').style.display='block';
+    $('#materials').innerHTML=mats.slice(0,8).map(m=>`<div class="mat-bar"><span class="mat-label">${m.name}</span><div class="mat-track"><div class="mat-fill" style="width:${m.conf*100}%"></div></div><span class="mat-pct">${Math.round(m.conf*100)}%</span></div>`).join('');
+  } else { $('#materialsCard').style.display='none'; }
+
+  // Flags
+  $('#greenFlags').innerHTML=sc.gf.map(f=>`<div class="flag" style="color:var(--green);">✓ ${f}</div>`).join('');
+  $('#redFlags').innerHTML=sc.rf.map(f=>`<div class="flag" style="color:#ef4444;">✗ ${f}</div>`).join('');
 
   // Data table
-  const rows = [
-    ['NIP', subj.nip || '-'],
-    ['REGON', subj.regon || '-'],
-    ['KRS', subj.krs || '-'],
-    ['Status VAT', subj.statusVat || '-'],
-    ['Adres', subj.workingAddress || subj.residenceAddress || '-'],
-    ['Rachunki bankowe', (subj.accountNumbers || []).length + ' szt.'],
-    ['Reprezentanci', (subj.representatives || []).join(', ') || '-'],
-    ['Data rejestracji', subj.registrationLegalDate || '-'],
-  ];
-  $('#dataTable').innerHTML = rows.map(r =>
-    '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>'
-  ).join('');
+  const rows=[['NIP',fmtNIP(subj.nip||'')],['REGON',subj.regon||'—'],['KRS',subj.krs||'—'],['Status VAT',subj.statusVat||'—'],['Adres',subj.workingAddress||subj.residenceAddress||'—'],['Rachunki bankowe',(subj.accountNumbers||[]).length+' szt.'],['Reprezentanci',(subj.representatives||[]).join(', ')||'—'],['Data rejestracji',subj.registrationLegalDate||'—']];
+  $('#dataTable').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
 
-  // Recommendations
-  const actions = [];
-  if (result.tier === 'S') actions.push('Klient priorytetowy - zadzwon dzis i umow spotkanie.');
-  if (result.tier === 'A') actions.push('Wyslij spersonalizowana oferte z rabatem wolumenowym.');
-  if (result.tier === 'B') actions.push('Dodaj do kampanii. Follow-up za 7 dni.');
-  if (result.tier === 'C') actions.push('Lead do obserwacji. Follow-up za 30 dni.');
-  if (subj.statusVat !== 'Czynny') actions.push('UWAGA: Firma nie jest czynnym podatnikiem VAT!');
-  if (subj.krs) actions.push('Spolka zarejestrowana w KRS - potwierdz dane w rejestrze.');
-  if ((subj.accountNumbers || []).length > 3) actions.push('Duza firma - zaproponuj umowe ramowa i kredyt kupiecki.');
-  actions.push('Zweryfikuj firme w dodatkowych zrodlach (linki ponizej).');
+  // Sources
+  $('#sources').innerHTML='<span class="pill pill-green">Biała Lista VAT ✓</span><span class="pill pill-blue">Mock Provider</span>';
 
-  $('#actionList').innerHTML = actions.map(a => '<li>' + a + '</li>').join('');
-
-  // Tags
-  const tags = [result.tier === 'S' || result.tier === 'A' ? 'klient kluczowy' : 'lead'];
-  if (subj.krs) tags.push('spolka KRS');
-  if (subj.statusVat === 'Czynny') tags.push('czynny VAT');
-  if ((subj.accountNumbers || []).length > 3) tags.push('wiele rachunkow');
-  $('#tagsContainer').innerHTML = tags.map(t => '<span class="pill">' + t + '</span>').join('');
-
-  // Quick links
-  const enc = s => encodeURIComponent(s || '');
-  const nameOrNip = subj.nip || subj.name || '';
-  const links = [
-    { label:'eKRS', url:'https://ekrs.ms.gov.pl/web/wyszukiwarka-krs/strona-glowna/index.html' },
-    { label:'CEIDG', url:'https://aplikacja.ceidg.gov.pl/ceidg/ceidg.public.ui/Search.aspx' },
-    { label:'LinkedIn', url:'https://www.google.com/search?q=site:linkedin.com/company+' + enc(subj.name) },
-    { label:'Przetargi', url:'https://www.google.com/search?q=' + enc(subj.name) + '+przetarg' },
-    { label:'Strona www', url:'https://www.google.com/search?q=' + enc(subj.name) + '+oficjalna+strona' },
-    { label:'Panorama Firm', url:'https://www.google.com/search?q=site:panoramafirm.pl+' + enc(nameOrNip) },
-  ];
-  $('#linksRow').innerHTML = links.map(l =>
-    '<a class="link-btn" href="' + l.url + '" target="_blank">' + l.label + '</a>'
-  ).join('');
-
-  $('#results').style.display = 'block';
+  $('#results').style.display='block';
 }
 
-// --- Search ---
-async function doSearch() {
-  const q = $('#q').value.trim();
-  if (!q) { alert('Wpisz NIP firmy.'); return; }
-
-  $('#results').style.display = 'none';
-  $('#status').innerHTML = '<div class="status-msg"><span class="spinner"></span> Wyszukuje dane dla: <b>' + q + '</b></div>';
-  $('#searchBtn').disabled = true;
-
-  try {
-    const nip = q.replace(/[\s\-]/g, '');
-    let subj;
-    if (/^\d{10}$/.test(nip)) {
-      subj = await fetchByNip(nip);
-    } else {
-      subj = await fetchByName(q);
-    }
-    const result = scoreCompany(subj);
-    renderResults(subj, result);
-    $('#status').innerHTML = '';
-    saveHistory({ query: q, name: subj.name, score: result.score, tier: result.tier, annual: result.annual, ts: Date.now() });
-  } catch (err) {
-    $('#status').innerHTML = '<div class="error-msg">' + err.message + '</div>';
-  } finally {
-    $('#searchBtn').disabled = false;
-  }
+async function doSearch(){
+  const raw=$('#q').value.trim();const nip=raw.replace(/[\s-]/g,'');
+  if(!nip||nip.length!==10||!/^\d{10}$/.test(nip)){$('#status').innerHTML='<div class="error">Wpisz prawidłowy 10-cyfrowy NIP</div>';return;}
+  $('#results').style.display='none';
+  $('#status').innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);"><span class="spinner"></span> Szukam danych dla NIP '+fmtNIP(nip)+'...</div>';
+  $('#searchBtn').disabled=true;
+  try{
+    const subj=await fetchVAT(nip);
+    render(subj);$('#status').innerHTML='';
+  }catch(e){$('#status').innerHTML='<div class="error">'+e.message+'</div>';}
+  finally{$('#searchBtn').disabled=false;}
 }
 
-// --- History ---
-function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) { return []; } }
-function saveHistory(entry) {
-  const h = getHistory();
-  h.unshift(entry);
-  if (h.length > 50) h.length = 50;
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
-  renderHistory();
-}
-function renderHistory() {
-  const el = $('#history');
-  const h = getHistory();
-  if (!h.length) { el.innerHTML = '<div class="status-msg">Brak zapisanych sprawdzen.</div>'; return; }
-  el.innerHTML = h.slice(0, 10).map((item, i) => {
-    const d = new Date(item.ts);
-    const date = d.toLocaleDateString('pl-PL') + ' ' + d.toLocaleTimeString('pl-PL', { hour:'2-digit', minute:'2-digit' });
-    return '<div class="hist-item" data-idx="' + i + '">' +
-      '<div><span class="hist-name">' + (item.name || item.query) + '</span></div>' +
-      '<div><span class="pill">Tier ' + item.tier + '</span> <span class="hist-meta">' + date + '</span></div></div>';
-  }).join('');
-  el.querySelectorAll('.hist-item').forEach(el => {
-    el.onclick = () => {
-      const item = getHistory()[Number(el.dataset.idx)];
-      if (item) { $('#q').value = item.query; doSearch(); }
-    };
-  });
-}
-
-// --- CSV export ---
-function exportCsv() {
-  const rows = Array.from(document.querySelectorAll('#dataTable tr')).map(tr =>
-    [tr.children[0].textContent, tr.children[1].textContent]
-  );
-  rows.push(['Scoring', $('#scoreVal').textContent]);
-  rows.push(['Tier', $('#tierVal').textContent]);
-  rows.push(['Potencjal roczny', $('#annualVal').textContent + ' PLN']);
-  const csv = 'Pole,Wartosc\n' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-  a.download = 'potencjal_' + ($('#q').value.trim() || 'export') + '.csv';
-  a.click();
-}
-
-// --- Init ---
-(function init() {
-  renderHistory();
-  $('#searchBtn').onclick = doSearch;
-  $('#q').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
-  $('#exportCsv').onclick = exportCsv;
-  $('#printBtn').onclick = () => window.print();
-  $('#clearHistory').onclick = () => { localStorage.removeItem(HISTORY_KEY); renderHistory(); };
-})();
+$('#searchBtn').onclick=doSearch;
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
 </script>
 </body>
 </html>

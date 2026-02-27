@@ -1,0 +1,43 @@
+# PKD to Material Category Mapping
+# Maps Polish PKD (NACE) codes to construction material categories
+
+version: "1"
+
+# Section F: Construction
+"41.10": [cement, rebar, aggregates, insulation, drywall, roofing, windows_doors]
+"41.20": [cement, rebar, aggregates, insulation, drywall, roofing, facade, windows_doors, paints]
+"42.11": [aggregates, rebar, cement, pipes]
+"42.12": [rebar, aggregates, cement, pipes]
+"42.13": [pipes, rebar, aggregates]
+"42.21": [pipes, waterproofing, aggregates]
+"42.22": [electrical, pipes, rebar]
+"42.91": [waterproofing, rebar, aggregates]
+"42.99": [cement, rebar, aggregates]
+"43.11": [aggregates, cement]
+"43.12": [aggregates, pipes]
+"43.21": [electrical, tools]
+"43.22": [pipes, hvac, tools]
+"43.29": [pipes, hvac, insulation]
+"43.31": [facade, paints, adhesives, insulation]
+"43.32": [windows_doors, adhesives]
+"43.33": [facade, paints, adhesives]
+"43.34": [paints, adhesives, facade]
+"43.39": [adhesives, paints, tools]
+"43.91": [roofing, insulation, waterproofing]
+"43.99": [cement, adhesives, tools, paints]
+
+# Section C: Manufacturing (construction-related)
+"23.51": [cement]
+"23.52": [cement, aggregates]
+"23.61": [cement, rebar, aggregates]
+"23.63": [cement, aggregates]
+"23.69": [cement, aggregates]
+
+# Section G: Trade (construction materials)
+"46.73": [cement, insulation, drywall, roofing, facade, adhesives, paints, pipes, tools]
+"46.74": [pipes, rebar, tools]
+"47.52": [tools, paints, adhesives]
+
+# Section M: Professional services (architecture/engineering)
+"71.11": [insulation, facade, windows_doors]
+"71.12": [cement, rebar, aggregates, insulation]

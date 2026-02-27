@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sig-red: #e63946;
+  --sig-bg: #0a0a12;
+}
+
+body {
+  background: var(--sig-bg);
+  color: #e8e8f4;
+}
+
+/* Score gauge animation */
+@keyframes score-fill {
+  from { stroke-dashoffset: 283; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #12121e;
+}
+::-webkit-scrollbar-thumb {
+  background: #252540;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #363660;
+}
+
+/* Print */
+@media print {
+  body { background: white; color: black; }
+  .no-print { display: none !important; }
+}

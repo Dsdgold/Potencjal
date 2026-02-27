@@ -1,0 +1,110 @@
+# Construction Material Categories — SIG Potencjał
+# Used by the material recommendation engine.
+
+version: "1"
+
+categories:
+  cement:
+    name_pl: "Cement i spoiwa"
+    icon: "🧱"
+    description: "Cementy portlandzkie, zaprawy, spoiwa hydrauliczne"
+    keywords: ["cement", "beton", "spoiwo", "zaprawa", "posadzka"]
+    margin_range: "20-30%"
+
+  insulation:
+    name_pl: "Izolacje termiczne"
+    icon: "🔥"
+    description: "Styropian, wełna mineralna, PIR, XPS"
+    keywords: ["izolacja", "styropian", "wełna", "termoizolacja", "ocieplenie", "PIR", "XPS"]
+    margin_range: "25-35%"
+
+  drywall:
+    name_pl: "Systemy suchej zabudowy"
+    icon: "📐"
+    description: "Płyty gipsowo-kartonowe, profile, akcesoria"
+    keywords: ["gips", "karton-gips", "sucha zabudowa", "regips", "knauf", "profil"]
+    margin_range: "20-28%"
+
+  rebar:
+    name_pl: "Stal zbrojeniowa"
+    icon: "⚙️"
+    description: "Pręty, siatki, kotwy, złączki"
+    keywords: ["stal", "zbrojenie", "pręty", "siatka", "kotwa"]
+    margin_range: "10-18%"
+
+  aggregates:
+    name_pl: "Kruszywa i piasek"
+    icon: "⛰️"
+    description: "Żwir, piasek, kamień, kruszywo łamane"
+    keywords: ["kruszywo", "piasek", "żwir", "kamień", "tłuczeń"]
+    margin_range: "15-25%"
+
+  roofing:
+    name_pl: "Pokrycia dachowe"
+    icon: "🏠"
+    description: "Dachówki, blachodachówki, papa, membrany"
+    keywords: ["dach", "dachówka", "blachodachówka", "papa", "pokrycie dachowe", "gont"]
+    margin_range: "22-32%"
+
+  facade:
+    name_pl: "Systemy elewacyjne"
+    icon: "🏢"
+    description: "Tynki, okładziny, systemy ETICS, klinkier"
+    keywords: ["elewacja", "tynk", "fasada", "okładzina", "ETICS", "klinkier"]
+    margin_range: "25-35%"
+
+  windows_doors:
+    name_pl: "Okna i drzwi"
+    icon: "🪟"
+    description: "Stolarka PCV, drewniana, aluminiowa"
+    keywords: ["okno", "drzwi", "stolarka", "PCV", "aluminium"]
+    margin_range: "20-30%"
+
+  waterproofing:
+    name_pl: "Hydroizolacja"
+    icon: "💧"
+    description: "Folie, membrany, masy bitumiczne, szlamy"
+    keywords: ["hydroizolacja", "folia", "membrana", "uszczelnienie", "bitum"]
+    margin_range: "28-38%"
+
+  adhesives:
+    name_pl: "Kleje i chemia budowlana"
+    icon: "🧪"
+    description: "Kleje do płytek, silikony, pianki, impregnaty"
+    keywords: ["klej", "chemia", "silikon", "pianka", "preparat", "impregnat"]
+    margin_range: "30-42%"
+
+  paints:
+    name_pl: "Farby i lakiery"
+    icon: "🎨"
+    description: "Farby emulsyjne, lateksowe, lakiery, grunty"
+    keywords: ["farba", "lakier", "emulsja", "grunt", "malowanie", "lateks"]
+    margin_range: "28-40%"
+
+  pipes:
+    name_pl: "Instalacje wod-kan"
+    icon: "🔧"
+    description: "Rury PP, PVC, PE, armatura, zawory"
+    keywords: ["rura", "instalacja", "wod-kan", "kanalizacja", "woda", "PP", "PVC"]
+    margin_range: "22-32%"
+
+  electrical:
+    name_pl: "Instalacje elektryczne"
+    icon: "⚡"
+    description: "Kable, przewody, rozdzielnice, osprzęt"
+    keywords: ["kabel", "elektryka", "przewód", "instalacja elektryczna", "rozdzielnica"]
+    margin_range: "18-28%"
+
+  hvac:
+    name_pl: "Ogrzewanie i wentylacja"
+    icon: "🌡️"
+    description: "Grzejniki, pompy ciepła, rury grzewcze, wentylacja"
+    keywords: ["ogrzewanie", "wentylacja", "klimatyzacja", "pompa ciepła", "grzejnik"]
+    margin_range: "20-30%"
+
+  tools:
+    name_pl: "Narzędzia budowlane"
+    icon: "🔨"
+    description: "Elektronarzędzia, narzędzia ręczne, odzież BHP"
+    keywords: ["narzędzie", "elektronarzędzie", "wiertarka", "szlifierka", "BHP"]
+    margin_range: "25-40%"

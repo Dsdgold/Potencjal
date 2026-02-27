@@ -1,0 +1,110 @@
+# Scoring Rules v1 — SIG Potencjał
+# Each component has a max score and can be overridden per-organization.
+# Total: 100 points
+
+version: "1"
+description: "Deterministic credit risk scoring for Polish companies"
+
+components:
+  vat_status:
+    max: 12
+    label: "Status VAT"
+    description: "Czynny podatnik VAT = maksimum. Zwolniony = połowa."
+
+  legal_form:
+    max: 12
+    label: "Forma prawna"
+    description: "S.A. > sp. z o.o. > sp.k./sp.j. > JDG"
+
+  company_age:
+    max: 10
+    label: "Wiek firmy"
+    description: ">15 lat = max, <2 lat = minimalne"
+
+  location:
+    max: 8
+    label: "Lokalizacja"
+    description: "Top 5 miast = max, top 15 = 75%, inne = 40%"
+
+  bank_accounts:
+    max: 8
+    label: "Rachunki bankowe"
+    description: "Liczba rachunków na Białej Liście (proxy rozmiaru firmy)"
+
+  registries:
+    max: 10
+    label: "Rejestry publiczne"
+    description: "Obecność w KRS, REGON, CEIDG, VAT"
+
+  management:
+    max: 8
+    label: "Zarząd / reprezentacja"
+    description: "Więcej osób w zarządzie = stabilniejsza struktura"
+
+  share_capital:
+    max: 10
+    label: "Kapitał zakładowy"
+    description: ">1M PLN = max, >100K = 70%, minimalny = 10%"
+
+  pkd_relevance:
+    max: 7
+    label: "Branża (PKD)"
+    description: "Firma budowlana = max (wysoki potencjał materiałowy)"
+
+  data_quality:
+    max: 8
+    label: "Kompletność danych"
+    description: "Procent wypełnionych kluczowych pól"
+
+  stability:
+    max: 7
+    label: "Stabilność działania"
+    description: "Aktywna firma + wiek > 5 lat = max"
+
+risk_bands:
+  A:
+    min_score: 75
+    label: "Niskie ryzyko"
+    color: "#22c55e"
+    description: "Firma godna zaufania. Pełny limit kredytowy."
+  B:
+    min_score: 55
+    label: "Umiarkowane ryzyko"
+    color: "#3b82f6"
+    description: "Standardowa weryfikacja. Limit z zabezpieczeniem."
+  C:
+    min_score: 35
+    label: "Podwyższone ryzyko"
+    color: "#f59e0b"
+    description: "Ograniczony limit. Wymagane dodatkowe zabezpieczenia."
+  D:
+    min_score: 0
+    label: "Wysokie ryzyko"
+    color: "#ef4444"
+    description: "Przedpłata lub odmowa. Firma niespełniająca kryteriów."
+
+credit_limits:
+  A:
+    base: 500000
+    min: 200000
+    max: 1000000
+    payment_terms_days: 60
+    discount_pct: 15
+  B:
+    base: 200000
+    min: 50000
+    max: 400000
+    payment_terms_days: 45
+    discount_pct: 10
+  C:
+    base: 50000
+    min: 10000
+    max: 100000
+    payment_terms_days: 30
+    discount_pct: 5
+  D:
+    base: 0
+    min: 0
+    max: 15000
+    payment_terms_days: 0
+    discount_pct: 0
