@@ -2,23 +2,35 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Setup SSH
+      - name: Setup SSH key from base64
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+          echo "== key file info =="
+          ls -l ~/.ssh/id_ed25519
+          file ~/.ssh/id_ed25519 || true
+
+          echo "== key fingerprint =="
+          ssh-keygen -lf ~/.ssh/id_ed25519
+
+          echo "== known_hosts =="
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Test connection
+        shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=no \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          ssh -i ~/.ssh/id_ed25519 \
+              -o StrictHostKeyChecking=yes \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
               "echo CONNECTED"
