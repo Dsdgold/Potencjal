@@ -8,6 +8,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Setup SSH key from base64
         shell: bash
         run: |
@@ -17,20 +19,27 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          echo "== key file info =="
-          ls -l ~/.ssh/id_ed25519
-          file ~/.ssh/id_ed25519 || true
-
           echo "== key fingerprint =="
           ssh-keygen -lf ~/.ssh/id_ed25519
 
           echo "== known_hosts =="
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Test connection
+      - name: Deploy to server
+        shell: bash
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'scripts' \
+            --exclude 'README.md' \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/potencjal/"
+
+      - name: Reload nginx
         shell: bash
         run: |
           ssh -i ~/.ssh/id_ed25519 \
               -o StrictHostKeyChecking=yes \
               "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-              "echo CONNECTED"
+              "sudo systemctl reload nginx"
