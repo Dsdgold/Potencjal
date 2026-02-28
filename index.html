@@ -3,473 +3,1273 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SIG Potencjał - Company Intelligence Platform</title>
+  <title>Potencjał AI — Wywiad Gospodarczy Nowej Generacji</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#e63946">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="description" content="AI-powered company intelligence platform. Scoring ryzyka, limity kredytowe, rekomendacje materiałów budowlanych.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#0a0a12; --surface:#12121e; --card:#16162a; --border:#252540; --muted:#7878a0; --text:#e8e8f4; --red:#e63946; --red-dark:#b30839; --green:#22c55e; --blue:#3b82f6; --orange:#f59e0b; }
-    * { box-sizing:border-box; margin:0; }
-    html,body { font-family:Inter,system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); }
-    a { color:inherit; text-decoration:none; }
+    :root {
+      --bg: #06060e;
+      --surface: #0c0c1a;
+      --card: #111128;
+      --card-hover: #161640;
+      --border: #1e1e48;
+      --border-glow: #6366f140;
+      --muted: #6b6b99;
+      --text: #e8e8ff;
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --accent-dark: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --cyan: #22d3ee;
+      --cyan-glow: rgba(34, 211, 238, 0.25);
+      --green: #34d399;
+      --green-glow: rgba(52, 211, 153, 0.2);
+      --red: #f87171;
+      --red-glow: rgba(248, 113, 113, 0.2);
+      --orange: #fbbf24;
+      --orange-glow: rgba(251, 191, 36, 0.2);
+      --gradient-1: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+      --gradient-2: linear-gradient(135deg, #22d3ee, #6366f1);
+      --gradient-3: linear-gradient(135deg, #34d399, #22d3ee);
+    }
 
-    /* Nav */
-    .nav { position:sticky; top:0; z-index:50; border-bottom:1px solid var(--border); background:rgba(18,18,30,.92); backdrop-filter:blur(12px); }
-    .nav .inner { max-width:1200px; margin:0 auto; padding:0 16px; height:56px; display:flex; align-items:center; justify-content:space-between; }
-    .logo { font-size:24px; font-weight:900; color:var(--red); letter-spacing:2px; }
-    .logo-sub { font-size:14px; font-weight:600; margin-left:8px; }
-    .nav-links { display:flex; gap:8px; }
-    .btn { padding:8px 20px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
-    .btn-ghost { background:transparent; color:var(--muted); }
-    .btn-ghost:hover { color:#fff; }
-    .btn-primary { background:linear-gradient(135deg,var(--red),var(--red-dark)); color:#fff; box-shadow:0 4px 16px rgba(230,57,70,.25); }
-    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(230,57,70,.35); }
-    .btn-outline { background:var(--card); border:1px solid var(--border); color:var(--text); }
-    .btn-outline:hover { border-color:rgba(230,57,70,.4); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
 
-    /* Hero */
-    .hero { max-width:1200px; margin:0 auto; padding:80px 16px 60px; text-align:center; }
-    .hero h1 { font-size:clamp(32px,5vw,56px); font-weight:900; line-height:1.15; margin-bottom:24px; }
-    .hero h1 span { color:var(--red); }
-    .hero p { font-size:18px; color:var(--muted); max-width:640px; margin:0 auto 40px; line-height:1.6; }
-    .hero-cta { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+    /* ═══════════════════ PARTICLE CANVAS ═══════════════════ */
+    #particles {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
 
-    /* Features */
-    .section { max-width:1200px; margin:0 auto; padding:60px 16px; }
-    .section-title { font-size:28px; font-weight:900; text-align:center; margin-bottom:48px; }
-    .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
-    .feature { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; transition:border-color .2s; }
-    .feature:hover { border-color:rgba(230,57,70,.3); }
-    .feature-icon { font-size:28px; margin-bottom:12px; }
-    .feature h3 { font-size:16px; font-weight:700; margin-bottom:8px; }
-    .feature p { font-size:13px; color:var(--muted); line-height:1.6; }
+    /* ═══════════════════ NAV ═══════════════════ */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 6, 14, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+    }
+    .nav .inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 24px;
+      height: 64px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--gradient-1);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 16px; color: white;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .logo-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 6px;
+      background: rgba(99, 102, 241, 0.15); color: var(--accent-light);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .nav-links { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      padding: 10px 22px; border-radius: 12px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s ease;
+      display: inline-flex; align-items: center; gap: 8px; font-family: inherit;
+    }
+    .btn-ghost { background: transparent; color: var(--muted); }
+    .btn-ghost:hover { color: var(--text); }
+    .btn-primary {
+      background: var(--gradient-1); color: white;
+      box-shadow: 0 4px 24px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 32px var(--accent-glow); }
+    .btn-outline {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+    }
+    .btn-outline:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+    .btn-lg { padding: 14px 32px; font-size: 16px; border-radius: 14px; }
 
-    /* Scoring demo */
-    .demo-section { background:var(--surface); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
-    .demo { max-width:1200px; margin:0 auto; padding:60px 16px; }
-    .demo-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center; }
-    @media(max-width:768px){ .demo-grid { grid-template-columns:1fr; } }
-    .demo-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
-    .score-gauge { text-align:center; padding:20px 0; }
-    .score-number { font-size:64px; font-weight:900; }
-    .component { margin-bottom:12px; }
-    .component-header { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; }
-    .component-bar { height:6px; background:#1a1a2e; border-radius:3px; overflow:hidden; }
-    .component-fill { height:100%; border-radius:3px; transition:width .6s; }
+    /* ═══════════════════ HERO ═══════════════════ */
+    .hero {
+      position: relative; z-index: 1;
+      max-width: 1280px; margin: 0 auto; padding: 140px 24px 80px; text-align: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 20px; border-radius: 99px; margin-bottom: 32px;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      font-size: 13px; font-weight: 600; color: var(--accent-light);
+    }
+    .hero-badge .pulse {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); position: relative;
+    }
+    .hero-badge .pulse::after {
+      content: ''; position: absolute; inset: -3px;
+      border-radius: 50%; background: var(--green);
+      animation: pulse 2s infinite; opacity: 0;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 72px); font-weight: 900;
+      line-height: 1.08; letter-spacing: -2px; margin-bottom: 24px;
+    }
+    .hero h1 .gradient {
+      background: var(--gradient-2);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px; color: var(--muted); max-width: 640px;
+      margin: 0 auto 48px; line-height: 1.7;
+    }
+    .hero-cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 
-    /* Pricing */
-    .pricing { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; }
-    .plan { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; }
-    .plan.featured { border-color:var(--red); box-shadow:0 0 40px rgba(230,57,70,.1); }
-    .plan-badge { font-size:11px; font-weight:700; color:var(--red); text-transform:uppercase; margin-bottom:8px; }
-    .plan h3 { font-size:20px; font-weight:700; margin-bottom:4px; }
-    .plan .price { font-size:32px; font-weight:900; margin:8px 0 16px; }
-    .plan .price span { font-size:14px; font-weight:400; color:var(--muted); }
-    .plan ul { list-style:none; padding:0; margin:0 0 20px; }
-    .plan ul li { font-size:13px; color:var(--muted); padding:4px 0; }
-    .plan ul li::before { content:"✓ "; color:var(--green); }
+    /* ═══════════════════ SEARCH ═══════════════════ */
+    .search-section {
+      position: relative; z-index: 1;
+      max-width: 680px; margin: 0 auto; padding: 0 24px;
+    }
+    .search-wrap {
+      position: relative;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      padding: 6px;
+      transition: all 0.3s ease;
+    }
+    .search-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(99, 102, 241, 0.1);
+    }
+    .search-inner { display: flex; gap: 8px; }
+    .search-inner input {
+      flex: 1; background: transparent; border: none;
+      padding: 16px 20px; font-size: 17px; color: var(--text);
+      font-family: 'JetBrains Mono', monospace; font-weight: 500;
+      outline: none; letter-spacing: 1px;
+    }
+    .search-inner input::placeholder { color: var(--muted); font-family: 'Inter', sans-serif; letter-spacing: 0; }
+    .search-inner button {
+      background: var(--gradient-1); color: white; border: none;
+      border-radius: 14px; padding: 14px 36px; font-size: 15px; font-weight: 700;
+      cursor: pointer; white-space: nowrap; font-family: inherit;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .search-inner button:hover { transform: scale(1.02); box-shadow: 0 6px 28px var(--accent-glow); }
+    .search-inner button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    #status { margin-top: 16px; text-align: center; }
 
-    /* Registers */
-    .registers { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:32px; }
-    .reg-badge { display:flex; align-items:center; gap:8px; padding:10px 18px; background:var(--card); border:1px solid var(--border); border-radius:12px; font-size:13px; }
-    .reg-dot { width:8px; height:8px; border-radius:50%; background:var(--green); }
+    /* ═══════════════════ RESULTS ═══════════════════ */
+    #results {
+      display: none; position: relative; z-index: 1;
+      max-width: 1280px; margin: 48px auto 0; padding: 0 24px;
+    }
 
-    /* Footer */
-    .footer { border-top:1px solid var(--border); padding:24px 16px; text-align:center; font-size:12px; color:var(--muted); }
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px; margin-bottom: 32px;
+      padding: 28px 32px; border-radius: 20px;
+      background: linear-gradient(135deg, var(--card), rgba(99,102,241,0.06));
+      border: 1px solid var(--border);
+    }
+    .results-header h2 { font-size: 22px; font-weight: 800; }
+    .results-header .addr { font-size: 14px; color: var(--muted); margin-top: 4px; }
+    .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 
-    /* Search bar (functional) */
-    .search-section { max-width:600px; margin:0 auto; }
-    .search-bar { display:flex; gap:10px; }
-    .search-bar input { flex:1; background:var(--surface); border:2px solid var(--border); border-radius:12px; padding:14px 18px; font-size:16px; color:var(--text); outline:none; transition:border .2s; }
-    .search-bar input:focus { border-color:var(--red); box-shadow:0 0 16px rgba(230,57,70,.15); }
-    .search-bar button { background:linear-gradient(135deg,var(--red),var(--red-dark)); color:#fff; border:none; border-radius:12px; padding:14px 32px; font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 14px; border-radius: 99px; font-size: 12px; font-weight: 600;
+    }
+    .pill-accent { background: rgba(99,102,241,.1); color: var(--accent-light); border: 1px solid rgba(99,102,241,.25); }
+    .pill-green { background: rgba(52,211,153,.08); color: var(--green); border: 1px solid rgba(52,211,153,.2); }
+    .pill-red { background: rgba(248,113,113,.08); color: var(--red); border: 1px solid rgba(248,113,113,.2); }
+    .pill-cyan { background: rgba(34,211,238,.08); color: var(--cyan); border: 1px solid rgba(34,211,238,.2); }
+    .pill-orange { background: rgba(251,191,36,.08); color: var(--orange); border: 1px solid rgba(251,191,36,.2); }
+    .pill-lg { font-size: 14px; padding: 6px 18px; }
 
-    /* Results */
-    #results { display:none; max-width:1200px; margin:32px auto 0; padding:0 16px; }
-    .results-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    @media(max-width:768px){ .results-grid { grid-template-columns:1fr; } }
-    .results-grid .full { grid-column:1/-1; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
-    .card h3 { font-size:14px; color:var(--red); margin:0 0 12px; font-weight:700; }
-    .dtable { width:100%; border-collapse:collapse; }
-    .dtable td { padding:6px 0; font-size:13px; border-bottom:1px solid rgba(37,37,64,.5); }
-    .dtable td:first-child { color:var(--muted); width:160px; }
-    .kpi { text-align:center; padding:12px; }
-    .kpi .val { font-size:22px; font-weight:800; }
-    .kpi .lbl { font-size:11px; color:var(--muted); margin-top:4px; }
-    .pill { display:inline-block; padding:3px 10px; border-radius:99px; font-size:12px; font-weight:600; margin:2px; }
-    .pill-green { background:rgba(34,197,94,.12); color:var(--green); border:1px solid rgba(34,197,94,.25); }
-    .pill-red { background:rgba(239,68,68,.12); color:#ef4444; border:1px solid rgba(239,68,68,.25); }
-    .pill-blue { background:rgba(59,130,246,.12); color:var(--blue); border:1px solid rgba(59,130,246,.25); }
-    .mat-bar { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-    .mat-label { font-size:12px; width:120px; }
-    .mat-track { flex:1; height:8px; background:#1a1a2e; border-radius:4px; overflow:hidden; }
-    .mat-fill { height:100%; background:var(--red); border-radius:4px; }
-    .mat-pct { font-size:11px; color:var(--muted); width:32px; text-align:right; }
-    .error { color:#fca5a5; background:rgba(42,21,32,.8); border:1px solid #5c2030; border-radius:10px; padding:12px; font-size:14px; text-align:center; }
-    .spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--border); border-top-color:var(--red); border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:8px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .flag { font-size:13px; padding:3px 0; }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+    }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+    .col-12 { grid-column: span 12; }
+    @media (max-width: 900px) { .col-6, .col-4 { grid-column: span 12; } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .card:hover {
+      border-color: rgba(99, 102, 241, 0.2);
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.05);
+    }
+    .card h3 {
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--muted); margin-bottom: 20px;
+    }
+
+    /* Score gauge */
+    .score-center { text-align: center; padding: 16px 0; }
+    .score-ring-wrap { position: relative; display: inline-block; }
+    .score-big {
+      font-size: 72px; font-weight: 900; line-height: 1;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .score-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .score-band {
+      font-size: 16px; font-weight: 700; margin-top: 12px;
+      padding: 6px 20px; border-radius: 99px; display: inline-block;
+    }
+
+    /* Radar chart */
+    .radar-wrap { display: flex; justify-content: center; padding: 8px 0; }
+
+    /* Components */
+    .comp-item { margin-bottom: 14px; }
+    .comp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .comp-name { font-size: 13px; font-weight: 500; }
+    .comp-pts { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .comp-bar { height: 6px; background: rgba(99,102,241,0.1); border-radius: 3px; overflow: hidden; }
+    .comp-fill {
+      height: 100%; border-radius: 3px;
+      transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .comp-note { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* Credit */
+    .credit-big {
+      font-size: 36px; font-weight: 900; text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--gradient-3); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .credit-sub { text-align: center; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .credit-range {
+      display: flex; justify-content: center; gap: 32px; margin-top: 16px;
+      padding-top: 16px; border-top: 1px solid var(--border);
+    }
+    .credit-range .item { text-align: center; }
+    .credit-range .val {
+      font-size: 16px; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .credit-range .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .credit-terms { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+
+    /* Materials */
+    .mat-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .mat-name { font-size: 12px; width: 130px; flex-shrink: 0; }
+    .mat-track { flex: 1; height: 8px; background: rgba(99,102,241,.08); border-radius: 4px; overflow: hidden; }
+    .mat-fill {
+      height: 100%; border-radius: 4px;
+      background: var(--gradient-2);
+      transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .mat-pct { font-size: 11px; color: var(--muted); width: 36px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+    /* Flags */
+    .flag { font-size: 13px; padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+    .flag-icon { width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .flag-green .flag-icon { background: rgba(52,211,153,.1); color: var(--green); }
+    .flag-red .flag-icon { background: rgba(248,113,113,.1); color: var(--red); }
+
+    /* Data table */
+    .dtable { width: 100%; border-collapse: collapse; }
+    .dtable tr { border-bottom: 1px solid rgba(30,30,72,.5); }
+    .dtable td { padding: 10px 0; font-size: 13px; }
+    .dtable td:first-child { color: var(--muted); width: 160px; font-size: 12px; }
+
+    /* AI Terminal */
+    .ai-terminal {
+      background: rgba(6,6,14,.9); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; margin-top: 20px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      line-height: 1.8; color: var(--green); max-height: 300px; overflow-y: auto;
+    }
+    .ai-terminal .prompt { color: var(--accent-light); }
+    .ai-terminal .info { color: var(--cyan); }
+    .ai-terminal .warn { color: var(--orange); }
+    .ai-terminal .err { color: var(--red); }
+    .ai-cursor {
+      display: inline-block; width: 8px; height: 16px;
+      background: var(--green); animation: blink 1s step-end infinite;
+      vertical-align: text-bottom; margin-left: 2px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ═══════════════════ FEATURES ═══════════════════ */
+    .section {
+      position: relative; z-index: 1;
+      max-width: 1280px; margin: 0 auto; padding: 100px 24px;
+    }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 700; color: var(--accent-light);
+      text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 44px); font-weight: 900;
+      letter-spacing: -1px; margin-bottom: 20px; line-height: 1.15;
+    }
+    .section-desc { font-size: 16px; color: var(--muted); max-width: 560px; margin-bottom: 60px; }
+
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    @media (max-width: 900px) { .features-grid { grid-template-columns: 1fr; } }
+
+    .feature-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px;
+      transition: all 0.3s ease; position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--gradient-1); opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 14px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .fi-purple { background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.15); }
+    .fi-cyan { background: rgba(34,211,238,.1); border: 1px solid rgba(34,211,238,.15); }
+    .fi-green { background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.15); }
+    .fi-orange { background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.15); }
+    .fi-red { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.15); }
+    .fi-blue { background: rgba(56,189,248,.1); border: 1px solid rgba(56,189,248,.15); }
+    .feature-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    /* ═══════════════════ DATA SOURCES ═══════════════════ */
+    .sources-grid {
+      display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    }
+    .source-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 28px;
+      display: flex; align-items: center; gap: 14px;
+      transition: all 0.3s;
+    }
+    .source-card:hover { border-color: var(--accent); box-shadow: 0 0 30px var(--accent-glow); }
+    .source-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .source-dot.active { color: var(--green); background: var(--green); }
+    .source-dot.ready { color: var(--orange); background: var(--orange); }
+    .source-dot.planned { color: var(--accent); background: var(--accent); }
+    .source-name { font-size: 14px; font-weight: 600; }
+    .source-tag {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 4px; margin-left: 4px;
+    }
+
+    /* ═══════════════════ STATS ═══════════════════ */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+      margin: 60px 0;
+    }
+    @media (max-width: 768px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card {
+      text-align: center; padding: 32px 20px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 20px;
+    }
+    .stat-val {
+      font-size: 40px; font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--gradient-1); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .stat-label { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+    /* ═══════════════════ PRICING ═══════════════════ */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; } }
+    .plan-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 24px; padding: 36px; position: relative;
+      transition: all 0.3s;
+    }
+    .plan-card:hover { transform: translateY(-4px); }
+    .plan-card.featured {
+      border-color: var(--accent);
+      box-shadow: 0 0 60px rgba(99,102,241,.1), 0 0 120px rgba(99,102,241,.05);
+    }
+    .plan-card.featured::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; background: var(--gradient-1); border-radius: 24px 24px 0 0;
+    }
+    .plan-badge {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      color: var(--accent-light); margin-bottom: 8px; letter-spacing: 1px;
+    }
+    .plan-card h3 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .plan-price {
+      font-size: 40px; font-weight: 900; margin: 16px 0 24px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .plan-price span { font-size: 14px; font-weight: 400; color: var(--muted); }
+    .plan-features { list-style: none; margin-bottom: 28px; }
+    .plan-features li {
+      font-size: 13px; color: var(--muted); padding: 6px 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .plan-features li::before {
+      content: ''; width: 18px; height: 18px; border-radius: 6px;
+      background: rgba(52,211,153,.1); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .plan-check { color: var(--green); font-size: 12px; margin-left: -28px; margin-right: 10px; }
+
+    /* ═══════════════════ FOOTER ═══════════════════ */
+    .footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 40px 24px; text-align: center;
+    }
+    .footer p { font-size: 13px; color: var(--muted); }
+    .footer-links { display: flex; gap: 24px; justify-content: center; margin-top: 12px; }
+    .footer-links a { font-size: 12px; color: var(--muted); transition: color 0.2s; }
+    .footer-links a:hover { color: var(--accent-light); }
+
+    /* ═══════════════════ UTILS ═══════════════════ */
+    .error-box {
+      color: var(--red); background: rgba(248,113,113,.06);
+      border: 1px solid rgba(248,113,113,.15); border-radius: 14px;
+      padding: 16px; font-size: 14px; text-align: center;
+    }
+    .spinner {
+      display: inline-block; width: 20px; height: 20px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+      vertical-align: middle; margin-right: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .fade-in { animation: fadeIn 0.6s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    .glow-line {
+      height: 1px; border: none; margin: 80px 0;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.3;
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      .hero h1 { letter-spacing: -1px; }
+      .search-inner { flex-direction: column; }
+      .search-inner button { width: 100%; justify-content: center; }
+      .nav-links .btn-ghost { display: none; }
+      .results-header { padding: 20px; }
+      .card { padding: 20px; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
+<canvas id="particles"></canvas>
+
+<!-- NAV -->
 <nav class="nav">
   <div class="inner">
-    <div style="display:flex;align-items:center;">
-      <span class="logo">SIG</span>
-      <span class="logo-sub">Potencjał</span>
+    <div class="logo-wrap">
+      <div class="logo-icon">P</div>
+      <div class="logo-text"><span>Potencjal</span>.AI</div>
+      <div class="logo-badge">v2.0</div>
     </div>
     <div class="nav-links">
+      <a href="#features" class="btn btn-ghost">Funkcje</a>
       <a href="#pricing" class="btn btn-ghost">Cennik</a>
-      <a href="#search" class="btn btn-primary">Sprawdź firmę</a>
+      <a href="#search" class="btn btn-primary">Analizuj firme</a>
     </div>
   </div>
 </nav>
 
-<!-- Hero -->
+<!-- HERO -->
 <section class="hero">
-  <h1>Inteligencja kredytowa<br><span>dla firm budowlanych</span></h1>
-  <p>Wpisz NIP — w sekundę otrzymasz scoring ryzyka, sugerowany limit kredytowy i rekomendacje produktowe. Dane z rejestrów państwowych.</p>
-  <div id="search" class="search-section">
-    <div class="search-bar">
-      <input id="q" placeholder="Wpisz 10-cyfrowy NIP firmy" autofocus>
-      <button id="searchBtn">Sprawdź</button>
-    </div>
-    <div id="status" style="margin-top:12px;"></div>
+  <div class="hero-badge">
+    <span class="pulse"></span>
+    Silnik scoringowy v2 &mdash; 11 komponentow AI
+  </div>
+  <h1>
+    Wywiad gospodarczy<br>
+    <span class="gradient">nowej generacji</span>
+  </h1>
+  <p>Wpisz NIP &mdash; w ulamku sekundy otrzymasz scoring ryzyka, limit kredytowy, rekomendacje materialowe i pelna analize AI. Dane z rejestrow panstwowych RP.</p>
+  <div class="hero-cta">
+    <a href="#search" class="btn btn-primary btn-lg">Rozpocznij analize</a>
+    <a href="#features" class="btn btn-outline btn-lg">Zobacz mozliwosci</a>
   </div>
 </section>
 
-<!-- Results (hidden until search) -->
+<!-- SEARCH -->
+<section id="search" style="position:relative;z-index:1;padding-bottom:40px;">
+  <div class="search-section">
+    <div class="search-wrap">
+      <div class="search-inner">
+        <input id="q" placeholder="Wpisz 10-cyfrowy NIP firmy..." autofocus>
+        <button id="searchBtn">Analizuj</button>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+</section>
+
+<!-- RESULTS -->
 <div id="results">
+  <!-- Company Header -->
+  <div class="results-header fade-in">
+    <div>
+      <h2 id="companyName"></h2>
+      <div class="addr" id="companyAddr"></div>
+      <div class="badge-row" id="badges"></div>
+    </div>
+    <div id="vatBadge"></div>
+  </div>
+
   <div class="results-grid">
-    <!-- Company header -->
-    <div class="card full">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div>
-          <h2 id="companyName" style="font-size:20px;margin:0;"></h2>
-          <p id="companyAddr" style="font-size:13px;color:var(--muted);margin:6px 0 0;"></p>
-          <div id="badges" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
-        </div>
-        <div id="vatBadge"></div>
-      </div>
-    </div>
-
     <!-- Score -->
-    <div class="card">
+    <div class="card col-4 fade-in" style="animation-delay:.1s">
       <h3>Scoring ryzyka</h3>
-      <div class="score-gauge">
-        <svg viewBox="0 0 200 110" width="180">
-          <path d="M10,100 A85,85 0 0,1 190,100" fill="none" stroke="#1a1a2e" stroke-width="14" stroke-linecap="round"/>
-          <path id="gaugeArc" d="M10,100 A85,85 0 0,1 190,100" fill="none" stroke="var(--red)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 267"/>
+      <div class="score-center">
+        <svg viewBox="0 0 200 200" width="180" height="180">
+          <circle cx="100" cy="100" r="85" fill="none" stroke="rgba(99,102,241,.08)" stroke-width="12"/>
+          <circle id="scoreRing" cx="100" cy="100" r="85" fill="none" stroke="var(--accent)" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="0 534" transform="rotate(-90 100 100)"
+            style="transition: stroke-dasharray 1.5s cubic-bezier(0.22,1,0.36,1), stroke 0.3s;"/>
         </svg>
-        <div style="margin-top:-40px;">
-          <div id="scoreVal" class="score-number" style="color:var(--red);">0</div>
-          <div style="font-size:12px;color:var(--muted);">punktów na 100</div>
-          <div id="bandLabel" style="font-size:16px;font-weight:700;margin-top:4px;"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+          <div id="scoreVal" class="score-big" style="color:var(--accent)">0</div>
+          <div class="score-label">na 100 punktow</div>
+        </div>
+        <div style="position:relative;">
+          <div id="bandLabel" class="score-band"></div>
         </div>
       </div>
     </div>
 
-    <!-- Credit Limit -->
-    <div class="card">
+    <!-- Credit -->
+    <div class="card col-4 fade-in" style="animation-delay:.2s">
       <h3>Limit kredytowy</h3>
-      <div class="kpi"><div class="val" id="creditVal">—</div><div class="lbl">Sugerowany limit</div></div>
-      <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;">
-        <div class="kpi" style="flex:1;"><div class="val" style="font-size:14px;" id="creditMin">—</div><div class="lbl">Min</div></div>
-        <div class="kpi" style="flex:1;"><div class="val" style="font-size:14px;" id="creditMax">—</div><div class="lbl">Max</div></div>
+      <div style="padding:20px 0;">
+        <div id="creditVal" class="credit-big">--</div>
+        <div class="credit-sub">Sugerowany limit</div>
       </div>
-      <div id="creditTerms" style="display:flex;gap:8px;justify-content:center;margin-top:12px;"></div>
+      <div class="credit-range">
+        <div class="item"><div class="val" id="creditMin">--</div><div class="lbl">Minimum</div></div>
+        <div class="item"><div class="val" id="creditMax">--</div><div class="lbl">Maksimum</div></div>
+      </div>
+      <div class="credit-terms" id="creditTerms"></div>
+    </div>
+
+    <!-- Radar -->
+    <div class="card col-4 fade-in" style="animation-delay:.3s">
+      <h3>Profil ryzyka</h3>
+      <div class="radar-wrap">
+        <svg id="radarChart" viewBox="0 0 300 300" width="260" height="260"></svg>
+      </div>
     </div>
 
     <!-- Components -->
-    <div class="card">
+    <div class="card col-6 fade-in" style="animation-delay:.4s">
       <h3>Komponenty scoringu (11)</h3>
       <div id="components"></div>
     </div>
 
     <!-- Materials -->
-    <div class="card" id="materialsCard">
-      <h3>Rekomendacja materiałów budowlanych</h3>
+    <div class="card col-6 fade-in" style="animation-delay:.5s" id="materialsCard">
+      <h3>Rekomendacja materialow</h3>
       <div id="materials"></div>
-      <p id="materialsExpl" style="font-size:12px;color:var(--muted);margin-top:8px;"></p>
+    </div>
+
+    <!-- AI Terminal -->
+    <div class="card col-12 fade-in" style="animation-delay:.6s">
+      <h3>Analiza AI</h3>
+      <div class="ai-terminal" id="aiTerminal"></div>
     </div>
 
     <!-- Flags -->
-    <div class="card">
-      <h3>Atuty i ryzyka</h3>
+    <div class="card col-6 fade-in" style="animation-delay:.7s">
+      <h3>Atuty & Ryzyka</h3>
       <div id="greenFlags"></div>
-      <div id="redFlags" style="margin-top:8px;"></div>
+      <div id="redFlags" style="margin-top:12px;"></div>
     </div>
 
     <!-- Data table -->
-    <div class="card">
+    <div class="card col-6 fade-in" style="animation-delay:.8s">
       <h3>Dane rejestrowe</h3>
       <table class="dtable" id="dataTable"></table>
     </div>
 
     <!-- Sources -->
-    <div class="card full">
-      <h3>Źródła danych</h3>
-      <div id="sources" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    <div class="card col-12 fade-in" style="animation-delay:.9s">
+      <h3>Zrodla danych</h3>
+      <div id="sources" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
     </div>
   </div>
 </div>
 
-<!-- Features -->
+<!-- STATS -->
 <section class="section">
-  <h2 class="section-title">Pełna platforma Sales Intelligence</h2>
-  <div class="features">
-    <div class="feature">
-      <div class="feature-icon">📊</div>
-      <h3>11-komponentowy scoring</h3>
-      <p>Status VAT, forma prawna, wiek, lokalizacja, kapitał zakładowy, zarząd, branża PKD, rachunki bankowe, rejestry, kompletność danych i stabilność.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">💳</div>
-      <h3>Limit kredytowy z uzasadnieniem</h3>
-      <p>Automatyczna sugestia limitu (min/max), terminów płatności i rabatu handlowego. Dostosowywany do profilu ryzyka.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🧱</div>
-      <h3>Mapa materiałów budowlanych</h3>
-      <p>15 kategorii: cement, izolacje, drywall, stal, kruszywa, dach, elewacja, okna, hydroizolacja, kleje, farby, instalacje wod-kan, elektryczne, HVAC, narzędzia.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🏛️</div>
-      <h3>Multi-rejestr: 4+ źródła</h3>
-      <p>Biała Lista VAT, KRS (OpenAPI), GUS REGON (BIR1), CEIDG. Każde pole ma źródło i timestamp.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">🔒</div>
-      <h3>SaaS z RBAC i multi-tenancy</h3>
-      <p>Organizacje, użytkownicy, role (viewer/member/admin/superadmin). Plany: Free, Pro, Enterprise. Stripe billing.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">📋</div>
-      <h3>CRM wbudowany</h3>
-      <p>Notatki, zadania, watchlisty, alerty zmian. Audit log ze wszystkimi operacjami. Eksport CSV/PDF.</p>
-    </div>
-  </div>
-  <div class="registers">
-    <div class="reg-badge"><div class="reg-dot"></div>Biała Lista VAT (MF)</div>
-    <div class="reg-badge"><div class="reg-dot"></div>KRS (MS)</div>
-    <div class="reg-badge"><div class="reg-dot" style="background:var(--orange);"></div>GUS REGON</div>
-    <div class="reg-badge"><div class="reg-dot" style="background:var(--orange);"></div>CEIDG</div>
-    <div class="reg-badge"><div class="reg-dot" style="background:var(--blue);"></div>Qdrant (Vector DB)</div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val">11</div><div class="stat-label">Komponentow scoringu</div></div>
+    <div class="stat-card"><div class="stat-val">4+</div><div class="stat-label">Rejestrow panstwowych</div></div>
+    <div class="stat-card"><div class="stat-val">15</div><div class="stat-label">Kategorii materialow</div></div>
+    <div class="stat-card"><div class="stat-val">&lt;1s</div><div class="stat-label">Czas analizy</div></div>
   </div>
 </section>
 
-<!-- Pricing -->
-<section class="demo-section" id="pricing">
-  <div class="section" style="padding-top:48px;padding-bottom:48px;">
-    <h2 class="section-title">Plany cenowe</h2>
-    <div class="pricing">
-      <div class="plan">
-        <h3>Free</h3>
-        <div class="price">0 PLN<span>/mies.</span></div>
-        <ul><li>10 zapytań/mies.</li><li>Scoring ryzyka</li><li>Limit kredytowy</li><li>1 użytkownik</li></ul>
-        <a href="#search" class="btn btn-outline" style="width:100%;justify-content:center;">Zacznij</a>
-      </div>
-      <div class="plan featured">
-        <div class="plan-badge">Najpopularniejszy</div>
-        <h3>Pro</h3>
-        <div class="price">299 PLN<span>/mies.</span></div>
-        <ul><li>200 zapytań/mies.</li><li>Scoring + limit kredytowy</li><li>Rekomendacja materiałów</li><li>Eksport PDF</li><li>CRM (notatki, zadania)</li><li>Do 5 użytkowników</li></ul>
-        <a href="#search" class="btn btn-primary" style="width:100%;justify-content:center;">Wybierz Pro</a>
-      </div>
-      <div class="plan">
-        <h3>Enterprise</h3>
-        <div class="price">999 PLN<span>/mies.</span></div>
-        <ul><li>5000 zapytań/mies.</li><li>Wszystko z Pro</li><li>API REST</li><li>Własne konektory</li><li>SSO</li><li>Bez limitu użytkowników</li></ul>
-        <a href="#search" class="btn btn-outline" style="width:100%;justify-content:center;">Kontakt</a>
-      </div>
+<hr class="glow-line">
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">Mozliwosci platformy</div>
+  <h2 class="section-title">Wszystko czego potrzebujesz<br>do oceny kontrahentow</h2>
+  <p class="section-desc">Pelna platforma Sales Intelligence dla branzy budowlanej. Od scoringu ryzyka po rekomendacje produktowe.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon fi-purple">&#x1F9E0;</div>
+      <h3>Scoring AI 0&ndash;100</h3>
+      <p>11-komponentowy algorytm z pelna wyjasnialnioscia. Kazdy punkt ma uzasadnienie, kazdy komponent mozesz przesledzic.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-cyan">&#x1F4B3;</div>
+      <h3>Inteligentny limit kredytowy</h3>
+      <p>Automatyczna sugestia limitu z zakresem min-max, terminami platnosci i rabatem handlowym. Dopasowany do profilu ryzyka.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-green">&#x1F9F1;</div>
+      <h3>Mapa materialow budowlanych</h3>
+      <p>15 kategorii: cement, izolacje, drywall, stal, kruszywa, dach, elewacja, okna, hydroizolacja, kleje, farby i wiecej.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-orange">&#x1F3DB;</div>
+      <h3>Multi-rejestr: 4+ zrodla</h3>
+      <p>Biala Lista VAT, KRS, GUS REGON, CEIDG. Kazde pole z oznaczeniem zrodla i timestampem aktualizacji.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-red">&#x1F4CA;</div>
+      <h3>Radar profilu ryzyka</h3>
+      <p>Interaktywny wykres radarowy pokazujacy sily i slabosci firmy w 11 wymiarach. Natychmiastowa identyfikacja ryzyk.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon fi-blue">&#x2699;</div>
+      <h3>Terminal analizy AI</h3>
+      <p>Pelna narracja AI tlumaczy wynik scoringu, identyfikuje wzorce i rekomenduje strategie wspolpracy.</p>
     </div>
   </div>
 </section>
 
+<hr class="glow-line">
+
+<!-- DATA SOURCES -->
+<section class="section" style="text-align:center;">
+  <div class="section-label" style="justify-content:center;">Zrodla danych</div>
+  <h2 class="section-title">Dane z oficjalnych rejestrow</h2>
+  <p class="section-desc" style="margin-left:auto;margin-right:auto;">Pobieramy informacje bezposrednio z rejestrow panstwowych RP i weryfikujemy je krzyzowo.</p>
+  <div class="sources-grid">
+    <div class="source-card"><div class="source-dot active"></div><span class="source-name">Biala Lista VAT (MF)</span></div>
+    <div class="source-card"><div class="source-dot active"></div><span class="source-name">KRS (MS)</span></div>
+    <div class="source-card"><div class="source-dot ready"></div><span class="source-name">GUS REGON</span></div>
+    <div class="source-card"><div class="source-dot ready"></div><span class="source-name">CEIDG</span></div>
+    <div class="source-card"><div class="source-dot planned"></div><span class="source-name">Qdrant VectorDB</span></div>
+  </div>
+</section>
+
+<hr class="glow-line">
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div style="text-align:center;">
+    <div class="section-label" style="justify-content:center;">Cennik</div>
+    <h2 class="section-title">Transparentne plany cenowe</h2>
+    <p class="section-desc" style="margin-left:auto;margin-right:auto;">Zacznij za darmo. Skaluj w miare potrzeb.</p>
+  </div>
+  <div class="pricing-grid" style="margin-top:48px;">
+    <div class="plan-card">
+      <h3>Free</h3>
+      <div class="plan-price">0 PLN<span>/mies.</span></div>
+      <ul class="plan-features">
+        <li><span class="plan-check">&#10003;</span> 10 zapytan/miesiac</li>
+        <li><span class="plan-check">&#10003;</span> Scoring ryzyka 0&ndash;100</li>
+        <li><span class="plan-check">&#10003;</span> Limit kredytowy</li>
+        <li><span class="plan-check">&#10003;</span> 1 uzytkownik</li>
+      </ul>
+      <a href="#search" class="btn btn-outline" style="width:100%;justify-content:center;">Zacznij za darmo</a>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-badge">Najpopularniejszy</div>
+      <h3>Pro</h3>
+      <div class="plan-price">299 PLN<span>/mies.</span></div>
+      <ul class="plan-features">
+        <li><span class="plan-check">&#10003;</span> 200 zapytan/miesiac</li>
+        <li><span class="plan-check">&#10003;</span> Scoring + limit kredytowy</li>
+        <li><span class="plan-check">&#10003;</span> Rekomendacja materialow</li>
+        <li><span class="plan-check">&#10003;</span> Analiza AI + terminal</li>
+        <li><span class="plan-check">&#10003;</span> Eksport PDF</li>
+        <li><span class="plan-check">&#10003;</span> CRM + notatki</li>
+        <li><span class="plan-check">&#10003;</span> Do 5 uzytkownikow</li>
+      </ul>
+      <a href="#search" class="btn btn-primary" style="width:100%;justify-content:center;">Wybierz Pro</a>
+    </div>
+    <div class="plan-card">
+      <h3>Enterprise</h3>
+      <div class="plan-price">999 PLN<span>/mies.</span></div>
+      <ul class="plan-features">
+        <li><span class="plan-check">&#10003;</span> 5000 zapytan/miesiac</li>
+        <li><span class="plan-check">&#10003;</span> Wszystko z Pro</li>
+        <li><span class="plan-check">&#10003;</span> REST API</li>
+        <li><span class="plan-check">&#10003;</span> Wlasne konektory</li>
+        <li><span class="plan-check">&#10003;</span> SSO</li>
+        <li><span class="plan-check">&#10003;</span> Bez limitu uzytkownikow</li>
+      </ul>
+      <a href="#search" class="btn btn-outline" style="width:100%;justify-content:center;">Kontakt</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
 <footer class="footer">
-  <p>SIG Potencjał v1.0 — Dane z rejestrów państwowych RP</p>
-  <p style="margin-top:4px;">Biała Lista VAT · KRS · REGON · CEIDG · Scoring 11-komponentowy · Docker Compose</p>
+  <p style="font-size:16px;font-weight:700;margin-bottom:8px;">
+    <span style="background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Potencjal</span>.AI
+  </p>
+  <p>Platforma wywiadu gospodarczego nowej generacji &mdash; v2.0</p>
+  <p style="margin-top:4px;">Biala Lista VAT &middot; KRS &middot; REGON &middot; CEIDG &middot; 11-komponentowy scoring AI</p>
+  <div class="footer-links">
+    <a href="#features">Funkcje</a>
+    <a href="#pricing">Cennik</a>
+    <a href="#search">Analizuj</a>
+  </div>
 </footer>
 
 <script>
+/* ═══════════════════ PARTICLES ═══════════════════ */
+(function() {
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+  const PARTICLE_COUNT = 80;
+  const MAX_DIST = 150;
+
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * w;
+      this.y = Math.random() * h;
+      this.vx = (Math.random() - 0.5) * 0.4;
+      this.vy = (Math.random() - 0.5) * 0.4;
+      this.r = Math.random() * 2 + 0.5;
+      this.alpha = Math.random() * 0.5 + 0.1;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      if (this.x < 0 || this.x > w) this.vx *= -1;
+      if (this.y < 0 || this.y > h) this.vy *= -1;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(99, 102, 241, ${this.alpha})`;
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+
+  function animate() {
+    ctx.clearRect(0, 0, w, h);
+    for (const p of particles) { p.update(); p.draw(); }
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < MAX_DIST) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(99, 102, 241, ${0.08 * (1 - dist / MAX_DIST)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+/* ═══════════════════ APP LOGIC ═══════════════════ */
 const $ = s => document.querySelector(s);
-const TODAY = new Date().toISOString().slice(0,10);
-const WEIGHTS = [6,5,7,2,3,4,5,6,7];
-const MAJOR_CITIES = ['warszawa','kraków','wrocław','poznań','gdańsk','katowice','łódź','szczecin','lublin','bydgoszcz','gdynia','białystok','częstochowa','radom','toruń'];
+const TODAY = new Date().toISOString().slice(0, 10);
+const WEIGHTS = [6, 5, 7, 2, 3, 4, 5, 6, 7];
+const MAJOR_CITIES = ['warszawa','krakow','wroclaw','poznan','gdansk','katowice','lodz','szczecin','lublin','bydgoszcz','gdynia','bialystok','czestochowa','radom','torun'];
 const CONSTR_PKD = ['41','42','43','71.1','23.5','23.6','46.73'];
-const BANDS = {A:{min:75,label:'Niskie ryzyko',color:'#22c55e'},B:{min:55,label:'Umiarkowane ryzyko',color:'#3b82f6'},C:{min:35,label:'Podwyższone ryzyko',color:'#f59e0b'},D:{min:0,label:'Wysokie ryzyko',color:'#ef4444'}};
-const CREDIT = {A:{base:500000,min:200000,max:1000000,days:60,disc:15},B:{base:200000,min:50000,max:400000,days:45,disc:10},C:{base:50000,min:10000,max:100000,days:30,disc:5},D:{base:0,min:0,max:15000,days:0,disc:0}};
-const MATERIALS = {
-  cement:{n:'Cement i spoiwa',k:['cement','beton','zaprawa']},insulation:{n:'Izolacje termiczne',k:['izolacja','styropian','wełna']},
-  drywall:{n:'Sucha zabudowa',k:['gips','karton-gips']},rebar:{n:'Stal zbrojeniowa',k:['stal','zbrojenie']},
-  aggregates:{n:'Kruszywa',k:['kruszywo','piasek','żwir']},roofing:{n:'Pokrycia dachowe',k:['dach','dachówka','papa']},
-  facade:{n:'Elewacje',k:['elewacja','tynk','fasada']},windows_doors:{n:'Okna i drzwi',k:['okno','drzwi','stolarka']},
-  waterproofing:{n:'Hydroizolacja',k:['hydroizolacja','folia','membrana']},adhesives:{n:'Kleje / chemia',k:['klej','silikon','pianka']},
-  paints:{n:'Farby i lakiery',k:['farba','lakier','emulsja']},pipes:{n:'Instalacje wod-kan',k:['rura','wod-kan']},
-  electrical:{n:'Inst. elektryczne',k:['kabel','elektryka']},hvac:{n:'HVAC',k:['ogrzewanie','wentylacja','pompa ciepła']},
-  tools:{n:'Narzędzia',k:['narzędzie','wiertarka']}
+
+const BANDS = {
+  A: { min: 75, label: 'Niskie ryzyko', color: '#34d399' },
+  B: { min: 55, label: 'Umiarkowane ryzyko', color: '#6366f1' },
+  C: { min: 35, label: 'Podwyzszone ryzyko', color: '#fbbf24' },
+  D: { min: 0,  label: 'Wysokie ryzyko', color: '#f87171' }
 };
-const PKD_MAP = {'41.20':['cement','rebar','aggregates','insulation','drywall','roofing','facade','windows_doors','paints'],'42.11':['aggregates','rebar','cement','pipes'],'43.22':['pipes','hvac','tools'],'43.31':['facade','paints','adhesives','insulation'],'43.91':['roofing','insulation','waterproofing'],'46.73':['cement','insulation','drywall','roofing','facade','adhesives','paints','pipes','tools']};
 
-function validateNip(n){
-  if(n.length!==10||!/^\d{10}$/.test(n)||n==='0000000000')return false;
-  const d=n.split('').map(Number);
-  const c=d.slice(0,9).reduce((s,v,i)=>s+v*WEIGHTS[i],0)%11;
-  return c<10&&c===d[9];
+const CREDIT = {
+  A: { base: 500000, min: 200000, max: 1000000, days: 60, disc: 15 },
+  B: { base: 200000, min: 50000, max: 400000, days: 45, disc: 10 },
+  C: { base: 50000, min: 10000, max: 100000, days: 30, disc: 5 },
+  D: { base: 0, min: 0, max: 15000, days: 0, disc: 0 }
+};
+
+const MATERIALS = {
+  cement:{n:'Cement i spoiwa',k:['cement','beton','zaprawa']},
+  insulation:{n:'Izolacje termiczne',k:['izolacja','styropian','welna']},
+  drywall:{n:'Sucha zabudowa',k:['gips','karton-gips']},
+  rebar:{n:'Stal zbrojeniowa',k:['stal','zbrojenie']},
+  aggregates:{n:'Kruszywa',k:['kruszywo','piasek','zwir']},
+  roofing:{n:'Pokrycia dachowe',k:['dach','dachowka','papa']},
+  facade:{n:'Elewacje',k:['elewacja','tynk','fasada']},
+  windows_doors:{n:'Okna i drzwi',k:['okno','drzwi','stolarka']},
+  waterproofing:{n:'Hydroizolacja',k:['hydroizolacja','folia','membrana']},
+  adhesives:{n:'Kleje / chemia',k:['klej','silikon','pianka']},
+  paints:{n:'Farby i lakiery',k:['farba','lakier','emulsja']},
+  pipes:{n:'Inst. wod-kan',k:['rura','wod-kan']},
+  electrical:{n:'Inst. elektryczne',k:['kabel','elektryka']},
+  hvac:{n:'HVAC',k:['ogrzewanie','wentylacja','pompa']},
+  tools:{n:'Narzedzia',k:['narzedzie','wiertarka']}
+};
+
+const PKD_MAP = {
+  '41.20':['cement','rebar','aggregates','insulation','drywall','roofing','facade','windows_doors','paints'],
+  '42.11':['aggregates','rebar','cement','pipes'],
+  '43.22':['pipes','hvac','tools'],
+  '43.31':['facade','paints','adhesives','insulation'],
+  '43.91':['roofing','insulation','waterproofing'],
+  '46.73':['cement','insulation','drywall','roofing','facade','adhesives','paints','pipes','tools']
+};
+
+function validateNip(n) {
+  if (n.length !== 10 || !/^\d{10}$/.test(n) || n === '0000000000') return false;
+  const d = n.split('').map(Number);
+  const c = d.slice(0, 9).reduce((s, v, i) => s + v * WEIGHTS[i], 0) % 11;
+  return c < 10 && c === d[9];
 }
-function fmtPLN(v){return v.toLocaleString('pl-PL')+' PLN';}
-function fmtNIP(n){return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6,8)+'-'+n.slice(8);}
 
-async function fetchVAT(nip){
-  const r=await fetch(`/api/vat/nip/${nip}?date=${TODAY}`);
-  if(!r.ok)throw new Error('Błąd API VAT: '+r.status);
-  const d=await r.json();
-  const s=d.result?.subject||d.result?.subjects?.[0];
-  if(!s)throw new Error('Nie znaleziono firmy');
+function fmtPLN(v) { return v.toLocaleString('pl-PL') + ' PLN'; }
+function fmtNIP(n) { return n.slice(0,3)+'-'+n.slice(3,6)+'-'+n.slice(6,8)+'-'+n.slice(8); }
+
+async function fetchVAT(nip) {
+  const r = await fetch(`https://wl-api.mf.gov.pl/api/search/nip/${nip}?date=${TODAY}`);
+  if (!r.ok) throw new Error('Blad API VAT: ' + r.status);
+  const d = await r.json();
+  const s = d.result?.subject || d.result?.subjects?.[0];
+  if (!s) throw new Error('Nie znaleziono firmy o podanym NIP');
   return s;
 }
 
-function scoreCompany(s){
-  const comps=[];const rf=[];const gf=[];
-  // 1 VAT 12
-  let p=0;if(s.statusVat==='Czynny'){p=12;gf.push('Czynny VAT');}else if(s.statusVat==='Zwolniony')p=6;else{rf.push('Brak czynnego VAT');}
-  comps.push({n:'Status VAT',p,m:12,e:s.statusVat||'brak'});
-  // 2 Legal 12
-  const nm=(s.name||'').toUpperCase();
-  p=4;if(nm.includes('S.A.')||nm.includes('AKCYJNA')){p=12;gf.push('Spółka akcyjna');}else if(nm.includes('Z O.O.')){p=10;gf.push('Sp. z o.o.');}else if(nm.includes('KOMANDYTOWA'))p=8;else if(nm.includes('JAWNA'))p=7;
-  comps.push({n:'Forma prawna',p,m:12,e:''});
-  // 3 Age 10
-  let years=null;if(s.registrationLegalDate){try{years=Math.floor((Date.now()-new Date(s.registrationLegalDate))/31557600000);}catch{}}
-  p=years?years>15?10:years>10?8:years>5?6:years>2?4:2:2;
-  if(years>10)gf.push(years+' lat na rynku');if(years&&years<2)rf.push('Młoda firma');
-  comps.push({n:'Wiek firmy',p,m:10,e:years?years+' lat':'brak danych'});
-  // 4 Location 8
-  const addr=(s.workingAddress||s.residenceAddress||'').toLowerCase();
-  p=0;if(MAJOR_CITIES.slice(0,5).some(c=>addr.includes(c)))p=8;else if(MAJOR_CITIES.some(c=>addr.includes(c)))p=6;else if(addr.length>5)p=3;
-  comps.push({n:'Lokalizacja',p,m:8,e:addr.split(',').pop()?.trim()||''});
-  // 5 Bank 8
-  const ba=(s.accountNumbers||[]).length;
-  p=ba>=10?8:ba>=5?6:ba>=2?4:ba>=1?2:0;
-  if(ba>=10)gf.push(ba+' rachunków');if(ba===0)rf.push('Brak rachunków');
-  comps.push({n:'Rachunki bankowe',p,m:8,e:ba+' szt.'});
-  // 6 Registries 10
-  const hasKrs=!!s.krs,hasRegon=!!s.regon,hasVat=s.statusVat==='Czynny';
-  const rc=(hasKrs?1:0)+(hasRegon?1:0)+(hasVat?1:0);
-  p=Math.round(rc/3*10);if(hasKrs)gf.push('Wpis w KRS');
-  comps.push({n:'Rejestry publiczne',p,m:10,e:rc+'/3 rejestrów'});
-  // 7 Mgmt 8
-  const reps=(s.representatives||[]).length;
-  p=reps>=3?8:reps>=2?6:reps>=1?4:0;if(!reps)rf.push('Brak danych o zarządzie');
-  comps.push({n:'Zarząd',p,m:8,e:reps+' osób'});
-  // 8 Capital 10 (not available from VAT alone)
-  comps.push({n:'Kapitał zakładowy',p:hasKrs?5:0,m:10,e:hasKrs?'Wymaga KRS':'Brak danych'});
-  // 9 PKD 7
-  comps.push({n:'Branża PKD',p:3,m:7,e:'Z Białej Listy: brak PKD'});
-  // 10 Data quality 8
-  const fields=[s.name,s.nip,s.regon,s.statusVat,s.workingAddress||s.residenceAddress,s.registrationLegalDate,s.krs];
-  const filled=fields.filter(Boolean).length;
-  p=Math.round(filled/fields.length*8);
-  comps.push({n:'Kompletność danych',p,m:8,e:Math.round(filled/fields.length*100)+'%'});
-  // 11 Stability 7
-  p=s.statusVat==='Czynny'?5:0;if(years&&years>5)p=7;if(s.statusVat!=='Czynny')p=0;
-  comps.push({n:'Stabilność',p,m:7,e:s.statusVat==='Czynny'?'Aktywna':'Nieaktywna'});
+function scoreCompany(s) {
+  const comps = []; const rf = []; const gf = [];
 
-  const total=Math.min(100,comps.reduce((a,c)=>a+c.p,0));
-  let band='D';for(const b of ['A','B','C','D'])if(total>=BANDS[b].min){band=b;break;}
-  return {score:total,band,comps,rf,gf};
-}
+  // 1 VAT
+  let p = 0;
+  if (s.statusVat === 'Czynny') { p = 12; gf.push('Czynny VAT'); }
+  else if (s.statusVat === 'Zwolniony') p = 6;
+  else { rf.push('Brak czynnego VAT'); }
+  comps.push({ n: 'Status VAT', p, m: 12, e: s.statusVat || 'brak' });
 
-function creditLimit(score,band,s){
-  const l=CREDIT[band];
-  let mult=1;
-  return {suggested:Math.round(l.base*mult/1000)*1000,min:l.min,max:l.max,days:l.days,disc:l.disc};
-}
+  // 2 Legal form
+  const nm = (s.name || '').toUpperCase();
+  p = 4;
+  if (nm.includes('S.A.') || nm.includes('AKCYJNA')) { p = 12; gf.push('Spolka akcyjna'); }
+  else if (nm.includes('Z O.O.')) { p = 10; gf.push('Sp. z o.o.'); }
+  else if (nm.includes('KOMANDYTOWA')) p = 8;
+  else if (nm.includes('JAWNA')) p = 7;
+  comps.push({ n: 'Forma prawna', p, m: 12, e: '' });
 
-function materialRec(s){
-  const scores={};const reasons={};
-  for(const k in MATERIALS){scores[k]=0;reasons[k]=[];}
-  // Keyword matching from name
-  const text=(s.name||'').toLowerCase();
-  for(const[k,v]of Object.entries(MATERIALS))for(const kw of v.k)if(text.includes(kw)){scores[k]=Math.min(1,scores[k]+.3);reasons[k].push(kw);}
-  // If construction-related name
-  if(['budow','construc','montaż','instalac','remont'].some(w=>text.includes(w))){
-    for(const k in scores)scores[k]=Math.max(scores[k],.15);
-    // Common materials for construction
-    ['cement','rebar','aggregates','insulation','adhesives','paints'].forEach(k=>{scores[k]=Math.min(1,scores[k]+.2);});
+  // 3 Age
+  let years = null;
+  if (s.registrationLegalDate) {
+    try { years = Math.floor((Date.now() - new Date(s.registrationLegalDate)) / 31557600000); } catch {}
   }
-  const results=Object.entries(scores).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({code:k,name:MATERIALS[k].n,conf:v,reason:reasons[k].join(', ')||'profil ogólny'}));
-  return results;
+  p = years ? (years > 15 ? 10 : years > 10 ? 8 : years > 5 ? 6 : years > 2 ? 4 : 2) : 2;
+  if (years > 10) gf.push(years + ' lat na rynku');
+  if (years && years < 2) rf.push('Mloda firma');
+  comps.push({ n: 'Wiek firmy', p, m: 10, e: years ? years + ' lat' : 'brak danych' });
+
+  // 4 Location
+  const addr = (s.workingAddress || s.residenceAddress || '').toLowerCase();
+  p = 0;
+  if (MAJOR_CITIES.slice(0, 5).some(c => addr.includes(c))) p = 8;
+  else if (MAJOR_CITIES.some(c => addr.includes(c))) p = 6;
+  else if (addr.length > 5) p = 3;
+  comps.push({ n: 'Lokalizacja', p, m: 8, e: addr.split(',').pop()?.trim() || '' });
+
+  // 5 Bank accounts
+  const ba = (s.accountNumbers || []).length;
+  p = ba >= 10 ? 8 : ba >= 5 ? 6 : ba >= 2 ? 4 : ba >= 1 ? 2 : 0;
+  if (ba >= 10) gf.push(ba + ' rachunkow');
+  if (ba === 0) rf.push('Brak rachunkow');
+  comps.push({ n: 'Rachunki bankowe', p, m: 8, e: ba + ' szt.' });
+
+  // 6 Registries
+  const hasKrs = !!s.krs, hasRegon = !!s.regon, hasVat = s.statusVat === 'Czynny';
+  const rc = (hasKrs ? 1 : 0) + (hasRegon ? 1 : 0) + (hasVat ? 1 : 0);
+  p = Math.round(rc / 3 * 10);
+  if (hasKrs) gf.push('Wpis w KRS');
+  comps.push({ n: 'Rejestry publiczne', p, m: 10, e: rc + '/3 rejestrow' });
+
+  // 7 Management
+  const reps = (s.representatives || []).length;
+  p = reps >= 3 ? 8 : reps >= 2 ? 6 : reps >= 1 ? 4 : 0;
+  if (!reps) rf.push('Brak danych o zarzadzie');
+  comps.push({ n: 'Zarzad', p, m: 8, e: reps + ' osob' });
+
+  // 8 Capital
+  comps.push({ n: 'Kapital zakladowy', p: hasKrs ? 5 : 0, m: 10, e: hasKrs ? 'Wymaga KRS' : 'Brak danych' });
+
+  // 9 PKD
+  comps.push({ n: 'Branza PKD', p: 3, m: 7, e: 'Z Bialej Listy: brak PKD' });
+
+  // 10 Data quality
+  const fields = [s.name, s.nip, s.regon, s.statusVat, s.workingAddress || s.residenceAddress, s.registrationLegalDate, s.krs];
+  const filled = fields.filter(Boolean).length;
+  p = Math.round(filled / fields.length * 8);
+  comps.push({ n: 'Kompletnosc danych', p, m: 8, e: Math.round(filled / fields.length * 100) + '%' });
+
+  // 11 Stability
+  p = s.statusVat === 'Czynny' ? 5 : 0;
+  if (years && years > 5) p = 7;
+  if (s.statusVat !== 'Czynny') p = 0;
+  comps.push({ n: 'Stabilnosc', p, m: 7, e: s.statusVat === 'Czynny' ? 'Aktywna' : 'Nieaktywna' });
+
+  const total = Math.min(100, comps.reduce((a, c) => a + c.p, 0));
+  let band = 'D';
+  for (const b of ['A','B','C','D']) if (total >= BANDS[b].min) { band = b; break; }
+  return { score: total, band, comps, rf, gf };
 }
 
-function render(subj){
-  const sc=scoreCompany(subj);const cr=creditLimit(sc.score,sc.band,subj);const mats=materialRec(subj);
-  // Company header
-  $('#companyName').textContent=subj.name||'—';
-  $('#companyAddr').textContent=subj.workingAddress||subj.residenceAddress||'';
-  const bHtml=[];
-  if(subj.nip)bHtml.push(`<span class="pill pill-blue">NIP: ${fmtNIP(subj.nip)}</span>`);
-  if(subj.regon)bHtml.push(`<span class="pill pill-blue">REGON: ${subj.regon}</span>`);
-  if(subj.krs)bHtml.push(`<span class="pill pill-blue">KRS: ${subj.krs}</span>`);
-  $('#badges').innerHTML=bHtml.join('');
-  $('#vatBadge').innerHTML=subj.statusVat==='Czynny'?'<span class="pill pill-green" style="font-size:14px;">VAT Czynny</span>':'<span class="pill pill-red" style="font-size:14px;">VAT: '+(subj.statusVat||'brak')+'</span>';
+function creditLimit(score, band) {
+  const l = CREDIT[band];
+  return { suggested: Math.round(l.base / 1000) * 1000, min: l.min, max: l.max, days: l.days, disc: l.disc };
+}
 
-  // Score gauge
-  const color=BANDS[sc.band].color;
-  $('#gaugeArc').setAttribute('stroke',color);
-  $('#gaugeArc').setAttribute('stroke-dasharray',`${(sc.score/100)*267} 267`);
-  $('#scoreVal').textContent=sc.score;$('#scoreVal').style.color=color;
-  $('#bandLabel').textContent='Pasmo '+sc.band+' — '+BANDS[sc.band].label;$('#bandLabel').style.color=color;
+function materialRec(s) {
+  const scores = {}; const reasons = {};
+  for (const k in MATERIALS) { scores[k] = 0; reasons[k] = []; }
+  const text = (s.name || '').toLowerCase();
+  for (const [k, v] of Object.entries(MATERIALS))
+    for (const kw of v.k) if (text.includes(kw)) { scores[k] = Math.min(1, scores[k] + .3); reasons[k].push(kw); }
+  if (['budow','construc','montaz','instalac','remont'].some(w => text.includes(w))) {
+    for (const k in scores) scores[k] = Math.max(scores[k], .15);
+    ['cement','rebar','aggregates','insulation','adhesives','paints'].forEach(k => { scores[k] = Math.min(1, scores[k] + .2); });
+  }
+  return Object.entries(scores).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])
+    .map(([k, v]) => ({ code: k, name: MATERIALS[k].n, conf: v, reason: reasons[k].join(', ') || 'profil ogolny' }));
+}
+
+/* ═══════════════════ RADAR CHART ═══════════════════ */
+function drawRadar(comps) {
+  const svg = document.getElementById('radarChart');
+  const cx = 150, cy = 150, maxR = 120;
+  const n = comps.length;
+  const angleStep = (2 * Math.PI) / n;
+
+  let html = '';
+  // Grid rings
+  for (let ring = 1; ring <= 4; ring++) {
+    const r = (ring / 4) * maxR;
+    let pts = [];
+    for (let i = 0; i < n; i++) {
+      const angle = -Math.PI / 2 + i * angleStep;
+      pts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`);
+    }
+    html += `<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(99,102,241,0.08)" stroke-width="1"/>`;
+  }
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const angle = -Math.PI / 2 + i * angleStep;
+    const ex = cx + maxR * Math.cos(angle);
+    const ey = cy + maxR * Math.sin(angle);
+    html += `<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="rgba(99,102,241,0.06)" stroke-width="1"/>`;
+    // Labels
+    const lx = cx + (maxR + 18) * Math.cos(angle);
+    const ly = cy + (maxR + 18) * Math.sin(angle);
+    const shortName = comps[i].n.length > 10 ? comps[i].n.slice(0, 10) + '..' : comps[i].n;
+    html += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="rgba(107,107,153,0.7)" font-size="7" font-family="Inter">${shortName}</text>`;
+  }
+  // Data polygon
+  let dataPts = [];
+  for (let i = 0; i < n; i++) {
+    const pct = comps[i].m > 0 ? comps[i].p / comps[i].m : 0;
+    const r = Math.max(4, pct * maxR);
+    const angle = -Math.PI / 2 + i * angleStep;
+    dataPts.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`);
+  }
+  html += `<polygon points="${dataPts.join(' ')}" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.8)" stroke-width="2"/>`;
+  // Data dots
+  for (let i = 0; i < n; i++) {
+    const pct = comps[i].m > 0 ? comps[i].p / comps[i].m : 0;
+    const r = Math.max(4, pct * maxR);
+    const angle = -Math.PI / 2 + i * angleStep;
+    const dx = cx + r * Math.cos(angle);
+    const dy = cy + r * Math.sin(angle);
+    html += `<circle cx="${dx}" cy="${dy}" r="3" fill="var(--accent)" stroke="white" stroke-width="1"/>`;
+  }
+  svg.innerHTML = html;
+}
+
+/* ═══════════════════ AI TERMINAL ═══════════════════ */
+async function runAiTerminal(subj, sc, cr, mats) {
+  const terminal = document.getElementById('aiTerminal');
+  terminal.innerHTML = '';
+
+  const lines = [
+    { cls: 'prompt', text: '$ potencjal-ai --analyze --nip ' + (subj.nip || '?') },
+    { cls: 'info', text: '[INIT] Laczenie z rejestrami panstwowymi...' },
+    { cls: '', text: '[OK] Biala Lista VAT - dane pobrane' },
+    { cls: '', text: `[OK] Firma: ${subj.name}` },
+    { cls: '', text: `[OK] Status VAT: ${subj.statusVat || "brak"} | REGON: ${subj.regon || "n/a"} | KRS: ${subj.krs || "n/a"}` },
+    { cls: 'info', text: '[SCORING] Uruchamiam silnik scoringowy v2...' },
+  ];
+
+  // Component lines
+  for (const c of sc.comps) {
+    const pct = c.m > 0 ? Math.round(c.p / c.m * 100) : 0;
+    const bar = '█'.repeat(Math.round(pct / 10)) + '░'.repeat(10 - Math.round(pct / 10));
+    lines.push({ cls: '', text: `  ${c.n.padEnd(22)} ${bar} ${c.p}/${c.m}` });
+  }
+
+  lines.push({ cls: '', text: '' });
+  lines.push({ cls: 'info', text: `[WYNIK] Score: ${sc.score}/100 | Pasmo: ${sc.band} - ${BANDS[sc.band].label}` });
+  lines.push({ cls: 'info', text: `[KREDYT] Sugerowany limit: ${cr.suggested > 0 ? fmtPLN(cr.suggested) : 'Przedplata'} (${fmtPLN(cr.min)} - ${fmtPLN(cr.max)})` });
+
+  if (cr.days) lines.push({ cls: '', text: `[WARUNKI] Termin platnosci: ${cr.days} dni | Rabat: ${cr.disc}%` });
+
+  if (sc.gf.length) {
+    lines.push({ cls: '', text: '' });
+    lines.push({ cls: 'info', text: '[ATUTY]' });
+    sc.gf.forEach(f => lines.push({ cls: '', text: '  + ' + f }));
+  }
+  if (sc.rf.length) {
+    lines.push({ cls: 'warn', text: '[RYZYKA]' });
+    sc.rf.forEach(f => lines.push({ cls: 'err', text: '  ! ' + f }));
+  }
+
+  if (mats.length) {
+    lines.push({ cls: '', text: '' });
+    lines.push({ cls: 'info', text: '[MATERIALY] Rekomendowane kategorie:' });
+    mats.slice(0, 5).forEach(m => lines.push({ cls: '', text: `  ${m.name}: ${Math.round(m.conf * 100)}% pewnosci` }));
+  }
+
+  lines.push({ cls: '', text: '' });
+  lines.push({ cls: 'prompt', text: '$ Analiza zakonczona. Wynik gotowy.' });
+
+  for (const line of lines) {
+    const div = document.createElement('div');
+    if (line.cls) div.className = line.cls;
+    terminal.appendChild(div);
+
+    // Typewriter effect
+    for (let i = 0; i < line.text.length; i++) {
+      div.textContent += line.text[i];
+      if (i % 3 === 0) await new Promise(r => setTimeout(r, 8));
+    }
+    terminal.scrollTop = terminal.scrollHeight;
+    await new Promise(r => setTimeout(r, 40));
+  }
+  // Final cursor
+  const cursor = document.createElement('span');
+  cursor.className = 'ai-cursor';
+  terminal.lastChild.appendChild(cursor);
+}
+
+/* ═══════════════════ ANIMATED COUNTER ═══════════════════ */
+function animateCounter(el, target, duration = 1200) {
+  const start = performance.now();
+  const startVal = 0;
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    el.textContent = Math.round(startVal + (target - startVal) * eased);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+/* ═══════════════════ RENDER ═══════════════════ */
+function render(subj) {
+  const sc = scoreCompany(subj);
+  const cr = creditLimit(sc.score, sc.band);
+  const mats = materialRec(subj);
+  const color = BANDS[sc.band].color;
+
+  // Header
+  $('#companyName').textContent = subj.name || '—';
+  $('#companyAddr').textContent = subj.workingAddress || subj.residenceAddress || '';
+  let bHtml = '';
+  if (subj.nip) bHtml += `<span class="pill pill-accent">NIP: ${fmtNIP(subj.nip)}</span>`;
+  if (subj.regon) bHtml += `<span class="pill pill-accent">REGON: ${subj.regon}</span>`;
+  if (subj.krs) bHtml += `<span class="pill pill-accent">KRS: ${subj.krs}</span>`;
+  $('#badges').innerHTML = bHtml;
+  $('#vatBadge').innerHTML = subj.statusVat === 'Czynny'
+    ? '<span class="pill pill-green pill-lg">VAT Czynny</span>'
+    : `<span class="pill pill-red pill-lg">VAT: ${subj.statusVat || 'brak'}</span>`;
+
+  // Score ring
+  const ringPct = sc.score / 100;
+  document.getElementById('scoreRing').setAttribute('stroke-dasharray', `${ringPct * 534} 534`);
+  document.getElementById('scoreRing').setAttribute('stroke', color);
+  animateCounter($('#scoreVal'), sc.score);
+  $('#scoreVal').style.color = color;
+  $('#bandLabel').textContent = `Pasmo ${sc.band} — ${BANDS[sc.band].label}`;
+  $('#bandLabel').style.cssText = `color:${color};background:${color}15;border:1px solid ${color}40;`;
 
   // Credit
-  $('#creditVal').textContent=cr.suggested>0?fmtPLN(cr.suggested):'Przedpłata';
-  $('#creditMin').textContent=fmtPLN(cr.min);$('#creditMax').textContent=fmtPLN(cr.max);
-  let terms='';if(cr.days)terms+=`<span class="pill pill-blue">${cr.days} dni</span>`;if(cr.disc)terms+=`<span class="pill pill-green">Rabat ${cr.disc}%</span>`;
-  $('#creditTerms').innerHTML=terms;
+  $('#creditVal').textContent = cr.suggested > 0 ? fmtPLN(cr.suggested) : 'Przedplata';
+  $('#creditMin').textContent = fmtPLN(cr.min);
+  $('#creditMax').textContent = fmtPLN(cr.max);
+  let terms = '';
+  if (cr.days) terms += `<span class="pill pill-cyan">${cr.days} dni</span>`;
+  if (cr.disc) terms += `<span class="pill pill-green">Rabat ${cr.disc}%</span>`;
+  $('#creditTerms').innerHTML = terms;
+
+  // Radar
+  drawRadar(sc.comps);
 
   // Components
-  $('#components').innerHTML=sc.comps.map(c=>{
-    const pct=c.m?Math.round(c.p/c.m*100):0;
-    const clr=pct>=70?'var(--green)':pct>=40?'var(--orange)':'var(--red)';
-    return `<div class="component"><div class="component-header"><span>${c.n}</span><span style="color:var(--muted)">${c.p}/${c.m}</span></div><div class="component-bar"><div class="component-fill" style="width:${pct}%;background:${clr};"></div></div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${c.e}</div></div>`;
+  $('#components').innerHTML = sc.comps.map(c => {
+    const pct = c.m ? Math.round(c.p / c.m * 100) : 0;
+    const clr = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--accent)' : pct >= 20 ? 'var(--orange)' : 'var(--red)';
+    return `<div class="comp-item">
+      <div class="comp-head"><span class="comp-name">${c.n}</span><span class="comp-pts">${c.p}/${c.m}</span></div>
+      <div class="comp-bar"><div class="comp-fill" style="width:${pct}%;background:${clr};"></div></div>
+      <div class="comp-note">${c.e}</div>
+    </div>`;
   }).join('');
 
   // Materials
-  if(mats.length){
-    $('#materialsCard').style.display='block';
-    $('#materials').innerHTML=mats.slice(0,8).map(m=>`<div class="mat-bar"><span class="mat-label">${m.name}</span><div class="mat-track"><div class="mat-fill" style="width:${m.conf*100}%"></div></div><span class="mat-pct">${Math.round(m.conf*100)}%</span></div>`).join('');
-  } else { $('#materialsCard').style.display='none'; }
+  if (mats.length) {
+    $('#materialsCard').style.display = 'block';
+    $('#materials').innerHTML = mats.slice(0, 8).map(m =>
+      `<div class="mat-item"><span class="mat-name">${m.name}</span><div class="mat-track"><div class="mat-fill" style="width:${m.conf * 100}%"></div></div><span class="mat-pct">${Math.round(m.conf * 100)}%</span></div>`
+    ).join('');
+  } else {
+    $('#materialsCard').style.display = 'none';
+  }
 
   // Flags
-  $('#greenFlags').innerHTML=sc.gf.map(f=>`<div class="flag" style="color:var(--green);">✓ ${f}</div>`).join('');
-  $('#redFlags').innerHTML=sc.rf.map(f=>`<div class="flag" style="color:#ef4444;">✗ ${f}</div>`).join('');
+  $('#greenFlags').innerHTML = sc.gf.map(f => `<div class="flag flag-green"><span class="flag-icon">&#10003;</span>${f}</div>`).join('');
+  $('#redFlags').innerHTML = sc.rf.map(f => `<div class="flag flag-red"><span class="flag-icon">&#10007;</span>${f}</div>`).join('');
 
   // Data table
-  const rows=[['NIP',fmtNIP(subj.nip||'')],['REGON',subj.regon||'—'],['KRS',subj.krs||'—'],['Status VAT',subj.statusVat||'—'],['Adres',subj.workingAddress||subj.residenceAddress||'—'],['Rachunki bankowe',(subj.accountNumbers||[]).length+' szt.'],['Reprezentanci',(subj.representatives||[]).join(', ')||'—'],['Data rejestracji',subj.registrationLegalDate||'—']];
-  $('#dataTable').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+  const rows = [
+    ['NIP', fmtNIP(subj.nip || '')],
+    ['REGON', subj.regon || '—'],
+    ['KRS', subj.krs || '—'],
+    ['Status VAT', subj.statusVat || '—'],
+    ['Adres', subj.workingAddress || subj.residenceAddress || '—'],
+    ['Rachunki bankowe', (subj.accountNumbers || []).length + ' szt.'],
+    ['Reprezentanci', (subj.representatives || []).map(r => typeof r === 'string' ? r : (r.firstName || '') + ' ' + (r.lastName || '')).join(', ') || '—'],
+    ['Data rejestracji', subj.registrationLegalDate || '—'],
+  ];
+  $('#dataTable').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
 
   // Sources
-  $('#sources').innerHTML='<span class="pill pill-green">Biała Lista VAT ✓</span><span class="pill pill-blue">Mock Provider</span>';
+  $('#sources').innerHTML = [
+    '<span class="pill pill-green">Biala Lista VAT &#10003;</span>',
+    '<span class="pill pill-cyan">Scoring Engine v2</span>',
+    '<span class="pill pill-accent">AI Terminal</span>',
+    '<span class="pill pill-orange">Radar Analysis</span>',
+  ].join('');
 
-  $('#results').style.display='block';
+  $('#results').style.display = 'block';
+
+  // Scroll to results
+  document.querySelector('.results-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Launch AI terminal
+  runAiTerminal(subj, sc, cr, mats);
 }
 
-async function doSearch(){
-  const raw=$('#q').value.trim();const nip=raw.replace(/[\s-]/g,'');
-  if(!nip||nip.length!==10||!/^\d{10}$/.test(nip)){$('#status').innerHTML='<div class="error">Wpisz prawidłowy 10-cyfrowy NIP</div>';return;}
-  $('#results').style.display='none';
-  $('#status').innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);"><span class="spinner"></span> Szukam danych dla NIP '+fmtNIP(nip)+'...</div>';
-  $('#searchBtn').disabled=true;
-  try{
-    const subj=await fetchVAT(nip);
-    render(subj);$('#status').innerHTML='';
-  }catch(e){$('#status').innerHTML='<div class="error">'+e.message+'</div>';}
-  finally{$('#searchBtn').disabled=false;}
+/* ═══════════════════ SEARCH ═══════════════════ */
+async function doSearch() {
+  const raw = $('#q').value.trim();
+  const nip = raw.replace(/[\s\-]/g, '');
+  if (!nip || nip.length !== 10 || !/^\d{10}$/.test(nip)) {
+    $('#status').innerHTML = '<div class="error-box">Wpisz prawidlowy 10-cyfrowy NIP</div>';
+    return;
+  }
+
+  $('#results').style.display = 'none';
+  $('#status').innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);"><span class="spinner"></span>Laczenie z rejestrami panstwowymi dla NIP ${fmtNIP(nip)}...</div>`;
+  $('#searchBtn').disabled = true;
+
+  try {
+    const subj = await fetchVAT(nip);
+    render(subj);
+    $('#status').innerHTML = '';
+  } catch (e) {
+    $('#status').innerHTML = `<div class="error-box">${e.message}</div>`;
+  } finally {
+    $('#searchBtn').disabled = false;
+  }
 }
 
-$('#searchBtn').onclick=doSearch;
-$('#q').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
+$('#searchBtn').onclick = doSearch;
+$('#q').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+/* ═══════════════════ SCROLL REVEAL ═══════════════════ */
+(function() {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feature-card, .stat-card, .plan-card, .source-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+    observer.observe(el);
+  });
+})();
 </script>
 </body>
 </html>
