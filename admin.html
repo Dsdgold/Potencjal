@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Administracyjny — Potencjal.AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#06060e;--surface:#0c0c1a;--card:#111128;--card-hover:#161640;
+  --border:#1e1e48;--muted:#6b6b99;--text:#e8e8ff;
+  --accent:#6366f1;--accent-light:#818cf8;--accent-dark:#4f46e5;
+  --accent-glow:rgba(99,102,241,.3);
+  --cyan:#22d3ee;--green:#34d399;--red:#f87171;--orange:#fbbf24;--pink:#f472b6;
+  --sidebar-w:260px;
+  --gradient-1:linear-gradient(135deg,#6366f1,#8b5cf6,#a78bfa);
+  --gradient-2:linear-gradient(135deg,#22d3ee,#6366f1);
+  --gradient-3:linear-gradient(135deg,#34d399,#22d3ee);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6;}
+a{color:inherit;text-decoration:none;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+
+/* ═══════ SIDEBAR ═══════ */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;transition:transform .3s;}
+.sidebar-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.s-logo{width:36px;height:36px;border-radius:10px;background:var(--gradient-1);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;box-shadow:0 4px 20px var(--accent-glow);}
+.s-title{font-size:16px;font-weight:800;}
+.s-title span{background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.s-badge{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(99,102,241,.15);color:var(--accent-light);border:1px solid rgba(99,102,241,.3);}
+
+.sidebar-nav{flex:1;padding:12px;overflow-y:auto;}
+.nav-group{margin-bottom:8px;}
+.nav-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);padding:12px 12px 6px;display:block;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;border:1px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(99,102,241,.06);}
+.nav-item.active{color:var(--accent-light);background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.15);}
+.nav-item .icon{width:20px;text-align:center;font-size:14px;flex-shrink:0;}
+.nav-item .count{margin-left:auto;font-size:11px;font-weight:700;background:rgba(99,102,241,.15);color:var(--accent-light);padding:2px 8px;border-radius:99px;font-family:'JetBrains Mono',monospace;}
+.nav-item .count-red{background:rgba(248,113,113,.12);color:var(--red);}
+
+.sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--border);}
+.user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient-1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;}
+.user-info .name{font-size:13px;font-weight:600;}
+.user-info .role{font-size:11px;color:var(--muted);}
+
+/* ═══════ MAIN ═══════ */
+.main{margin-left:var(--sidebar-w);min-height:100vh;}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(6,6,14,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h1{font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px;}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.mobile-toggle{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;}
+.back-link{font-size:13px;color:var(--accent-light);display:flex;align-items:center;gap:6px;transition:color .2s;}
+.back-link:hover{color:var(--text);}
+
+.content{padding:28px 32px;}
+
+/* ═══════ BUTTONS ═══════ */
+.btn{padding:9px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:7px;font-family:inherit;white-space:nowrap;}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px;}
+.btn-xs{padding:4px 10px;font-size:11px;border-radius:6px;}
+.btn-primary{background:var(--gradient-1);color:#fff;box-shadow:0 2px 12px var(--accent-glow);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px var(--accent-glow);}
+.btn-outline{background:var(--card);border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--accent);box-shadow:0 0 16px var(--accent-glow);}
+.btn-ghost{background:transparent;color:var(--muted);}
+.btn-ghost:hover{color:var(--text);}
+.btn-success{background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.2);}
+.btn-success:hover{background:rgba(52,211,153,.25);}
+.btn-danger{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.15);}
+.btn-danger:hover{background:rgba(248,113,113,.2);}
+
+/* ═══════ KPI CARDS ═══════ */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.kpi{padding:22px 24px;background:var(--card);border:1px solid var(--border);border-radius:16px;transition:all .3s;position:relative;overflow:hidden;}
+.kpi:hover{border-color:rgba(99,102,241,.2);box-shadow:0 0 30px rgba(99,102,241,.05);}
+.kpi::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;opacity:.05;}
+.kpi:nth-child(1)::after{background:var(--accent);}
+.kpi:nth-child(2)::after{background:var(--cyan);}
+.kpi:nth-child(3)::after{background:var(--green);}
+.kpi:nth-child(4)::after{background:var(--orange);}
+.kpi-label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.kpi-val{font-size:32px;font-weight:900;font-family:'JetBrains Mono',monospace;margin:6px 0 4px;}
+.kpi-sub{font-size:12px;color:var(--muted);}
+.kpi-sub .up{color:var(--green);}
+.kpi-sub .down{color:var(--red);}
+
+/* ═══════ CARD / TABLE ═══════ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.card-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.card-header h2{font-size:15px;font-weight:700;}
+.card-body{padding:0;}
+.card-body-pad{padding:24px;}
+
+.search-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 12px;transition:border-color .2s;}
+.search-box:focus-within{border-color:var(--accent);}
+.search-box .ico{color:var(--muted);font-size:14px;}
+.search-box input{background:none;border:none;color:var(--text);font-size:13px;padding:8px 0;outline:none;width:180px;font-family:inherit;}
+.search-box input::placeholder{color:var(--muted);}
+
+table{width:100%;border-collapse:collapse;}
+thead th{text-align:left;padding:12px 20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;}
+tbody td{padding:14px 20px;font-size:13px;border-bottom:1px solid rgba(30,30,72,.4);}
+tbody tr{transition:background .15s;}
+tbody tr:hover{background:rgba(99,102,241,.03);}
+tbody tr:last-child td{border-bottom:none;}
+
+/* ═══════ PILLS / BADGES ═══════ */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:99px;font-size:11px;font-weight:600;}
+.pill-green{background:rgba(52,211,153,.08);color:var(--green);border:1px solid rgba(52,211,153,.15);}
+.pill-red{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.15);}
+.pill-orange{background:rgba(251,191,36,.08);color:var(--orange);border:1px solid rgba(251,191,36,.15);}
+.pill-accent{background:rgba(99,102,241,.08);color:var(--accent-light);border:1px solid rgba(99,102,241,.15);}
+.pill-cyan{background:rgba(34,211,238,.08);color:var(--cyan);border:1px solid rgba(34,211,238,.15);}
+.pill-pink{background:rgba(244,114,182,.08);color:var(--pink);border:1px solid rgba(244,114,182,.15);}
+
+.avatar{width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;}
+
+/* ═══════ MODAL ═══════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s;}
+.modal-overlay.open{opacity:1;pointer-events:auto;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;transform:translateY(20px) scale(.97);transition:transform .25s;}
+.modal-overlay.open .modal{transform:translateY(0) scale(1);}
+.modal-head{padding:24px 28px 0;display:flex;align-items:center;justify-content:space-between;}
+.modal-head h3{font-size:18px;font-weight:800;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;transition:color .2s;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:24px 28px;}
+.modal-foot{padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+.form-group{margin-bottom:18px;}
+.form-label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;}
+.form-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+select.form-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b6b99'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
+.toggle-row .label{font-size:13px;}
+.toggle-row .desc{font-size:11px;color:var(--muted);}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--border);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;}
+.toggle.on::after{transform:translateX(18px);}
+
+.perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.perm-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;background:var(--surface);border:1px solid var(--border);cursor:pointer;transition:all .15s;user-select:none;}
+.perm-item:hover{border-color:rgba(99,102,241,.2);}
+.perm-item.active{border-color:var(--accent);background:rgba(99,102,241,.08);color:var(--accent-light);}
+.perm-check{width:16px;height:16px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;flex-shrink:0;}
+.perm-item.active .perm-check{border-color:var(--accent);background:var(--accent);color:#fff;}
+
+/* ═══════ TABS ═══════ */
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--border);overflow-x:auto;}
+.tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--text);}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 12px var(--accent-glow);}
+
+/* ═══════ ACTIVITY LOG ═══════ */
+.activity-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(30,30,72,.3);}
+.activity-item:last-child{border-bottom:none;}
+.activity-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+.activity-text{font-size:13px;line-height:1.5;}
+.activity-time{font-size:11px;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+
+/* ═══════ CHARTS ═══════ */
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:8px;}
+.mini-bar{flex:1;background:rgba(99,102,241,.3);border-radius:2px 2px 0 0;transition:height .6s cubic-bezier(.22,1,.36,1);}
+
+.chart-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px;}
+
+/* ═══════ SCOPE MATRIX ═══════ */
+.scope-matrix{overflow-x:auto;}
+.scope-matrix table{min-width:700px;}
+.scope-matrix thead th{text-align:center;font-size:10px;}
+.scope-matrix thead th:first-child{text-align:left;}
+.scope-matrix tbody td{text-align:center;padding:10px 12px;}
+.scope-matrix tbody td:first-child{text-align:left;font-weight:600;font-size:13px;}
+.scope-cell{width:24px;height:24px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
+.scope-cell.granted{background:rgba(52,211,153,.12);color:var(--green);border-color:rgba(52,211,153,.2);}
+.scope-cell.denied{background:rgba(248,113,113,.06);color:rgba(248,113,113,.3);border-color:transparent;}
+.scope-cell:hover{transform:scale(1.15);}
+
+/* ═══════ EMPTY STATE ═══════ */
+.empty{text-align:center;padding:48px 24px;color:var(--muted);}
+.empty .icon{font-size:40px;margin-bottom:12px;opacity:.4;}
+.empty p{font-size:14px;}
+
+/* ═══════ TOAST ═══════ */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:toastIn .3s ease;box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.toast-success{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.2);color:var(--green);backdrop-filter:blur(12px);}
+.toast-error{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.2);color:var(--red);backdrop-filter:blur(12px);}
+.toast-info{background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.2);color:var(--accent-light);backdrop-filter:blur(12px);}
+@keyframes toastIn{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* ═══════ RESPONSIVE ═══════ */
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.chart-row{grid-template-columns:1fr;}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;}
+  .mobile-toggle{display:block;}
+  .content{padding:20px 16px;}
+  .topbar{padding:0 16px;}
+  .kpi-grid{grid-template-columns:1fr;}
+  .perm-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="s-logo">P</div>
+    <div>
+      <div class="s-title"><span>Potencjal</span>.AI</div>
+    </div>
+    <span class="s-badge">ADMIN</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group">
+      <span class="nav-group-label">Przegld</span>
+      <div class="nav-item active" data-page="dashboard"><span class="icon">&#9632;</span>Dashboard</div>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Zarzadzanie</span>
+      <div class="nav-item" data-page="users"><span class="icon">&#9775;</span>Uzytkownicy<span class="count" id="usersCount">0</span></div>
+      <div class="nav-item" data-page="registrations"><span class="icon">&#9998;</span>Rejestracje<span class="count count-red" id="regCount">0</span></div>
+      <div class="nav-item" data-page="roles"><span class="icon">&#9881;</span>Role</div>
+      <div class="nav-item" data-page="scopes"><span class="icon">&#9919;</span>Zakresy dostepu</div>
+      <div class="nav-item" data-page="subscriptions"><span class="icon">&#9830;</span>Subskrypcje</div>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">System</span>
+      <div class="nav-item" data-page="activity"><span class="icon">&#8987;</span>Log aktywnosci</div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">AD</div>
+      <div class="user-info"><div class="name">Admin</div><div class="role">Super Administrator</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+      <h1 id="pageTitle">Dashboard</h1>
+    </div>
+    <div class="topbar-actions">
+      <a href="index.html" class="back-link">&larr; Strona glowna</a>
+    </div>
+  </div>
+
+  <div class="content" id="content"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Modal</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* ═══════════════════ DATA STORE ═══════════════════ */
+const COLORS = ['#6366f1','#22d3ee','#34d399','#fbbf24','#f87171','#f472b6','#a78bfa','#38bdf8'];
+function randColor(i){return COLORS[i % COLORS.length];}
+
+const PERMS = [
+  {id:'users.read',label:'Odczyt uzytkownikow'},
+  {id:'users.write',label:'Edycja uzytkownikow'},
+  {id:'users.delete',label:'Usuwanie uzytkownikow'},
+  {id:'companies.read',label:'Odczyt firm'},
+  {id:'companies.score',label:'Scoring firm'},
+  {id:'companies.export',label:'Eksport danych'},
+  {id:'credit.read',label:'Odczyt limitow'},
+  {id:'credit.write',label:'Edycja limitow'},
+  {id:'materials.read',label:'Odczyt materialow'},
+  {id:'materials.write',label:'Edycja materialow'},
+  {id:'subscriptions.read',label:'Odczyt subskrypcji'},
+  {id:'subscriptions.write',label:'Zarzadzanie subskrypcjami'},
+  {id:'roles.read',label:'Odczyt rol'},
+  {id:'roles.write',label:'Zarzadzanie rolami'},
+  {id:'admin.panel',label:'Dostep do panelu admin'},
+  {id:'api.access',label:'Dostep do REST API'},
+  {id:'reports.read',label:'Raporty i analizy'},
+  {id:'audit.read',label:'Log audytu'},
+];
+
+const SCOPES = [
+  {id:'companies',label:'Firmy',desc:'Wyszukiwanie i analiza firm'},
+  {id:'scoring',label:'Scoring',desc:'Scoring ryzyka 0-100'},
+  {id:'credit',label:'Kredyt',desc:'Limity kredytowe'},
+  {id:'materials',label:'Materialy',desc:'Rekomendacje materialow'},
+  {id:'crm',label:'CRM',desc:'Zarzadzanie kontaktami'},
+  {id:'export',label:'Eksport',desc:'Eksport PDF/CSV'},
+  {id:'api',label:'API',desc:'Dostep REST API'},
+  {id:'admin',label:'Admin',desc:'Panel administracyjny'},
+];
+
+// Initialize from localStorage or defaults
+function loadStore(){
+  try{return JSON.parse(localStorage.getItem('potencjal_admin'))||null;}catch{return null;}
+}
+function saveStore(){localStorage.setItem('potencjal_admin',JSON.stringify(store));}
+
+let store = loadStore() || {
+  users:[
+    {id:1,name:'Jan Kowalski',email:'jan@sig.pl',role:'admin',status:'active',plan:'enterprise',created:'2024-06-15',lastLogin:'2026-02-27',queries:847,avatar:'JK'},
+    {id:2,name:'Anna Nowak',email:'anna@firma.pl',role:'manager',status:'active',plan:'pro',created:'2024-09-22',lastLogin:'2026-02-28',queries:312,avatar:'AN'},
+    {id:3,name:'Piotr Wisniewski',email:'piotr@budowa.com',role:'user',status:'active',plan:'pro',created:'2025-01-10',lastLogin:'2026-02-26',queries:156,avatar:'PW'},
+    {id:4,name:'Maria Dabrowska',email:'maria@construct.pl',role:'user',status:'active',plan:'free',created:'2025-03-05',lastLogin:'2026-02-20',queries:42,avatar:'MD'},
+    {id:5,name:'Tomasz Lewandowski',email:'tomasz@bud-ex.pl',role:'user',status:'suspended',plan:'pro',created:'2025-05-18',lastLogin:'2026-01-15',queries:89,avatar:'TL'},
+    {id:6,name:'Katarzyna Wojcik',email:'kasia@stalbud.pl',role:'viewer',status:'active',plan:'free',created:'2025-07-01',lastLogin:'2026-02-28',queries:23,avatar:'KW'},
+    {id:7,name:'Michal Kaminski',email:'michal@instal.pl',role:'user',status:'active',plan:'enterprise',created:'2024-11-30',lastLogin:'2026-02-27',queries:534,avatar:'MK'},
+    {id:8,name:'Agnieszka Zielinska',email:'aga@dachpol.pl',role:'manager',status:'active',plan:'pro',created:'2025-02-14',lastLogin:'2026-02-25',queries:201,avatar:'AZ'},
+  ],
+  registrations:[
+    {id:101,name:'Robert Mazur',email:'robert@nowabudowa.pl',company:'NowaBudowa Sp. z o.o.',nip:'5271234567',plan:'pro',date:'2026-02-27',status:'pending'},
+    {id:102,name:'Ewa Kaczmarek',email:'ewa@izolpol.pl',company:'IzolPol S.A.',nip:'7891234560',plan:'enterprise',date:'2026-02-28',status:'pending'},
+    {id:103,name:'Krzysztof Piotrowski',email:'krzysztof@betomix.pl',company:'BetoMix',nip:'1234567890',plan:'free',date:'2026-02-26',status:'pending'},
+    {id:104,name:'Magdalena Grabowska',email:'magda@steelworks.pl',company:'SteelWorks Sp. z o.o.',nip:'9876543210',plan:'pro',date:'2026-02-25',status:'pending'},
+    {id:105,name:'Lukasz Jankowski',email:'lukasz@deski.pl',company:'DeskiPlus',nip:'4561237890',plan:'free',date:'2026-02-24',status:'approved'},
+    {id:106,name:'Natalia Pawlak',email:'natalia@farbymax.pl',company:'FarbyMax Sp. j.',nip:'1472583690',plan:'pro',date:'2026-02-23',status:'rejected'},
+  ],
+  roles:[
+    {id:'admin',name:'Administrator',desc:'Pelny dostep do systemu',color:'#6366f1',perms:PERMS.map(p=>p.id)},
+    {id:'manager',name:'Manager',desc:'Zarzadzanie zespolem i raportami',color:'#22d3ee',perms:['users.read','companies.read','companies.score','companies.export','credit.read','materials.read','materials.write','subscriptions.read','reports.read']},
+    {id:'user',name:'Uzytkownik',desc:'Standardowy dostep do scoringu',color:'#34d399',perms:['companies.read','companies.score','credit.read','materials.read']},
+    {id:'viewer',name:'Obserwator',desc:'Tylko odczyt',color:'#fbbf24',perms:['companies.read','credit.read','materials.read']},
+  ],
+  scopeMatrix:{
+    admin:{companies:'rw',scoring:'rw',credit:'rw',materials:'rw',crm:'rw',export:'rw',api:'rw',admin:'rw'},
+    manager:{companies:'rw',scoring:'rw',credit:'r',materials:'rw',crm:'rw',export:'rw',api:'r',admin:'n'},
+    user:{companies:'r',scoring:'rw',credit:'r',materials:'r',crm:'r',export:'n',api:'n',admin:'n'},
+    viewer:{companies:'r',scoring:'r',credit:'r',materials:'r',crm:'n',export:'n',api:'n',admin:'n'},
+  },
+  subscriptions:[
+    {id:1,userId:1,plan:'enterprise',status:'active',startDate:'2024-06-15',endDate:'2027-06-15',amount:999,currency:'PLN',interval:'monthly',autoRenew:true},
+    {id:2,userId:2,plan:'pro',status:'active',startDate:'2025-01-01',endDate:'2026-12-31',amount:299,currency:'PLN',interval:'monthly',autoRenew:true},
+    {id:3,userId:3,plan:'pro',status:'active',startDate:'2025-01-10',endDate:'2026-01-10',amount:299,currency:'PLN',interval:'monthly',autoRenew:true},
+    {id:4,userId:4,plan:'free',status:'active',startDate:'2025-03-05',endDate:null,amount:0,currency:'PLN',interval:null,autoRenew:false},
+    {id:5,userId:5,plan:'pro',status:'cancelled',startDate:'2025-05-18',endDate:'2026-05-18',amount:299,currency:'PLN',interval:'monthly',autoRenew:false},
+    {id:6,userId:6,plan:'free',status:'active',startDate:'2025-07-01',endDate:null,amount:0,currency:'PLN',interval:null,autoRenew:false},
+    {id:7,userId:7,plan:'enterprise',status:'active',startDate:'2024-11-30',endDate:'2027-11-30',amount:999,currency:'PLN',interval:'monthly',autoRenew:true},
+    {id:8,userId:8,plan:'pro',status:'active',startDate:'2025-02-14',endDate:'2027-02-14',amount:299,currency:'PLN',interval:'monthly',autoRenew:true},
+  ],
+  activity:[
+    {time:'2026-02-28 14:32',action:'Zatwierdzono rejestracje: Lukasz Jankowski',type:'success'},
+    {time:'2026-02-28 14:15',action:'Nowa rejestracja: Ewa Kaczmarek (IzolPol S.A.)',type:'info'},
+    {time:'2026-02-28 13:50',action:'Zmiana roli: Agnieszka Zielinska -> Manager',type:'info'},
+    {time:'2026-02-28 12:00',action:'Scoring batch: 45 firm przetworzonych',type:'success'},
+    {time:'2026-02-27 18:30',action:'Odrzucono rejestracje: Natalia Pawlak',type:'error'},
+    {time:'2026-02-27 16:45',action:'Subskrypcja anulowana: Tomasz Lewandowski',type:'warn'},
+    {time:'2026-02-27 14:20',action:'Nowa rola utworzona: Audytor',type:'info'},
+    {time:'2026-02-27 10:00',action:'Konto zawieszone: Tomasz Lewandowski',type:'error'},
+    {time:'2026-02-26 09:15',action:'Eksport CSV: 200 firm przez Anna Nowak',type:'info'},
+    {time:'2026-02-25 16:30',action:'System backup completed',type:'success'},
+  ],
+  nextId:200
+};
+saveStore();
+
+/* ═══════════════════ HELPERS ═══════════════════ */
+function toast(msg,type='success'){
+  const d=document.createElement('div');d.className='toast toast-'+type;
+  d.innerHTML=`<span>${type==='success'?'&#10003;':type==='error'?'&#10007;':'&#8505;'}</span>${msg}`;
+  document.getElementById('toasts').appendChild(d);
+  setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity .3s';setTimeout(()=>d.remove(),300);},3000);
+}
+function openModal(title,bodyHtml,footHtml){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=bodyHtml;
+  document.getElementById('modalFoot').innerHTML=footHtml;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+function planLabel(p){return {free:'Free',pro:'Pro',enterprise:'Enterprise'}[p]||p;}
+function planPill(p){return {free:'pill-accent',pro:'pill-cyan',enterprise:'pill-pink'}[p]||'pill-accent';}
+function statusPill(s){return{active:'pill-green',suspended:'pill-orange',cancelled:'pill-red',pending:'pill-orange',approved:'pill-green',rejected:'pill-red'}[s]||'pill-accent';}
+
+function addActivity(action,type='info'){
+  store.activity.unshift({time:new Date().toISOString().replace('T',' ').slice(0,16),action,type});
+  if(store.activity.length>50) store.activity.length=50;
+  saveStore();
+}
+
+/* ═══════════════════ NAVIGATION ═══════════════════ */
+let currentPage='dashboard';
+document.querySelectorAll('.nav-item[data-page]').forEach(item=>{
+  item.addEventListener('click',()=>{
+    currentPage=item.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    item.classList.add('active');
+    renderPage();
+    document.getElementById('sidebar').classList.remove('open');
+  });
+});
+
+function updateCounts(){
+  document.getElementById('usersCount').textContent=store.users.length;
+  const pending=store.registrations.filter(r=>r.status==='pending').length;
+  document.getElementById('regCount').textContent=pending;
+  document.getElementById('regCount').style.display=pending?'':'none';
+}
+
+/* ═══════════════════ PAGES ═══════════════════ */
+const titles={dashboard:'Dashboard',users:'Uzytkownicy',registrations:'Rejestracje',roles:'Role',scopes:'Zakresy dostepu',subscriptions:'Subskrypcje',activity:'Log aktywnosci'};
+
+function renderPage(){
+  document.getElementById('pageTitle').textContent=titles[currentPage]||'';
+  updateCounts();
+  const c=document.getElementById('content');
+  switch(currentPage){
+    case 'dashboard': renderDashboard(c); break;
+    case 'users': renderUsers(c); break;
+    case 'registrations': renderRegistrations(c); break;
+    case 'roles': renderRoles(c); break;
+    case 'scopes': renderScopes(c); break;
+    case 'subscriptions': renderSubscriptions(c); break;
+    case 'activity': renderActivity(c); break;
+  }
+}
+
+/* ═══════ DASHBOARD ═══════ */
+function renderDashboard(c){
+  const active=store.users.filter(u=>u.status==='active').length;
+  const pending=store.registrations.filter(r=>r.status==='pending').length;
+  const totalQueries=store.users.reduce((a,u)=>a+u.queries,0);
+  const mrr=store.subscriptions.filter(s=>s.status==='active').reduce((a,s)=>a+s.amount,0);
+
+  const bars=[35,52,44,68,75,60,82,71,55,90,78,65];
+
+  c.innerHTML=`
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Uzytkownicy</div><div class="kpi-val">${store.users.length}</div><div class="kpi-sub"><span class="up">&#9650; ${active}</span> aktywnych</div>
+        <div class="mini-chart">${bars.map(h=>`<div class="mini-bar" style="height:${h}%"></div>`).join('')}</div>
+      </div>
+      <div class="kpi"><div class="kpi-label">Oczekujace rejestracje</div><div class="kpi-val">${pending}</div><div class="kpi-sub">wymaga akcji</div></div>
+      <div class="kpi"><div class="kpi-label">Zapytania (total)</div><div class="kpi-val">${totalQueries.toLocaleString('pl')}</div><div class="kpi-sub"><span class="up">&#9650; 12%</span> vs poprz. mies.</div></div>
+      <div class="kpi"><div class="kpi-label">MRR</div><div class="kpi-val">${mrr.toLocaleString('pl')} PLN</div><div class="kpi-sub">${store.subscriptions.filter(s=>s.status==='active'&&s.amount>0).length} platnych subskrypcji</div></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-header"><h2>Ostatni uzytkownicy</h2><button class="btn btn-sm btn-outline" onclick="currentPage='users';document.querySelector('[data-page=users]').click();">Pokaz wszystkich</button></div>
+        <div class="card-body">
+          <table>
+            <thead><tr><th>Uzytkownik</th><th>Rola</th><th>Plan</th><th>Status</th><th>Zapytania</th></tr></thead>
+            <tbody>
+              ${store.users.slice(0,5).map(u=>`<tr>
+                <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:${randColor(u.id)}">${u.avatar}</div><div><div style="font-weight:600;">${u.name}</div><div style="font-size:11px;color:var(--muted);">${u.email}</div></div></div></td>
+                <td><span class="pill pill-accent">${u.role}</span></td>
+                <td><span class="pill ${planPill(u.plan)}">${planLabel(u.plan)}</span></td>
+                <td><span class="pill ${statusPill(u.status)}">${u.status}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${u.queries}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h2>Aktywnosc</h2></div>
+        <div class="card-body" style="padding:16px 20px;max-height:320px;overflow-y:auto;">
+          ${store.activity.slice(0,8).map(a=>`
+            <div class="activity-item">
+              <div class="activity-dot" style="background:${a.type==='success'?'var(--green)':a.type==='error'?'var(--red)':a.type==='warn'?'var(--orange)':'var(--accent)'}"></div>
+              <div><div class="activity-text">${a.action}</div><div class="activity-time">${a.time}</div></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Oczekujace rejestracje</h2><span class="pill pill-orange">${pending} oczekujacych</span></div>
+      <div class="card-body">
+        ${pending?`<table>
+          <thead><tr><th>Osoba</th><th>Firma</th><th>NIP</th><th>Plan</th><th>Data</th><th>Akcje</th></tr></thead>
+          <tbody>${store.registrations.filter(r=>r.status==='pending').map(r=>`<tr>
+            <td><div style="font-weight:600;">${r.name}</div><div style="font-size:11px;color:var(--muted);">${r.email}</div></td>
+            <td>${r.company}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${r.nip}</td>
+            <td><span class="pill ${planPill(r.plan)}">${planLabel(r.plan)}</span></td>
+            <td style="font-size:12px;color:var(--muted);">${r.date}</td>
+            <td><button class="btn btn-xs btn-success" onclick="approveReg(${r.id})">&#10003; Zatwierdz</button> <button class="btn btn-xs btn-danger" onclick="rejectReg(${r.id})">&#10007; Odrzuc</button></td>
+          </tr>`).join('')}</tbody>
+        </table>`:'<div class="empty"><div class="icon">&#10003;</div><p>Brak oczekujacych rejestracji</p></div>'}
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════ USERS ═══════ */
+let userSearch='';
+function renderUsers(c){
+  const filtered=store.users.filter(u=>!userSearch||u.name.toLowerCase().includes(userSearch)||u.email.toLowerCase().includes(userSearch));
+  c.innerHTML=`
+    <div class="card">
+      <div class="card-header">
+        <div style="display:flex;gap:12px;align-items:center;">
+          <h2>Uzytkownicy (${store.users.length})</h2>
+          <div class="search-box"><span class="ico">&#128269;</span><input placeholder="Szukaj..." value="${userSearch}" oninput="userSearch=this.value.toLowerCase();renderUsers(document.getElementById('content'));"></div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="openUserModal()">+ Dodaj uzytkownika</button>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead><tr><th>Uzytkownik</th><th>Rola</th><th>Plan</th><th>Status</th><th>Ostatnie logowanie</th><th>Zapytania</th><th>Akcje</th></tr></thead>
+          <tbody>
+            ${filtered.map(u=>`<tr>
+              <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:${randColor(u.id)}">${u.avatar}</div><div><div style="font-weight:600;">${u.name}</div><div style="font-size:11px;color:var(--muted);">${u.email}</div></div></div></td>
+              <td><span class="pill pill-accent">${u.role}</span></td>
+              <td><span class="pill ${planPill(u.plan)}">${planLabel(u.plan)}</span></td>
+              <td><span class="pill ${statusPill(u.status)}">${u.status}</span></td>
+              <td style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${u.lastLogin}</td>
+              <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${u.queries}</td>
+              <td>
+                <button class="btn btn-xs btn-outline" onclick="openUserModal(${u.id})">Edytuj</button>
+                ${u.status==='active'?`<button class="btn btn-xs btn-danger" onclick="toggleUserStatus(${u.id})">Zawies</button>`:`<button class="btn btn-xs btn-success" onclick="toggleUserStatus(${u.id})">Aktywuj</button>`}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        ${!filtered.length?'<div class="empty"><div class="icon">&#128269;</div><p>Nie znaleziono uzytkownikow</p></div>':''}
+      </div>
+    </div>
+  `;
+}
+
+function openUserModal(id){
+  const u=id?store.users.find(x=>x.id===id):null;
+  const roles=store.roles.map(r=>`<option value="${r.id}" ${u&&u.role===r.id?'selected':''}>${r.name}</option>`).join('');
+  openModal(u?'Edytuj uzytkownika':'Nowy uzytkownik',`
+    <div class="form-group"><label class="form-label">Imie i nazwisko</label><input class="form-input" id="mName" value="${u?u.name:''}"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="mEmail" type="email" value="${u?u.email:''}"></div>
+    <div class="form-group"><label class="form-label">Rola</label><select class="form-input" id="mRole">${roles}</select></div>
+    <div class="form-group"><label class="form-label">Plan</label><select class="form-input" id="mPlan"><option value="free" ${u&&u.plan==='free'?'selected':''}>Free</option><option value="pro" ${u&&u.plan==='pro'?'selected':''}>Pro</option><option value="enterprise" ${u&&u.plan==='enterprise'?'selected':''}>Enterprise</option></select></div>
+  `,`<button class="btn btn-outline" onclick="closeModal()">Anuluj</button>
+     <button class="btn btn-primary" onclick="saveUser(${id||0})">Zapisz</button>`);
+}
+
+function saveUser(id){
+  const name=document.getElementById('mName').value.trim();
+  const email=document.getElementById('mEmail').value.trim();
+  const role=document.getElementById('mRole').value;
+  const plan=document.getElementById('mPlan').value;
+  if(!name||!email){toast('Wypelnij wszystkie pola','error');return;}
+  if(id){
+    const u=store.users.find(x=>x.id===id);
+    if(u){u.name=name;u.email=email;u.role=role;u.plan=plan;u.avatar=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+    addActivity(`Edycja uzytkownika: ${name}`);
+    toast('Uzytkownik zaktualizowany');
+  } else {
+    store.users.push({id:++store.nextId,name,email,role,plan,status:'active',created:new Date().toISOString().slice(0,10),lastLogin:'-',queries:0,avatar:name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()});
+    addActivity(`Nowy uzytkownik: ${name}`,'success');
+    toast('Uzytkownik dodany');
+  }
+  saveStore();closeModal();renderPage();
+}
+
+function toggleUserStatus(id){
+  const u=store.users.find(x=>x.id===id);
+  if(u){
+    u.status=u.status==='active'?'suspended':'active';
+    addActivity(`${u.status==='active'?'Aktywowano':'Zawieszono'} konto: ${u.name}`,u.status==='active'?'success':'error');
+    toast(u.status==='active'?'Konto aktywowane':'Konto zawieszone',u.status==='active'?'success':'info');
+    saveStore();renderPage();
+  }
+}
+
+/* ═══════ REGISTRATIONS ═══════ */
+function renderRegistrations(c){
+  const tabs=['all','pending','approved','rejected'];
+  const tabLabels={all:'Wszystkie',pending:'Oczekujace',approved:'Zatwierdzone',rejected:'Odrzucone'};
+  c.innerHTML=`
+    <div class="tabs" id="regTabs">${tabs.map(t=>`<div class="tab ${t==='all'?'active':''}" data-filter="${t}">${tabLabels[t]} (${t==='all'?store.registrations.length:store.registrations.filter(r=>r.status===t).length})</div>`).join('')}</div>
+    <div class="card"><div class="card-body"><div id="regTable"></div></div></div>
+  `;
+  let filter='all';
+  document.querySelectorAll('#regTabs .tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('#regTabs .tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      filter=tab.dataset.filter;
+      renderRegTable(filter);
+    });
+  });
+  renderRegTable(filter);
+}
+
+function renderRegTable(filter){
+  const regs=filter==='all'?store.registrations:store.registrations.filter(r=>r.status===filter);
+  document.getElementById('regTable').innerHTML=regs.length?`<table>
+    <thead><tr><th>Osoba</th><th>Firma</th><th>NIP</th><th>Plan</th><th>Data</th><th>Status</th><th>Akcje</th></tr></thead>
+    <tbody>${regs.map(r=>`<tr>
+      <td><div style="font-weight:600;">${r.name}</div><div style="font-size:11px;color:var(--muted);">${r.email}</div></td>
+      <td>${r.company}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${r.nip}</td>
+      <td><span class="pill ${planPill(r.plan)}">${planLabel(r.plan)}</span></td>
+      <td style="font-size:12px;color:var(--muted);">${r.date}</td>
+      <td><span class="pill ${statusPill(r.status)}">${r.status}</span></td>
+      <td>${r.status==='pending'?`<button class="btn btn-xs btn-success" onclick="approveReg(${r.id})">&#10003;</button> <button class="btn btn-xs btn-danger" onclick="rejectReg(${r.id})">&#10007;</button>`:'-'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`:'<div class="empty"><div class="icon">&#9998;</div><p>Brak rejestracji w tej kategorii</p></div>';
+}
+
+function approveReg(id){
+  const r=store.registrations.find(x=>x.id===id);
+  if(r){
+    r.status='approved';
+    store.users.push({id:++store.nextId,name:r.name,email:r.email,role:'user',plan:r.plan,status:'active',created:r.date,lastLogin:'-',queries:0,avatar:r.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()});
+    store.subscriptions.push({id:++store.nextId,userId:store.nextId-1,plan:r.plan,status:'active',startDate:r.date,endDate:null,amount:{free:0,pro:299,enterprise:999}[r.plan],currency:'PLN',interval:r.plan==='free'?null:'monthly',autoRenew:r.plan!=='free'});
+    addActivity(`Zatwierdzono rejestracje: ${r.name} (${r.company})`,'success');
+    toast(`Rejestracja ${r.name} zatwierdzona`);
+    saveStore();renderPage();
+  }
+}
+
+function rejectReg(id){
+  const r=store.registrations.find(x=>x.id===id);
+  if(r){
+    r.status='rejected';
+    addActivity(`Odrzucono rejestracje: ${r.name} (${r.company})`,'error');
+    toast(`Rejestracja ${r.name} odrzucona`,'error');
+    saveStore();renderPage();
+  }
+}
+
+/* ═══════ ROLES ═══════ */
+function renderRoles(c){
+  c.innerHTML=`
+    <div style="display:flex;gap:12px;margin-bottom:20px;justify-content:flex-end;">
+      <button class="btn btn-sm btn-primary" onclick="openRoleModal()">+ Nowa rola</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;">
+      ${store.roles.map(r=>{
+        const userCount=store.users.filter(u=>u.role===r.id).length;
+        return `<div class="card" style="border-top:3px solid ${r.color};">
+          <div class="card-body-pad">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+              <div>
+                <h3 style="font-size:17px;font-weight:800;">${r.name}</h3>
+                <p style="font-size:12px;color:var(--muted);margin-top:2px;">${r.desc}</p>
+              </div>
+              <span class="pill pill-accent">${userCount} uzytk.</span>
+            </div>
+            <div style="margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Uprawnienia (${r.perms.length}/${PERMS.length})</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              ${r.perms.slice(0,8).map(p=>{const pm=PERMS.find(x=>x.id===p);return `<span class="pill pill-green" style="font-size:10px;">${pm?pm.label:p}</span>`;}).join('')}
+              ${r.perms.length>8?`<span class="pill pill-accent" style="font-size:10px;">+${r.perms.length-8} wiecej</span>`:''}
+            </div>
+            <div style="margin-top:16px;display:flex;gap:8px;">
+              <button class="btn btn-xs btn-outline" onclick="openRoleModal('${r.id}')">Edytuj</button>
+              ${r.id!=='admin'?`<button class="btn btn-xs btn-danger" onclick="deleteRole('${r.id}')">Usun</button>`:''}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function openRoleModal(id){
+  const r=id?store.roles.find(x=>x.id===id):null;
+  const perms=r?r.perms:[];
+  openModal(r?'Edytuj role: '+r.name:'Nowa rola',`
+    <div class="form-group"><label class="form-label">Nazwa roli</label><input class="form-input" id="mRoleName" value="${r?r.name:''}"></div>
+    <div class="form-group"><label class="form-label">Opis</label><input class="form-input" id="mRoleDesc" value="${r?r.desc:''}"></div>
+    <div class="form-group"><label class="form-label">Kolor</label><input class="form-input" id="mRoleColor" type="color" value="${r?r.color:'#6366f1'}" style="height:40px;padding:4px;"></div>
+    <div class="form-group">
+      <label class="form-label">Uprawnienia</label>
+      <div class="perm-grid" id="permGrid">
+        ${PERMS.map(p=>`<div class="perm-item ${perms.includes(p.id)?'active':''}" data-perm="${p.id}" onclick="this.classList.toggle('active')"><div class="perm-check">${perms.includes(p.id)?'&#10003;':''}</div>${p.label}</div>`).join('')}
+      </div>
+    </div>
+  `,`<button class="btn btn-outline" onclick="closeModal()">Anuluj</button>
+     <button class="btn btn-primary" onclick="saveRole('${id||''}')">Zapisz</button>`);
+  // Re-attach perm click handlers for check icon
+  document.querySelectorAll('#permGrid .perm-item').forEach(el=>{
+    el.addEventListener('click',()=>{
+      el.querySelector('.perm-check').innerHTML=el.classList.contains('active')?'&#10003;':'';
+    });
+  });
+}
+
+function saveRole(id){
+  const name=document.getElementById('mRoleName').value.trim();
+  const desc=document.getElementById('mRoleDesc').value.trim();
+  const color=document.getElementById('mRoleColor').value;
+  const perms=[...document.querySelectorAll('#permGrid .perm-item.active')].map(el=>el.dataset.perm);
+  if(!name){toast('Podaj nazwe roli','error');return;}
+  if(id){
+    const r=store.roles.find(x=>x.id===id);
+    if(r){r.name=name;r.desc=desc;r.color=color;r.perms=perms;}
+    addActivity(`Edycja roli: ${name}`);
+  } else {
+    const rid=name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+    store.roles.push({id:rid,name,desc,color,perms});
+    store.scopeMatrix[rid]={};
+    SCOPES.forEach(s=>{store.scopeMatrix[rid][s.id]='n';});
+    addActivity(`Nowa rola: ${name}`,'success');
+  }
+  toast('Rola zapisana');saveStore();closeModal();renderPage();
+}
+
+function deleteRole(id){
+  const r=store.roles.find(x=>x.id===id);
+  if(!r)return;
+  const users=store.users.filter(u=>u.role===id);
+  if(users.length){toast(`Nie mozna usunac roli z ${users.length} uzytkownikami`,'error');return;}
+  store.roles=store.roles.filter(x=>x.id!==id);
+  delete store.scopeMatrix[id];
+  addActivity(`Usunieto role: ${r.name}`,'error');
+  toast('Rola usunieta');saveStore();renderPage();
+}
+
+/* ═══════ SCOPES ═══════ */
+function renderScopes(c){
+  const accessLabels={rw:'&#10003;&#10003;',r:'&#10003;',n:'&mdash;'};
+  const nextAccess={n:'r',r:'rw',rw:'n'};
+  c.innerHTML=`
+    <div class="card">
+      <div class="card-header"><h2>Matryca dostepu (Role &times; Zakresy)</h2></div>
+      <div class="card-body" style="padding:16px;">
+        <div class="scope-matrix">
+          <table>
+            <thead><tr><th style="width:160px;">Rola / Zakres</th>${SCOPES.map(s=>`<th title="${s.desc}">${s.label}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${store.roles.map(r=>`<tr>
+                <td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${r.color};margin-right:6px;"></span>${r.name}</td>
+                ${SCOPES.map(s=>{
+                  const acc=(store.scopeMatrix[r.id]||{})[s.id]||'n';
+                  return `<td><div class="scope-cell ${acc!=='n'?'granted':'denied'}" onclick="toggleScope('${r.id}','${s.id}')" title="${acc==='rw'?'Pelny dostep (odczyt+zapis)':acc==='r'?'Tylko odczyt':'Brak dostepu'}">${accessLabels[acc]}</div></td>`;
+                }).join('')}
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:16px;font-size:12px;color:var(--muted);">
+          <span><span class="scope-cell granted" style="display:inline-flex;width:16px;height:16px;font-size:9px;vertical-align:middle;cursor:default;">&#10003;&#10003;</span> Pelny dostep</span>
+          <span><span class="scope-cell granted" style="display:inline-flex;width:16px;height:16px;font-size:10px;vertical-align:middle;cursor:default;">&#10003;</span> Tylko odczyt</span>
+          <span><span class="scope-cell denied" style="display:inline-flex;width:16px;height:16px;font-size:10px;vertical-align:middle;cursor:default;">&mdash;</span> Brak dostepu</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div class="card">
+        <div class="card-header"><h2>Definicje zakresow</h2></div>
+        <div class="card-body">
+          <table>
+            <thead><tr><th>Zakres</th><th>ID</th><th>Opis</th><th>Role z dostepem</th></tr></thead>
+            <tbody>
+              ${SCOPES.map(s=>{
+                const rolesWithAccess=store.roles.filter(r=>(store.scopeMatrix[r.id]||{})[s.id]&&(store.scopeMatrix[r.id]||{})[s.id]!=='n');
+                return `<tr>
+                  <td style="font-weight:600;">${s.label}</td>
+                  <td><code style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface);padding:2px 8px;border-radius:4px;">${s.id}</code></td>
+                  <td style="color:var(--muted);">${s.desc}</td>
+                  <td>${rolesWithAccess.map(r=>`<span class="pill pill-accent" style="font-size:10px;">${r.name}</span>`).join(' ')||'<span style="color:var(--muted);font-size:12px;">-</span>'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleScope(roleId,scopeId){
+  const nextAccess={n:'r',r:'rw',rw:'n'};
+  if(!store.scopeMatrix[roleId])store.scopeMatrix[roleId]={};
+  const current=store.scopeMatrix[roleId][scopeId]||'n';
+  store.scopeMatrix[roleId][scopeId]=nextAccess[current];
+  addActivity(`Zmiana zakresu: ${roleId}/${scopeId} -> ${nextAccess[current]}`);
+  saveStore();renderPage();
+}
+
+/* ═══════ SUBSCRIPTIONS ═══════ */
+function renderSubscriptions(c){
+  const plans={free:{name:'Free',price:0,color:'var(--accent)'},pro:{name:'Pro',price:299,color:'var(--cyan)'},enterprise:{name:'Enterprise',price:999,color:'var(--pink)'}};
+  const planStats={free:0,pro:0,enterprise:0};
+  store.subscriptions.filter(s=>s.status==='active').forEach(s=>planStats[s.plan]++);
+
+  c.innerHTML=`
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+      ${Object.entries(plans).map(([k,v])=>`<div class="kpi">
+        <div class="kpi-label">${v.name}</div>
+        <div class="kpi-val" style="background:linear-gradient(135deg,${v.color},var(--text));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${planStats[k]}</div>
+        <div class="kpi-sub">${v.price>0?v.price+' PLN/mies.':'Darmowy'}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Wszystkie subskrypcje</h2></div>
+      <div class="card-body">
+        <table>
+          <thead><tr><th>Uzytkownik</th><th>Plan</th><th>Status</th><th>Kwota</th><th>Okres</th><th>Auto-odnowienie</th><th>Akcje</th></tr></thead>
+          <tbody>
+            ${store.subscriptions.map(sub=>{
+              const user=store.users.find(u=>u.id===sub.userId);
+              return `<tr>
+                <td>${user?`<div style="display:flex;align-items:center;gap:8px;"><div class="avatar" style="background:${randColor(sub.userId)};width:28px;height:28px;font-size:10px;">${user.avatar}</div><span style="font-weight:600;">${user.name}</span></div>`:'<span style="color:var(--muted);">Usuniety</span>'}</td>
+                <td><span class="pill ${planPill(sub.plan)}">${planLabel(sub.plan)}</span></td>
+                <td><span class="pill ${statusPill(sub.status)}">${sub.status}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:600;">${sub.amount} PLN</td>
+                <td style="font-size:12px;color:var(--muted);">${sub.startDate}${sub.endDate?' &rarr; '+sub.endDate:''}</td>
+                <td>${sub.autoRenew?'<span class="pill pill-green">Tak</span>':'<span class="pill pill-red">Nie</span>'}</td>
+                <td>
+                  <button class="btn btn-xs btn-outline" onclick="openSubModal(${sub.id})">Edytuj</button>
+                  ${sub.status==='active'&&sub.amount>0?`<button class="btn btn-xs btn-danger" onclick="cancelSub(${sub.id})">Anuluj</button>`:''}
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function openSubModal(id){
+  const sub=store.subscriptions.find(x=>x.id===id);
+  if(!sub)return;
+  const user=store.users.find(u=>u.id===sub.userId);
+  openModal('Edytuj subskrypcje'+(user?' — '+user.name:''),`
+    <div class="form-group"><label class="form-label">Plan</label><select class="form-input" id="mSubPlan"><option value="free" ${sub.plan==='free'?'selected':''}>Free (0 PLN)</option><option value="pro" ${sub.plan==='pro'?'selected':''}>Pro (299 PLN)</option><option value="enterprise" ${sub.plan==='enterprise'?'selected':''}>Enterprise (999 PLN)</option></select></div>
+    <div class="form-group"><label class="form-label">Status</label><select class="form-input" id="mSubStatus"><option value="active" ${sub.status==='active'?'selected':''}>Aktywna</option><option value="cancelled" ${sub.status==='cancelled'?'selected':''}>Anulowana</option></select></div>
+    <div class="form-group">
+      <div class="toggle-row">
+        <div><div class="label">Auto-odnowienie</div><div class="desc">Automatyczne odnowienie po zakonczeniu okresu</div></div>
+        <div class="toggle ${sub.autoRenew?'on':''}" id="mSubRenew" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+  `,`<button class="btn btn-outline" onclick="closeModal()">Anuluj</button>
+     <button class="btn btn-primary" onclick="saveSub(${id})">Zapisz</button>`);
+}
+
+function saveSub(id){
+  const sub=store.subscriptions.find(x=>x.id===id);
+  if(!sub)return;
+  const plan=document.getElementById('mSubPlan').value;
+  sub.plan=plan;
+  sub.status=document.getElementById('mSubStatus').value;
+  sub.autoRenew=document.getElementById('mSubRenew').classList.contains('on');
+  sub.amount={free:0,pro:299,enterprise:999}[plan];
+  // Update user plan too
+  const user=store.users.find(u=>u.id===sub.userId);
+  if(user)user.plan=plan;
+  addActivity(`Subskrypcja zmieniona: ${user?user.name:'?'} -> ${planLabel(plan)}`);
+  toast('Subskrypcja zaktualizowana');saveStore();closeModal();renderPage();
+}
+
+function cancelSub(id){
+  const sub=store.subscriptions.find(x=>x.id===id);
+  if(!sub)return;
+  sub.status='cancelled';sub.autoRenew=false;
+  const user=store.users.find(u=>u.id===sub.userId);
+  addActivity(`Subskrypcja anulowana: ${user?user.name:'?'}`,'error');
+  toast('Subskrypcja anulowana','info');saveStore();renderPage();
+}
+
+/* ═══════ ACTIVITY LOG ═══════ */
+function renderActivity(c){
+  c.innerHTML=`
+    <div class="card">
+      <div class="card-header"><h2>Log aktywnosci systemowej</h2><button class="btn btn-sm btn-outline" onclick="store.activity=[];saveStore();renderPage();">Wyczysc log</button></div>
+      <div class="card-body" style="padding:20px;">
+        ${store.activity.length?store.activity.map(a=>`
+          <div class="activity-item">
+            <div class="activity-dot" style="background:${a.type==='success'?'var(--green)':a.type==='error'?'var(--red)':a.type==='warn'?'var(--orange)':'var(--accent)'}"></div>
+            <div><div class="activity-text">${a.action}</div><div class="activity-time">${a.time}</div></div>
+          </div>
+        `).join(''):'<div class="empty"><div class="icon">&#8987;</div><p>Brak wpisow w logu</p></div>'}
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════ INIT ═══════ */
+renderPage();
+</script>
+</body>
+</html>
