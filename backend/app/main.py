@@ -26,18 +26,41 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Create default admin if no users exist
+    # Seed default users if no users exist
     async with async_session() as db:
         result = await db.execute(select(User).limit(1))
         if not result.scalar_one_or_none():
-            admin = User(
-                email=settings.admin_email,
-                password_hash=hash_password(settings.admin_password),
-                full_name="Administrator",
-                role="admin",
-                package="enterprise",
-            )
-            db.add(admin)
+            seed_users = [
+                User(
+                    email=settings.admin_email,
+                    password_hash=hash_password(settings.admin_password),
+                    full_name="Administrator",
+                    role="admin",
+                    package="enterprise",
+                ),
+                User(
+                    email="jan.kowalski@example.pl",
+                    password_hash=hash_password("test123"),
+                    full_name="Jan Kowalski",
+                    role="manager",
+                    package="pro",
+                ),
+                User(
+                    email="anna.nowak@example.pl",
+                    password_hash=hash_password("test123"),
+                    full_name="Anna Nowak",
+                    role="user",
+                    package="business",
+                ),
+                User(
+                    email="demo@example.pl",
+                    password_hash=hash_password("demo123"),
+                    full_name="Demo User",
+                    role="user",
+                    package="starter",
+                ),
+            ]
+            db.add_all(seed_users)
             await db.commit()
     yield
 
