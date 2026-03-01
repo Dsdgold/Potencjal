@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.config import settings
 from app.database import async_session, engine, Base
 from app.models import User
-from app.routers import auth, leads, osint, scoring
+from app.routers import auth, leads, lookup, osint, scoring
 from app.services.auth import hash_password
 
 _FNAME = "mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html"
@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI):
                     full_name="Administrator",
                     role="admin",
                     package="enterprise",
+                    is_email_verified=True,
                 ),
                 User(
                     email="jan.kowalski@example.pl",
@@ -44,6 +45,7 @@ async def lifespan(app: FastAPI):
                     full_name="Jan Kowalski",
                     role="manager",
                     package="pro",
+                    is_email_verified=True,
                 ),
                 User(
                     email="anna.nowak@example.pl",
@@ -51,6 +53,7 @@ async def lifespan(app: FastAPI):
                     full_name="Anna Nowak",
                     role="user",
                     package="business",
+                    is_email_verified=True,
                 ),
                 User(
                     email="demo@example.pl",
@@ -58,6 +61,7 @@ async def lifespan(app: FastAPI):
                     full_name="Demo User",
                     role="user",
                     package="starter",
+                    is_email_verified=True,
                 ),
             ]
             db.add_all(seed_users)
@@ -83,6 +87,7 @@ app.include_router(auth.router)
 app.include_router(leads.router)
 app.include_router(scoring.router)
 app.include_router(osint.router)
+app.include_router(lookup.router)
 
 
 @app.get("/health")

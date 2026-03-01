@@ -164,7 +164,28 @@ input.nip-err{border-color:var(--danger)!important}
 .user-dropdown button:hover{background:var(--bg2)}
 .user-dropdown .sep{border-top:1px solid var(--border);margin:4px 0}
 @media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr 1fr}.landing .features,.pricing{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.kpi-row{grid-template-columns:1fr 1fr}.main{padding:12px}.topbar nav{display:none}.pricing,.landing .features{grid-template-columns:1fr}}
+/* NIP Lookup page */
+.lookup-hero{text-align:center;padding:40px 0 32px}
+.lookup-hero h1{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.lookup-hero p{color:var(--muted);font-size:14px;margin-bottom:24px}
+.lookup-input-wrap{display:flex;gap:12px;max-width:520px;margin:0 auto}
+.lookup-input-wrap input{flex:1;font-size:18px;padding:14px 16px;font-family:var(--mono);letter-spacing:2px;text-align:center}
+.lookup-input-wrap .btn{padding:14px 28px;font-size:15px}
+.lookup-status{text-align:center;margin-top:12px;font-size:13px;min-height:20px}
+.lookup-results{margin-top:24px;display:none}
+.lookup-results.active{display:block}
+.source-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.source-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;background:var(--accentBg);color:var(--accent);border:1px solid var(--accent)}
+.source-pill.err{background:var(--dangerBg);color:var(--danger);border-color:var(--danger)}
+.osint-detail{margin-top:16px}
+.osint-detail summary{cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;padding:6px 0}
+.osint-detail pre{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:11px;max-height:300px;overflow:auto;margin-top:8px}
+.lookup-loader{display:inline-block;width:18px;height:18px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Activation notice */
+.activation-notice{background:var(--warnBg);border:1px solid var(--warn);border-radius:var(--radius);padding:16px;text-align:center;margin-top:16px;color:var(--warn)}
+.activation-notice strong{display:block;font-size:14px;margin-bottom:4px}
+@media(max-width:600px){.kpi-row{grid-template-columns:1fr 1fr}.main{padding:12px}.topbar nav{display:none}.pricing,.landing .features{grid-template-columns:1fr}.lookup-input-wrap{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -172,6 +193,7 @@ input.nip-err{border-color:var(--danger)!important}
 <header class="topbar">
   <div class="logo"><i></i> Potencjal</div>
   <nav id="nav">
+    <button data-v="lookup">Sprawdz NIP</button>
     <button data-v="dashboard" class="active">Dashboard</button>
     <button data-v="newlead">Nowy lead</button>
     <button data-v="detail" class="hidden" id="navDet">Lead</button>
@@ -197,6 +219,57 @@ input.nip-err{border-color:var(--danger)!important}
   </div>
 </header>
 <main class="main">
+
+<!-- NIP LOOKUP -->
+<div id="v-lookup" class="view">
+  <div class="lookup-hero">
+    <h1>&#128269; Sprawdz potencjal firmy</h1>
+    <p>Wpisz NIP — automatycznie przeszukamy eKRS, CEIDG, GUS, Biala Lista VAT i zbudujemy pelna metryke scoringowa.</p>
+    <div class="lookup-input-wrap">
+      <input id="lu-nip" maxlength="10" placeholder="Wpisz NIP (10 cyfr)" autocomplete="off"/>
+      <button class="btn btn-p" id="luBtn">Sprawdz</button>
+    </div>
+    <div class="lookup-status" id="luStatus"></div>
+  </div>
+  <div class="lookup-results" id="luResults">
+    <div class="grid g2">
+      <div class="card mb16">
+        <div class="card-hdr"><h2>Scoring</h2></div>
+        <div class="flex gap12 aic" id="lu-scoreArea"></div>
+        <div id="lu-breakdown"></div>
+      </div>
+      <div class="card mb16">
+        <div class="card-hdr"><h2>Firmografia</h2></div>
+        <table class="tbl" id="lu-firmo"></table>
+      </div>
+      <div class="card mb16">
+        <div class="card-hdr"><h2>Rekomendowane kroki</h2></div>
+        <ol id="lu-actions" style="margin-left:18px;line-height:1.8"></ol>
+        <div class="chips mt12" id="lu-tags"></div>
+      </div>
+      <div class="card mb16">
+        <div class="card-hdr"><h2>Dopasowanie oferty</h2></div>
+        <table class="tbl" id="lu-offer"></table>
+      </div>
+      <div class="card mb16" style="grid-column:1/-1">
+        <div class="card-hdr">
+          <h2>Zrodla OSINT</h2>
+          <span class="small muted" id="lu-srcInfo"></span>
+        </div>
+        <div class="source-list" id="lu-sources"></div>
+        <details class="osint-detail">
+          <summary>Pokaz surowe dane OSINT (JSON)</summary>
+          <pre id="lu-rawJson"></pre>
+        </details>
+      </div>
+    </div>
+    <div class="btn-group mt16">
+      <button class="btn btn-p btn-sm" id="lu-openLead">Otworz lead</button>
+      <button class="btn btn-s btn-sm" id="lu-csv">Eksportuj CSV</button>
+      <button class="btn btn-s btn-sm" id="lu-newSearch">Nowe wyszukiwanie</button>
+    </div>
+  </div>
+</div>
 
 <!-- DASHBOARD -->
 <div id="v-dashboard" class="view active">
@@ -396,6 +469,11 @@ input.nip-err{border-color:var(--danger)!important}
         </select>
       </div>
       <button class="btn btn-p" id="regBtn">Zarejestruj</button>
+      <div id="regNotice" class="activation-notice" style="display:none">
+        <strong>Sprawdz skrzynke email!</strong>
+        Wyslalismy link aktywacyjny na Twój adres. Kliknij go, aby aktywowac konto.
+        <button class="btn btn-s btn-sm mt8" id="resendBtn">Wyslij ponownie</button>
+      </div>
       <div class="switch">Masz konto? <a onclick="go('login')">Zaloguj sie</a></div>
     </div>
   </div>
@@ -487,7 +565,15 @@ async function doLogin(){
   if(!email||!pass){toast('err','Podaj email i haslo.');return}
   try{
     const data=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
-    if(!data.ok){const t=await data.json().catch(()=>({}));toast('err',t.detail||'Bledne dane logowania.');return}
+    if(!data.ok){
+      const t=await data.json().catch(()=>({}));
+      if(t.detail==='EMAIL_NOT_VERIFIED'){
+        toast('err','Email nie zostal zweryfikowany. Sprawdz skrzynke.');
+        lastRegEmail=email;lastRegPass=pass;
+        return
+      }
+      toast('err',t.detail||'Bledne dane logowania.');return
+    }
     const j=await data.json();setTokens(j.access_token,j.refresh_token);
     await loadUser();toast('ok','Zalogowano!');go('dashboard')
   }catch(e){toast('err','Blad logowania: '+e.message)}
@@ -502,7 +588,10 @@ async function doRegister(){
   try{
     const data=await fetch(API+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,full_name:name,package:pkg})});
     if(!data.ok){const t=await data.json().catch(()=>({}));toast('err',t.detail||'Blad rejestracji.');return}
-    toast('ok','Konto utworzone! Zaloguj sie.');go('login')
+    lastRegEmail=email;lastRegPass=pass;
+    toast('ok','Konto utworzone! Sprawdz email.');
+    document.getElementById('regBtn').style.display='none';
+    document.getElementById('regNotice').style.display='block'
   }catch(e){toast('err','Blad: '+e.message)}
 }
 function logout(){clearTokens();updateUserUI();go('landing');toast('ok','Wylogowano.')}
@@ -664,8 +753,10 @@ function go(v){
   el.classList.add('active');
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
   if(v==='dashboard')loadDash();
+  if(v==='lookup')setTimeout(()=>document.getElementById('lu-nip').focus(),100);
   if(v==='config')document.getElementById('cfgEd').value=JSON.stringify(CONFIG,null,2);
   if(v==='newlead')clearNL();
+  if(v==='register'){document.getElementById('regBtn').style.display='';document.getElementById('regNotice').style.display='none'}
   if(v==='landing')renderPricing();
   if(v==='profile')loadProfile();
   if(v==='admin')loadAdmin();
@@ -1001,7 +1092,7 @@ function showShortcuts(){
   if(existing){existing.remove();return}
   const o=document.createElement('div');o.className='modal-overlay';
   o.innerHTML='<div class="modal"><h3>Skróty klawiszowe</h3>'+
-    [['N','Nowy lead'],['/ lub S','Szukaj'],['D','Dashboard'],['K','Konfiguracja'],['Esc','Zamknij / Dashboard'],['?','Ten panel'],['T','Zmien motyw']].map(([k,d])=>
+    [['L','Sprawdz NIP'],['N','Nowy lead'],['/ lub S','Szukaj'],['D','Dashboard'],['K','Konfiguracja'],['Esc','Zamknij / Dashboard'],['?','Ten panel'],['T','Zmien motyw']].map(([k,d])=>
     '<div class="row"><span>'+esc(d)+'</span><span class="kbd">'+esc(k)+'</span></div>'
   ).join('')+'<div class="mt16 small muted" style="text-align:center">Kliknij w tlo lub Esc aby zamknac</div></div>';
   o.addEventListener('click',e=>{if(e.target===o)o.remove()});
@@ -1020,6 +1111,7 @@ document.addEventListener('keydown',e=>{
     return
   }
   if(e.key.toLowerCase()==='n'){go('newlead');setTimeout(()=>document.getElementById('nl-nip').focus(),100);return}
+  if(e.key.toLowerCase()==='l'){go('lookup');return}
   if(e.key.toLowerCase()==='d'){go('dashboard');return}
   if(e.key.toLowerCase()==='k'){go('config');return}
   if(e.key.toLowerCase()==='t'){toggleTheme();return}
@@ -1090,6 +1182,118 @@ async function adminSetPkg(id,pkg){try{await apic('/api/auth/admin/users/'+id,{m
 async function adminToggle(id,active){try{await apic('/api/auth/admin/users/'+id,{method:'PUT',body:JSON.stringify({is_active:active})});loadAdmin();toast('ok','Status zmieniony.')}catch(e){toast('err',e.message)}}
 async function adminDel(id,email){if(!confirm('Usunac uzytkownika '+email+'?'))return;try{await apic('/api/auth/admin/users/'+id,{method:'DELETE'});loadAdmin();toast('ok','Uzytkownik usuniety.')}catch(e){toast('err',e.message)}}
 
+// === NIP LOOKUP ===
+let luLeadId=null;
+document.getElementById('lu-nip').addEventListener('input',function(){
+  this.value=this.value.replace(/\D/g,'').slice(0,10);
+});
+document.getElementById('lu-nip').addEventListener('keydown',e=>{if(e.key==='Enter')doLookup()});
+document.getElementById('luBtn').addEventListener('click',doLookup);
+document.getElementById('lu-newSearch').addEventListener('click',()=>{
+  document.getElementById('luResults').classList.remove('active');
+  document.getElementById('lu-nip').value='';document.getElementById('luStatus').innerHTML='';
+  document.getElementById('lu-nip').focus();luLeadId=null
+});
+document.getElementById('lu-openLead').addEventListener('click',()=>{if(luLeadId)openLead(luLeadId)});
+document.getElementById('lu-csv').addEventListener('click',()=>{
+  const el=document.getElementById('lu-firmo');if(!el)return;
+  const rows=Array.from(el.querySelectorAll('tr')).map(tr=>Array.from(tr.querySelectorAll('td,th')).map(c=>'"'+c.textContent.replace(/"/g,'""')+'"').join(','));
+  const csv=rows.join('\n');const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='nip_lookup_'+document.getElementById('lu-nip').value+'.csv';a.click()
+});
+
+async function doLookup(){
+  const nip=document.getElementById('lu-nip').value.trim();
+  if(!/^\d{10}$/.test(nip)){toast('err','NIP musi miec 10 cyfr.');return}
+  if(!validateNip(nip)){toast('err','NIP ma bledna sume kontrolna.');return}
+  if(!apiOn){
+    // Offline fallback
+    doLookupOffline(nip);return
+  }
+  const st=document.getElementById('luStatus');
+  st.innerHTML='<span class="lookup-loader"></span> Przeszukuje rejestry publiczne dla NIP '+esc(nip)+'...';
+  document.getElementById('luResults').classList.remove('active');
+  try{
+    const data=await apic('/api/lookup/nip/'+nip,{method:'POST'});
+    luLeadId=data.lead.id;
+    renderLookupResults(data.lead,data.scoring,data.osint_results);
+    st.innerHTML='<span style="color:var(--accent)">&#10003; Gotowe!</span> Znaleziono dane w '+(data.osint_results.filter(r=>!r.raw?.error).length)+' zródlach.'
+  }catch(e){
+    st.innerHTML='<span style="color:var(--danger)">&#10007; Blad: '+esc(e.message)+'</span>';
+    toast('err','Blad wyszukiwania: '+e.message)
+  }
+}
+
+function doLookupOffline(nip){
+  const m=mockEn(nip,'');
+  const d={nip,name:'Firma NIP '+nip,...m,basket_pln:0,website:''};
+  const r=offScore(d);
+  const fakeLead={...d,id:'offline-'+nip,score:r.score,tier:r.tier,annual_potential:r.annual_potential,revenue_band:r.revenue_band,sources:['offline'],created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  luLeadId=null;
+  renderLookupResults(fakeLead,r,[{source:'offline',nip,name:d.name,city:d.city,vat_status:d.vat_status,pkd:d.pkd,years_active:d.years_active,employees:d.employees,raw:{mode:'offline_mock'}}]);
+  document.getElementById('luStatus').innerHTML='<span style="color:var(--warn)">Tryb offline – dane symulowane.</span>';
+  document.getElementById('lu-openLead').style.display='none'
+}
+
+function renderLookupResults(lead,scoring,osintResults){
+  document.getElementById('luResults').classList.add('active');
+  document.getElementById('lu-openLead').style.display='';
+
+  // Score ring + breakdown
+  document.getElementById('lu-scoreArea').innerHTML=ringHTML(scoring.score,scoring.tier);
+  const bd=offScore(lead).breakdown;
+  document.getElementById('lu-breakdown').innerHTML=breakdownHTML(bd);
+
+  // Firmography
+  document.getElementById('lu-firmo').innerHTML=firmoHTML(lead);
+
+  // Actions
+  document.getElementById('lu-actions').innerHTML=actsHTML(scoring.recommended_actions);
+  document.getElementById('lu-tags').innerHTML=tagsHTML(scoring.categories);
+
+  // Offer
+  document.getElementById('lu-offer').innerHTML=offerHTML(lead.pkd||'');
+
+  // OSINT sources
+  const ok=osintResults.filter(r=>!r.raw?.error);
+  const err=osintResults.filter(r=>r.raw?.error);
+  document.getElementById('lu-srcInfo').textContent=ok.length+'/'+osintResults.length+' zródel odpowiedzialo';
+  document.getElementById('lu-sources').innerHTML=
+    ok.map(r=>'<span class="source-pill">&#10003; '+esc(r.source)+'</span>').join('')+
+    err.map(r=>'<span class="source-pill err">&#10007; '+esc(r.source)+(r.raw?.error==='no_api_key'?' (brak klucza)':'')+'</span>').join('');
+  document.getElementById('lu-rawJson').textContent=JSON.stringify(osintResults,null,2);
+
+  // Scroll to results
+  document.getElementById('luResults').scrollIntoView({behavior:'smooth',block:'start'})
+}
+
+// === EMAIL ACTIVATION ===
+let lastRegEmail='',lastRegPass='';
+
+document.getElementById('resendBtn')?.addEventListener('click',async()=>{
+  if(!lastRegEmail){toast('err','Brak danych rejestracji.');return}
+  try{
+    const resp=await fetch(API+'/api/auth/resend-activation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:lastRegEmail,password:lastRegPass})});
+    const data=await resp.json();
+    toast(resp.ok?'ok':'err',data.message||data.detail||'Blad');
+  }catch(e){toast('err','Blad: '+e.message)}
+});
+
+// Handle hash-based activation route
+function checkHashRoute(){
+  const h=location.hash;
+  if(h.startsWith('#activate/')){
+    const token=h.replace('#activate/','');
+    if(token){activateViaHash(token)}
+  }
+}
+async function activateViaHash(token){
+  // Redirect to backend activation endpoint
+  window.location.href=API+'/api/auth/activate/'+encodeURIComponent(token);
+}
+window.addEventListener('hashchange',checkHashRoute);
+
 // === DEMO DATA ===
 const DEMO_LEADS=[
   {id:'demo-1',name:'BUD-MAT Sp. z o.o.',nip:'5250001009',city:'Warszawa',pkd:'46.73',pkd_desc:'Hurt: drewno, mat. bud., sanitarne',employees:85,revenue_pln:32000000,years_active:12,vat_status:'Czynny VAT',basket_pln:24000,website:'budmat.pl',sources:['demo'],score:87,tier:'S',annual_potential:540000,revenue_band:'medium',created_at:'2026-01-15T10:00:00Z',updated_at:'2026-02-28T14:30:00Z'},
@@ -1117,6 +1321,7 @@ function seedDemoData(){
 (async()=>{
   await checkApi();
   initOsint();
+  checkHashRoute();
   if(apiOn&&getToken()){
     const ok=await loadUser();
     if(ok){loadDash()}else{clearTokens();go('landing')}
