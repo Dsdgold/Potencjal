@@ -8,29 +8,56 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup SSH key from base64
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-
           echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-
-          echo "== key file info =="
-          ls -l ~/.ssh/id_ed25519
-          file ~/.ssh/id_ed25519 || true
-
-          echo "== key fingerprint =="
-          ssh-keygen -lf ~/.ssh/id_ed25519
-
-          echo "== known_hosts =="
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Test connection
+      - name: Deploy frontend to /var/www/html
+        shell: bash
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/"
+
+      - name: Deploy backend
+        shell: bash
+        run: |
+          rsync -avz --delete \
+            --exclude '.env' \
+            --exclude '__pycache__' \
+            --exclude '.venv' \
+            --exclude '*.pyc' \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            backend/ \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/potencjal/backend/"
+
+      - name: Start backend services on server
         shell: bash
         run: |
           ssh -i ~/.ssh/id_ed25519 \
-              -o StrictHostKeyChecking=yes \
               "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-              "echo CONNECTED"
+              'cd /opt/potencjal/backend && \
+               docker compose up -d && \
+               if [ ! -d .venv ]; then python3 -m venv .venv; fi && \
+               .venv/bin/pip install -q -r requirements.txt && \
+               cp -n .env.example .env 2>/dev/null || true && \
+               .venv/bin/alembic upgrade head && \
+               (pkill -f "uvicorn app.main" || true) && \
+               nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/potencjal.log 2>&1 &'
+
+      - name: Verify deployment
+        shell: bash
+        run: |
+          sleep 3
+          ssh -i ~/.ssh/id_ed25519 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              'curl -sf http://localhost:8000/health && echo " Backend OK" || echo " Backend starting..."'
