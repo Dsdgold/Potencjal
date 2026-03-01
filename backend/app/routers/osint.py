@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Lead
+from app.dependencies import get_current_user
+from app.models import Lead, User
 from app.schemas import EnrichResponse, OsintResult
 from app.services.osint import (
     enrich_lead,
@@ -52,7 +53,7 @@ async def gus_check(nip: str):
 
 
 @router.post("/enrich/{lead_id}", response_model=EnrichResponse)
-async def enrich(lead_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def enrich(lead_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Auto-enrich a lead from all OSINT sources by its NIP."""
     lead = await db.get(Lead, lead_id)
     if not lead:

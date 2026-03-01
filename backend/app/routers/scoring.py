@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database import get_db
-from app.models import Lead, ScoringHistory
+from app.dependencies import get_current_user
+from app.models import Lead, ScoringHistory, User
 from app.schemas import ScoringHistoryOut, ScoringRequest, ScoringResult
 from app.services.scoring import (
     DEFAULT_WEIGHTS,
@@ -42,7 +43,7 @@ async def calculate(body: ScoringRequest):
 
 
 @router.post("/leads/{lead_id}", response_model=ScoringResult)
-async def score_lead(lead_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def score_lead(lead_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Score an existing lead – persists result on the lead and in scoring history."""
     lead = await db.get(Lead, lead_id)
     if not lead:
@@ -89,7 +90,7 @@ async def score_lead(lead_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/leads/{lead_id}/history", response_model=list[ScoringHistoryOut])
-async def scoring_history(lead_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def scoring_history(lead_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     lead = await db.get(Lead, lead_id)
     if not lead:
         raise HTTPException(404, "Lead not found")
