@@ -7,20 +7,20 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#060b18;--bg2:#0b1120;--card:#101828;--border:#1e293b;--border2:#263247;
-  --text:#e5e7eb;--muted:#64748b;--label:#94a3b8;
-  --accent:#22c55e;--accent2:#16a34a;--accentBg:rgba(34,197,94,.08);
-  --warn:#f59e0b;--warnBg:rgba(245,158,11,.08);
+  --bg:#0a1628;--bg2:#0f1d30;--card:#152238;--border:#1e3354;--border2:#2a4570;
+  --text:#e5e7eb;--muted:#bfbab5;--label:#e5dfd9;
+  --accent:#145efc;--accent2:#0d4fd4;--accentBg:rgba(20,94,252,.08);
+  --warn:#f2b825;--warnBg:rgba(242,184,37,.08);
   --danger:#ef4444;--dangerBg:rgba(239,68,68,.08);
-  --blue:#3b82f6;--blueBg:rgba(59,130,246,.08);
+  --blue:#145efc;--blueBg:rgba(20,94,252,.08);
   --radius:10px;--radiusLg:14px;
   --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
   --shadow:0 1px 3px rgba(0,0,0,.3);--transition:all .2s ease;
 }
 html.light{
-  --bg:#f1f5f9;--bg2:#e2e8f0;--card:#ffffff;--border:#cbd5e1;--border2:#94a3b8;
-  --text:#1e293b;--muted:#64748b;--label:#475569;
+  --bg:#f2efeb;--bg2:#e5dfd9;--card:#ffffff;--border:#bfbab5;--border2:#73706d;
+  --text:#1f2937;--muted:#73706d;--label:#4a4845;
   --shadow:0 1px 3px rgba(0,0,0,.1);
 }
 html,body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
@@ -57,13 +57,13 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--text);font-si
 .kpi.purple .val{color:#a78bfa}.kpi.teal .val{color:#2dd4bf}
 label{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 input,select,textarea{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 12px;font-size:13px;font-family:var(--font);outline:none;transition:var(--transition)}
-input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(20,94,252,.1)}
 input::placeholder,textarea::placeholder{color:var(--muted)}
 input.nip-ok{border-color:var(--accent)!important}
 input.nip-err{border-color:var(--danger)!important}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:700;font-family:var(--font);padding:9px 16px;border-radius:var(--radius);border:none;cursor:pointer;transition:var(--transition);white-space:nowrap}
 .btn:active{transform:scale(.97)}
-.btn-p{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#061016;box-shadow:var(--shadow)}
+.btn-p{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#ffffff;box-shadow:var(--shadow)}
 .btn-p:hover{filter:brightness(1.1)}
 .btn-s{background:var(--bg2);color:var(--text);border:1px solid var(--border2)}
 .btn-s:hover{border-color:var(--label)}
@@ -96,7 +96,7 @@ input.nip-err{border-color:var(--danger)!important}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .toast-wrap{position:fixed;top:64px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
 .toast{padding:12px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;box-shadow:var(--shadow);animation:slideIn .3s ease;display:flex;align-items:center;gap:8px}
-.toast.ok{background:#065f46;color:#6ee7b7;border:1px solid #059669}
+.toast.ok{background:#0a2d6e;color:#93b4fd;border:1px solid #145efc}
 .toast.err{background:#7f1d1d;color:#fca5a5;border:1px solid #dc2626}
 .toast.info{background:#1e3a5f;color:#93c5fd;border:1px solid #3b82f6}
 @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
@@ -148,7 +148,7 @@ input.nip-err{border-color:var(--danger)!important}
 .pricing{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px}
 .price-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radiusLg);padding:24px;text-align:center;transition:var(--transition);position:relative}
 .price-card.popular{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.price-card.popular::after{content:'POPULARNY';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;font-size:10px;font-weight:800;padding:2px 10px;border-radius:99px}
+.price-card.popular::after{content:'POPULARNY';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:800;padding:2px 10px;border-radius:99px}
 .price-card h3{font-size:16px;font-weight:800;margin-bottom:4px}
 .price-card .price{font-size:28px;font-weight:800;color:var(--accent);margin:12px 0}
 .price-card .price span{font-size:14px;color:var(--muted);font-weight:400}
@@ -617,7 +617,7 @@ function ringHTML(sc,tier){
 
 function breakdownHTML(bd){
   if(!bd)return'';
-  const colors={employees:'var(--blue)',revenueBand:'var(--accent)',yearsActive:'var(--warn)',vatStatus:'#a78bfa',pkdFit:'#f472b6',basketSignal:'#2dd4bf',locality:'#fb923c'};
+  const colors={employees:'var(--blue)',revenueBand:'#145efc',yearsActive:'#f2b825',vatStatus:'#dca0ff',pkdFit:'#4fa593',basketSignal:'#e5dfd9',locality:'#fb923c'};
   return'<div class="breakdown">'+Object.entries(bd).map(([k,v])=>{
     const pct=Math.round(v.score*v.weight),col=colors[k]||'var(--muted)';
     return'<div class="bd-row"><span class="bd-label">'+esc(v.label)+'</span><div class="bd-bar"><div class="bd-fill" style="width:'+v.score+'%;background:'+col+'"></div></div><span class="bd-val" style="color:'+col+'">'+v.score+'</span></div>'
@@ -1090,6 +1090,29 @@ async function adminSetPkg(id,pkg){try{await apic('/api/auth/admin/users/'+id,{m
 async function adminToggle(id,active){try{await apic('/api/auth/admin/users/'+id,{method:'PUT',body:JSON.stringify({is_active:active})});loadAdmin();toast('ok','Status zmieniony.')}catch(e){toast('err',e.message)}}
 async function adminDel(id,email){if(!confirm('Usunac uzytkownika '+email+'?'))return;try{await apic('/api/auth/admin/users/'+id,{method:'DELETE'});loadAdmin();toast('ok','Uzytkownik usuniety.')}catch(e){toast('err',e.message)}}
 
+// === DEMO DATA ===
+const DEMO_LEADS=[
+  {id:'demo-1',name:'BUD-MAT Sp. z o.o.',nip:'5250001009',city:'Warszawa',pkd:'46.73',pkd_desc:'Hurt: drewno, mat. bud., sanitarne',employees:85,revenue_pln:32000000,years_active:12,vat_status:'Czynny VAT',basket_pln:24000,website:'budmat.pl',sources:['demo'],score:87,tier:'S',annual_potential:540000,revenue_band:'medium',created_at:'2026-01-15T10:00:00Z',updated_at:'2026-02-28T14:30:00Z'},
+  {id:'demo-2',name:'DACH-POL S.A.',nip:'6790012345',city:'Kraków',pkd:'41',pkd_desc:'Roboty budowlane – wznoszenie budynków',employees:210,revenue_pln:78000000,years_active:18,vat_status:'Czynny VAT',basket_pln:45000,website:'dachpol.pl',sources:['demo'],score:91,tier:'S',annual_potential:540000,revenue_band:'large',created_at:'2026-01-10T08:00:00Z',updated_at:'2026-02-27T09:15:00Z'},
+  {id:'demo-3',name:'InstalTech Jan Nowak',nip:'7310056789',city:'Łódź',pkd:'43',pkd_desc:'Roboty budowlane specjalistyczne',employees:22,revenue_pln:4500000,years_active:6,vat_status:'Czynny VAT',basket_pln:8500,website:'instaltech-lodz.pl',sources:['demo'],score:72,tier:'A',annual_potential:216000,revenue_band:'small',created_at:'2026-02-01T11:00:00Z',updated_at:'2026-02-25T16:45:00Z'},
+  {id:'demo-4',name:'TERMO-BUD Sp. z o.o.',nip:'8520034567',city:'Wrocław',pkd:'43',pkd_desc:'Roboty budowlane specjalistyczne',employees:45,revenue_pln:12000000,years_active:9,vat_status:'Czynny VAT',basket_pln:15000,website:'termobud.com.pl',sources:['demo'],score:78,tier:'A',annual_potential:216000,revenue_band:'medium',created_at:'2026-01-20T09:30:00Z',updated_at:'2026-02-26T11:00:00Z'},
+  {id:'demo-5',name:'MegaSteel Konstrukcje',nip:'9510078901',city:'Katowice',pkd:'41',pkd_desc:'Roboty budowlane – wznoszenie budynków',employees:130,revenue_pln:55000000,years_active:15,vat_status:'Czynny VAT',basket_pln:38000,website:'megasteel.pl',sources:['demo'],score:85,tier:'S',annual_potential:540000,revenue_band:'large',created_at:'2026-01-05T07:00:00Z',updated_at:'2026-02-24T13:20:00Z'},
+  {id:'demo-6',name:'EKO-DOM Materialy',nip:'6180045678',city:'Poznań',pkd:'47.52',pkd_desc:'Detal: sprzet, farby, szklo',employees:12,revenue_pln:3200000,years_active:4,vat_status:'Czynny VAT',basket_pln:5500,website:'ekodom-poznan.pl',sources:['demo'],score:62,tier:'B',annual_potential:90000,revenue_band:'small',created_at:'2026-02-10T10:00:00Z',updated_at:'2026-02-23T15:30:00Z'},
+  {id:'demo-7',name:'HYDRO-INSTAL',nip:'5830067890',city:'Gdańsk',pkd:'42',pkd_desc:'Inzynieria ladowa i wodna',employees:65,revenue_pln:21000000,years_active:11,vat_status:'Czynny VAT',basket_pln:19000,website:'hydroinstal.gda.pl',sources:['demo'],score:76,tier:'A',annual_potential:216000,revenue_band:'medium',created_at:'2026-01-25T12:00:00Z',updated_at:'2026-02-22T10:45:00Z'},
+  {id:'demo-8',name:'Remonty Kowalski',nip:'7290023456',city:'Lublin',pkd:'43',pkd_desc:'Roboty budowlane specjalistyczne',employees:6,revenue_pln:850000,years_active:2,vat_status:'Zwolniony',basket_pln:2200,website:'',sources:['demo'],score:38,tier:'C',annual_potential:36000,revenue_band:'micro',created_at:'2026-02-15T14:00:00Z',updated_at:'2026-02-21T08:00:00Z'},
+  {id:'demo-9',name:'PROFIT-BUD Group',nip:'5420089012',city:'Warszawa',pkd:'41',pkd_desc:'Roboty budowlane – wznoszenie budynków',employees:320,revenue_pln:120000000,years_active:22,vat_status:'Czynny VAT',basket_pln:65000,website:'profitbud.pl',sources:['demo'],score:93,tier:'S',annual_potential:540000,revenue_band:'large',created_at:'2026-01-02T06:00:00Z',updated_at:'2026-02-20T17:00:00Z'},
+  {id:'demo-10',name:'Farby i Tynki Mazur',nip:'2890034567',city:'Olsztyn',pkd:'47.52',pkd_desc:'Detal: sprzet, farby, szklo',employees:8,revenue_pln:1600000,years_active:3,vat_status:'Czynny VAT',basket_pln:3800,website:'farbytynki.pl',sources:['demo'],score:48,tier:'C',annual_potential:36000,revenue_band:'micro',created_at:'2026-02-05T09:00:00Z',updated_at:'2026-02-19T12:30:00Z'},
+  {id:'demo-11',name:'DROG-BET Infrastruktura',nip:'6340056789',city:'Katowice',pkd:'42',pkd_desc:'Inzynieria ladowa i wodna',employees:95,revenue_pln:42000000,years_active:14,vat_status:'Czynny VAT',basket_pln:28000,website:'drogbet.pl',sources:['demo'],score:82,tier:'A',annual_potential:216000,revenue_band:'medium',created_at:'2026-01-18T08:30:00Z',updated_at:'2026-02-18T14:15:00Z'},
+  {id:'demo-12',name:'ElektroMont Uslugi',nip:'8130078901',city:'Rzeszów',pkd:'43',pkd_desc:'Roboty budowlane specjalistyczne',employees:15,revenue_pln:2800000,years_active:5,vat_status:'Czynny VAT',basket_pln:6200,website:'elektromont.rzeszow.pl',sources:['demo'],score:58,tier:'B',annual_potential:90000,revenue_band:'small',created_at:'2026-02-08T11:30:00Z',updated_at:'2026-02-17T09:45:00Z'}
+];
+
+function seedDemoData(){
+  const existing=JSON.parse(localStorage.getItem('pot_leads')||'[]');
+  if(existing.length===0){
+    localStorage.setItem('pot_leads',JSON.stringify(DEMO_LEADS));
+  }
+}
+
 // === INIT ===
 (async()=>{
   await checkApi();
@@ -1100,7 +1123,8 @@ async function adminDel(id,email){if(!confirm('Usunac uzytkownika '+email+'?'))r
   }else if(apiOn){
     go('landing')
   }else{
-    // Offline mode - no auth needed
+    // Offline mode - seed demo data and skip auth
+    seedDemoData();
     updateUserUI();
     loadDash()
   }
