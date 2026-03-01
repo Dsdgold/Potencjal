@@ -8,7 +8,12 @@ from fastapi.responses import HTMLResponse
 from app.database import engine, Base
 from app.routers import leads, osint, scoring
 
-FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html"
+_FNAME = "mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html"
+_CANDIDATES = [
+    Path(__file__).resolve().parent.parent.parent / _FNAME,   # repo layout
+    Path("/var/www/html") / _FNAME,                           # server layout
+]
+FRONTEND_PATH = next((p for p in _CANDIDATES if p.exists()), _CANDIDATES[0])
 
 
 @asynccontextmanager
@@ -45,4 +50,6 @@ async def health():
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
+    if not FRONTEND_PATH.exists():
+        return HTMLResponse("<h1>Frontend not found</h1>", status_code=404)
     return FRONTEND_PATH.read_text(encoding="utf-8")
