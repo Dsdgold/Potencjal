@@ -1,10 +1,14 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 from app.database import engine, Base
 from app.routers import leads, osint, scoring
+
+FRONTEND_PATH = Path(__file__).resolve().parent.parent.parent / "mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html"
 
 
 @asynccontextmanager
@@ -37,3 +41,8 @@ app.include_router(osint.router)
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    return FRONTEND_PATH.read_text(encoding="utf-8")
