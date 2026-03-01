@@ -18,6 +18,8 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), default="user")  # admin, manager, user
     package: Mapped[str] = mapped_column(String(20), default="starter")  # starter, business, pro, enterprise
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    activation_token: Mapped[str | None] = mapped_column(String(255), unique=True)
     leads_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -124,6 +124,13 @@ class EnrichResponse(BaseModel):
     merged: LeadUpdate
 
 
+class NipLookupResponse(BaseModel):
+    """Full NIP lookup result – OSINT data + scoring in one call."""
+    lead: LeadOut
+    osint_results: list[OsintResult]
+    scoring: ScoringResult
+
+
 # ── Auth ──────────────────────────────────────────────────────────────
 
 class RegisterRequest(BaseModel):
@@ -155,6 +162,7 @@ class UserOut(BaseModel):
     role: str
     package: str
     is_active: bool
+    is_email_verified: bool
     leads_count: int
     created_at: datetime
     last_login: datetime | None

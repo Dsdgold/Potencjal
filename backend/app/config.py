@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     admin_email: str = "admin@potencjal.pl"
     admin_password: str = "admin123"
 
+    # Email (SMTP)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = "noreply@potencjal.pl"
+    smtp_tls: bool = True
+    app_url: str = "http://localhost:8000"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
