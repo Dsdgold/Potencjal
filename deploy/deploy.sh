@@ -56,14 +56,16 @@ else
 fi
 
 # ── 4. Database ───────────────────────────────────────────────────────
-docker compose up -d 2>&1 | tee -a "$LOG"
+docker compose up -d 2>&1 | tee -a "$LOG" || log "WARNING: docker compose failed (continuing)"
 cp -n .env.example .env 2>/dev/null || true
-.venv/bin/alembic upgrade head 2>&1 | tee -a "$LOG"
+export PYTHONPATH="$REPO_DIR/backend"
+.venv/bin/alembic upgrade head 2>&1 | tee -a "$LOG" || log "WARNING: alembic migration failed (continuing)"
 log "Database migrated"
 
 # ── 5. Restart backend ───────────────────────────────────────────────
 pkill -f "uvicorn app.main" 2>/dev/null || true
 sleep 1
+cd "$REPO_DIR/backend"
 nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 \
     >> /tmp/potencjal.log 2>&1 &
 log "Backend restarted (PID: $!)"
