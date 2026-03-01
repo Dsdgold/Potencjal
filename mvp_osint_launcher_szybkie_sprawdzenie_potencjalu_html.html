@@ -1,462 +1,565 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MVP – OSINT Launcher: Szybkie sprawdzenie potencjału klienta</title>
-  <style>
-    :root { --bg:#0f172a; --card:#111826; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --warn:#f59e0b; --danger:#ef4444; }
-    html,body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji"; background:var(--bg); color:var(--text); }
-    .wrap { max-width:1100px; margin:24px auto 80px; padding:0 16px; }
-    .grid { display:grid; grid-template-columns: repeat(12, 1fr); gap:16px; }
-    .card { background:var(--card); border:1px solid #1f2937; border-radius:14px; padding:16px; }
-    h1 { font-size:22px; margin:0 0 8px; }
-    h2 { font-size:16px; margin:0 0 8px; color:var(--muted); font-weight:600; letter-spacing:.2px; }
-    label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-    input, select, textarea { width:100%; background:#0b1220; color:var(--text); border:1px solid #243043; border-radius:10px; padding:10px 12px; font-size:14px; outline:none; }
-    input:focus, textarea:focus { border-color:#334155; box-shadow:inset 0 0 0 1px #334155; }
-    button { background:linear-gradient(180deg,#22c55e,#16a34a); color:#061016; border:none; border-radius:12px; padding:10px 14px; font-weight:700; cursor:pointer; }
-    button.secondary { background:#0b1220; color:var(--text); border:1px solid #263247; }
-    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
-    .pill { display:inline-flex; gap:8px; align-items:center; padding:6px 10px; border-radius:999px; background:#0a1222; border:1px solid #22324b; color:#d1d5db; font-size:12px; }
-    .kpi { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px dashed #273349; border-radius:10px; min-width:120px; }
-    .kpi b { font-size:18px; }
-    .score { display:flex; align-items:center; gap:10px; }
-    .bar { height:10px; flex:1; background:#0b1220; border-radius:999px; overflow:hidden; border:1px solid #263247; }
-    .bar > i { display:block; height:100%; background:linear-gradient(90deg,#22c55e,#84cc16); width:0%; }
-    .tier { font-weight:800; letter-spacing:.5px; }
-    .grid-6 { grid-column: span 6; }
-    .grid-12 { grid-column: span 12; }
-    .grid-4 { grid-column: span 4; }
-    .muted { color:var(--muted); font-size:12px; }
-    .table { width:100%; border-collapse: collapse; }
-    .table th, .table td { text-align:left; font-size:13px; padding:8px 6px; border-bottom:1px solid #1f2937; }
-    .chips { display:flex; flex-wrap:wrap; gap:8px; }
-    .footer { position:fixed; bottom:0; left:0; right:0; background:rgba(15,23,42,.7); backdrop-filter: blur(6px); border-top:1px solid #1f2937; }
-    .footer .inner { max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; gap:10px; justify-content:space-between; align-items:center; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .hint { font-size:12px; color:#9ca3af; }
-    .danger { color:var(--danger); }
-    .warn { color:var(--warn); }
-    .ok { color:var(--accent); }
-    @media (max-width: 900px){ .grid-6,.grid-4 { grid-column: span 12; } }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Potencjal – Platforma oceny klientów B2B</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060b18;--bg2:#0b1120;--card:#101828;--border:#1e293b;--border2:#263247;
+  --text:#e5e7eb;--muted:#64748b;--label:#94a3b8;
+  --accent:#22c55e;--accent2:#16a34a;--accentBg:rgba(34,197,94,.08);
+  --warn:#f59e0b;--warnBg:rgba(245,158,11,.08);
+  --danger:#ef4444;--dangerBg:rgba(239,68,68,.08);
+  --blue:#3b82f6;--blueBg:rgba(59,130,246,.08);
+  --radius:10px;--radiusLg:14px;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  --shadow:0 1px 3px rgba(0,0,0,.3);--transition:all .2s ease;
+}
+html,body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.shell{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:52px;gap:20px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.topbar .logo{font-weight:800;font-size:16px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.topbar .logo i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.topbar nav{display:flex;gap:2px}
+.topbar nav button{background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;transition:var(--transition)}
+.topbar nav button:hover{color:var(--text);background:var(--bg2)}
+.topbar nav button.active{color:var(--accent);background:var(--accentBg)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot.on{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.dot.off{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px}
+.badge-s{background:var(--accentBg);color:var(--accent)}
+.badge-a{background:var(--blueBg);color:var(--blue)}
+.badge-b{background:var(--warnBg);color:var(--warn)}
+.badge-c{background:var(--dangerBg);color:var(--danger)}
+.main{flex:1;max-width:1200px;width:100%;margin:0 auto;padding:20px 24px 80px}
+.view{display:none}.view.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radiusLg);padding:20px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-hdr h2{font-size:13px;font-weight:700;color:var(--label);text-transform:uppercase;letter-spacing:.8px}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radiusLg);padding:16px;display:flex;flex-direction:column;gap:4px}
+.kpi .val{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.kpi.accent .val{color:var(--accent)}.kpi.blue .val{color:var(--blue)}.kpi.warn .val{color:var(--warn)}.kpi.danger .val{color:var(--danger)}
+label{display:block;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+input,select,textarea{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 12px;font-size:13px;font-family:var(--font);outline:none;transition:var(--transition)}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:700;font-family:var(--font);padding:9px 16px;border-radius:var(--radius);border:none;cursor:pointer;transition:var(--transition);white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-p{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#061016;box-shadow:var(--shadow)}
+.btn-p:hover{filter:brightness(1.1)}
+.btn-s{background:var(--bg2);color:var(--text);border:1px solid var(--border2)}
+.btn-s:hover{border-color:var(--label)}
+.btn-d{background:var(--dangerBg);color:var(--danger);border:1px solid transparent}
+.btn-d:hover{border-color:var(--danger)}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn-ghost{background:none;color:var(--muted);border:none;padding:6px 8px;cursor:pointer}
+.btn-ghost:hover{color:var(--text)}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
+.tbl tbody tr{transition:var(--transition);cursor:pointer}
+.tbl tbody tr:hover{background:var(--bg2)}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.score-ring{position:relative;width:110px;height:110px;flex-shrink:0}
+.score-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.score-ring .track{fill:none;stroke:var(--bg2);stroke-width:8}
+.score-ring .bar{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
+.score-ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-ring .center .num{font-size:26px;font-weight:800;letter-spacing:-1px}
+.score-ring .center .sub{font-size:11px;color:var(--muted);font-weight:600}
+.prog{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;border-radius:99px;transition:width .6s ease}
+.pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600;background:var(--bg2);border:1px solid var(--border2);color:var(--label)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.toast-wrap{position:fixed;top:64px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;box-shadow:var(--shadow);animation:slideIn .3s ease;display:flex;align-items:center;gap:8px}
+.toast.ok{background:#065f46;color:#6ee7b7;border:1px solid #059669}
+.toast.err{background:#7f1d1d;color:#fca5a5;border:1px solid #dc2626}
+.toast.info{background:#1e3a5f;color:#93c5fd;border:1px solid #3b82f6}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.muted{color:var(--muted)}.small{font-size:12px}.mono{font-family:var(--mono)}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mb16{margin-bottom:16px}
+.flex{display:flex}.aic{align-items:center}.jcb{justify-content:space-between}.gap8{gap:8px}.gap12{gap:12px}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.hidden{display:none!important}
+@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.kpi-row{grid-template-columns:1fr}.main{padding:12px}.topbar nav{display:none}}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Ocena potencjału klienta – OSINT Launcher (bez API)</h1>
-    <p class="muted">Wpisz NIP lub nazwę, opcjonalnie miasto i koszyk. Kliknij „Wyszukaj w necie” dla automatycznych zapytań lub wklej znalezione fragmenty. Narzędzie przeliczy scoring offline.</p>
+<div class="shell">
+<header class="topbar">
+  <div class="logo"><i></i> Potencjal</div>
+  <nav id="nav">
+    <button data-v="dashboard" class="active">Dashboard</button>
+    <button data-v="newlead">Nowy lead</button>
+    <button data-v="detail" class="hidden" id="navDet">Lead</button>
+    <button data-v="config">Konfiguracja</button>
+  </nav>
+  <div class="right">
+    <span class="small muted" id="connLbl">API</span>
+    <span class="dot" id="connDot"></span>
+  </div>
+</header>
+<main class="main">
 
-    <div class="card grid grid-12" style="gap:16px; align-items:end;">
-      <div class="grid-4">
-        <label>NIP lub nazwa</label>
-        <input id="q" placeholder="np. 5250001009 lub ACME Sp. z o.o." />
-      </div>
-      <div class="grid-4">
-        <label>Miasto (opcjonalnie)</label>
-        <input id="city" placeholder="np. Warszawa" />
-      </div>
-      <div class="grid-4">
-        <label>Aktualny koszyk (PLN)</label>
-        <input id="basket" type="number" min="0" step="1" placeholder="np. 3000" />
-      </div>
-      <div class="grid-12 row">
-        <button id="checkBtn">Sprawdź</button>
-        <button class="secondary" id="clearBtn">Wyczyść</button>
-        <span class="hint">Zero API. Zero scrapingu. Tylko wyszukiwarka i ręczna wklejka.</span>
+<!-- DASHBOARD -->
+<div id="v-dashboard" class="view active">
+  <div class="kpi-row" id="kpis"></div>
+  <div class="card">
+    <div class="card-hdr">
+      <h2>Leady</h2>
+      <div class="flex gap8 aic">
+        <input id="searchQ" placeholder="Szukaj NIP lub nazwa..." style="width:220px"/>
+        <select id="filterTier" style="width:100px"><option value="">Tier</option><option>S</option><option>A</option><option>B</option><option>C</option></select>
+        <button class="btn btn-p btn-sm" onclick="go('newlead')">+ Nowy</button>
       </div>
     </div>
-
-    <div class="grid-12 card">
-      <h2>Wyszukiwarka OSINT (otwieranie kart)</h2>
-      <div class="row">
-        <button id="gLinkedin" class="secondary">LinkedIn firmy</button>
-        <button id="gPrzetargi" class="secondary">Przetargi</button>
-        <button id="gEKRS" class="secondary">eKRS</button>
-        <button id="gCEIDG" class="secondary">CEIDG</button>
-        <button id="gStrona" class="secondary">Strona firmowa</button>
-        <button id="gPanorama" class="secondary">Panorama Firm</button>
-      </div>
-      <p class="hint">Przyciski otwierają nowe karty Google z gotowymi zapytaniami opartymi o pole „NIP lub nazwa”.</p>
-      <label style="margin-top:10px;">Wklej dane znalezione w sieci (opcjonalnie)</label>
-      <textarea id="osintPaste" rows="6" class="mono" placeholder="Wklej fragment strony: zakres zatrudnienia (np. 51–200), adres www, słowa kluczowe branży..."></textarea>
-      <div class="row" style="margin-top:8px;">
-        <button id="applyOsint" class="secondary">Zastosuj wklejkę do profilu</button>
-      </div>
-      <p class="hint">Parser uzupełni: domenę, orientacyjny headcount, dopasowanie branżowe → wpływa na scoring.</p>
+    <div style="overflow-x:auto">
+      <table class="tbl"><thead><tr>
+        <th>Firma</th><th>NIP</th><th>Miasto</th><th>PKD</th>
+        <th class="num">Prac.</th><th class="num">Przychód</th>
+        <th>Tier</th><th class="num">Score</th><th class="num">Potencjał</th>
+      </tr></thead><tbody id="leadsTb"></tbody></table>
     </div>
+    <div class="flex jcb aic mt12" id="pager"></div>
+  </div>
+</div>
 
-    <div id="out" class="grid" style="margin-top:16px; display:none;">
-      <div class="grid-6 card">
-        <h2>Wynik i tier</h2>
-        <div class="score">
-          <div class="bar"><i id="barFill"></i></div>
-          <div id="tier" class="tier">—</div>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <div class="kpi"><span class="muted">Wynik 0–100</span><b id="score">0</b></div>
-          <div class="kpi"><span class="muted">Szac. potencjał roczny</span><b id="annual"></b><span class="muted">PLN</span></div>
-          <div class="kpi"><span class="muted">Rozrzut</span><b id="band"></b><span class="muted">PLN</span></div>
-        </div>
-        <p class="muted" style="margin-top:8px;">Tier S: priorytet osobisty | A: dedykowany opiekun | B: kampanie targetowane | C: follow-up okazjonalny.</p>
+<!-- NEW LEAD -->
+<div id="v-newlead" class="view">
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-hdr"><h2>Dane firmy</h2></div>
+      <div class="grid g2 gap8">
+        <div><label>NIP</label><input id="nl-nip" maxlength="10" placeholder="5250001009"/></div>
+        <div><label>Nazwa firmy</label><input id="nl-name" placeholder="ACME Sp. z o.o."/></div>
+        <div><label>Miasto</label><input id="nl-city" placeholder="Warszawa"/></div>
+        <div><label>PKD</label><input id="nl-pkd" maxlength="10" placeholder="41"/></div>
+        <div><label>Pracownicy</label><input id="nl-emp" type="number" min="0"/></div>
+        <div><label>Przychód PLN</label><input id="nl-rev" type="number" min="0"/></div>
+        <div><label>Lata na rynku</label><input id="nl-years" type="number" min="0" step="0.1"/></div>
+        <div><label>Status VAT</label><select id="nl-vat"><option value="">--</option><option>Czynny VAT</option><option>Zwolniony</option><option>Niepewny</option></select></div>
+        <div><label>Koszyk PLN</label><input id="nl-basket" type="number" min="0"/></div>
+        <div><label>Strona WWW</label><input id="nl-web" placeholder="acme.pl"/></div>
       </div>
-
-      <div class="grid-6 card">
-        <h2>Rekomendowane kroki</h2>
-        <ol id="actions" style="margin:0 0 0 18px; padding:0; line-height:1.6;"></ol>
-        <div class="chips" id="tags" style="margin-top:10px;"></div>
+      <div class="btn-group mt16">
+        <button class="btn btn-p" id="nl-save">Zapisz i oceń</button>
+        <button class="btn btn-s" id="nl-enrich">Enrichuj OSINT</button>
+        <button class="btn btn-s" id="nl-offline">Ocena offline</button>
       </div>
-
-      <div class="grid-6 card">
-        <h2>Firmografia (offline)</h2>
-        <table class="table" id="firmo"></table>
-        <p class="hint">Dane z heurystyki + wklejki OSINT. Bez połączeń zewnętrznych.</p>
-      </div>
-
-      <div class="grid-6 card">
-        <h2>Dopasowanie oferty</h2>
-        <table class="table" id="offer"></table>
-        <p class="hint">Mapowanie PKD → kategorie materiałów budowlanych. Edytowalne poniżej.</p>
-      </div>
-
-      <div class="grid-12 card">
-        <h2>Konfiguracja scoringu (edytowalne)</h2>
-        <div class="row">
-          <textarea id="cfg" rows="10" aria-label="config" class="mono"></textarea>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <button id="applyCfg" class="secondary">Zastosuj konfigurację</button>
-          <span class="hint">Zmiany wpływają od razu. To offline.</span>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="card-hdr"><h2>OSINT – wyszukiwarka</h2></div>
+        <div class="btn-group" id="osintBtns"></div>
+        <div class="mt12">
+          <label>Wklej dane z sieci</label>
+          <textarea id="nl-paste" rows="5" class="mono" placeholder="Wklej fragment: zatrudnienie, www, branża..."></textarea>
+          <button class="btn btn-s btn-sm mt8" id="nl-applyPaste">Zastosuj wklejkę</button>
         </div>
       </div>
-
-      <div class="grid-12 card">
-        <h2>Eksport</h2>
-        <div class="row">
-          <button id="exportCsv" class="secondary">Eksportuj CSV</button>
-          <button id="printBtn" class="secondary">Drukuj / PDF</button>
-          <span class="hint">CSV zawiera najważniejsze pola do CRM.</span>
-        </div>
+      <div class="card" id="nl-result" style="display:none">
+        <div class="card-hdr"><h2>Wynik oceny</h2></div>
+        <div class="flex gap12 aic" id="nl-scoreArea"></div>
+        <div class="mt16"><ol id="nl-actions" style="margin-left:18px;line-height:1.8"></ol></div>
+        <div class="chips mt12" id="nl-tags"></div>
       </div>
     </div>
   </div>
+</div>
 
-  <div class="footer">
-    <div class="inner">
-      <div class="hint">OSINT wersja: 1.0 • Offline. Nie gromadzi danych.</div>
-      <div class="row">
-        <span class="pill"><span>Tryb</span><span class="muted">Wyszukiwarka + wklejka</span></span>
-      </div>
+<!-- LEAD DETAIL -->
+<div id="v-detail" class="view">
+  <div class="flex jcb aic mb16">
+    <div class="flex aic gap12">
+      <button class="btn-ghost" onclick="go('dashboard')">&larr; Wróć</button>
+      <h2 id="det-title" style="font-size:18px;font-weight:800;color:var(--text)"></h2>
+      <span id="det-badge"></span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-p btn-sm" id="det-score">Przelicz scoring</button>
+      <button class="btn btn-s btn-sm" id="det-enrich">Enrichuj OSINT</button>
+      <button class="btn btn-d btn-sm" id="det-del">Usuń</button>
     </div>
   </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-hdr"><h2>Firmografia</h2></div>
+      <table class="tbl" id="det-firmo"></table>
+    </div>
+    <div>
+      <div class="card mb16">
+        <div class="card-hdr"><h2>Scoring</h2></div>
+        <div class="flex gap12 aic" id="det-scoreArea"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><h2>Rekomendowane kroki</h2></div>
+        <ol id="det-actions" style="margin-left:18px;line-height:1.8"></ol>
+        <div class="chips mt12" id="det-tags"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h2>Dopasowanie oferty</h2></div>
+      <table class="tbl" id="det-offer"></table>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><h2>Historia scoringów</h2></div>
+      <table class="tbl" id="det-hist"></table>
+    </div>
+  </div>
+  <div class="btn-group mt16">
+    <button class="btn btn-s" id="det-csv">Eksportuj CSV</button>
+    <button class="btn btn-s" onclick="window.print()">Drukuj / PDF</button>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div id="v-config" class="view">
+  <div class="card" style="max-width:800px">
+    <div class="card-hdr"><h2>Konfiguracja scoringu</h2></div>
+    <textarea id="cfgEd" rows="22" class="mono" style="font-size:12px"></textarea>
+    <div class="flex gap8 mt12">
+      <button class="btn btn-p" id="cfgApply">Zastosuj</button>
+      <button class="btn btn-s" id="cfgReset">Przywróć domyślne</button>
+    </div>
+    <p class="small muted mt8">Zmiany wpływają od razu. Wagi muszą sumować się do 1.0.</p>
+  </div>
+</div>
+
+</main>
+</div>
+<div class="toast-wrap" id="toasts"></div>
 
 <script>
-// ——— Konfiguracja domyślna ———
-let CONFIG = {
-  weights: {
-    employees: 0.24,
-    revenueBand: 0.26,
-    yearsActive: 0.10,
-    vatStatus: 0.08,
-    pkdFit: 0.16,
-    basketSignal: 0.10,
-    locality: 0.06
-  },
-  revenueBands: [
-    { key: "micro", min: 0, max: 2_000_000, score: 25 },
-    { key: "small", min: 2_000_000, max: 10_000_000, score: 55 },
-    { key: "medium", min: 10_000_000, max: 50_000_000, score: 75 },
-    { key: "large", min: 50_000_000, max: Infinity, score: 92 }
-  ],
-  employeesScale: [
-    { max: 9, score: 20 }, { max: 49, score: 55 }, { max: 249, score: 78 }, { max: Infinity, score: 92 }
-  ],
-  yearsScale: [
-    { max: 1, score: 20 }, { max: 3, score: 40 }, { max: 7, score: 60 }, { max: 12, score: 75 }, { max: Infinity, score: 88 }
-  ],
-  basketCalibration: { alpha: 0.65, pivot: 8000 }, // 0–1 sygnał na tle koszyka
-  localityCities: ["Warszawa","Kraków","Wrocław","Poznań","Gdańsk","Katowice","Łódź"],
-  pkdToCategories: {
-    "41": ["materiały konstrukcyjne","stal","chemia bud.","narzędzia PRO"],
-    "42": ["kruszywa","beton","geowłókniny"],
-    "43": ["wykończeniówka","chemia bud.","elektryka","HVAC"],
-    "46.73": ["hurt budowlany","współpraca B2B","rabaty wolumenowe"],
-    "47.52": ["detal budowlany","POS","szybkie dostawy"],
-    "FALLBACK": ["materiały uniwersalne","transport","usługi cięcia/rozładunku"]
-  },
-  potentialModel: { baseARPU: 18000, multiplierByTier: { S: 30, A: 12, B: 5, C: 2 } }
-};
+// ═══ CONFIG ═══
+const API=location.port==='8000'?location.origin:(location.hostname==='localhost'||location.hostname==='127.0.0.1'?'http://localhost:8000':location.origin);
+let CONFIG={weights:{employees:.24,revenueBand:.26,yearsActive:.10,vatStatus:.08,pkdFit:.16,basketSignal:.10,locality:.06},revenueBands:[{key:"micro",min:0,max:2e6,score:25},{key:"small",min:2e6,max:10e6,score:55},{key:"medium",min:10e6,max:50e6,score:75},{key:"large",min:50e6,max:1/0,score:92}],employeesScale:[{max:9,score:20},{max:49,score:55},{max:249,score:78},{max:1/0,score:92}],yearsScale:[{max:1,score:20},{max:3,score:40},{max:7,score:60},{max:12,score:75},{max:1/0,score:88}],basketCalibration:{alpha:.65,pivot:8000},localityCities:["Warszawa","Kraków","Wrocław","Poznań","Gdańsk","Katowice","Łódź"],pkdToCategories:{"41":["materiały konstrukcyjne","stal","chemia bud.","narzędzia PRO"],"42":["kruszywa","beton","geowłókniny"],"43":["wykończeniówka","chemia bud.","elektryka","HVAC"],"46.73":["hurt budowlany","współpraca B2B","rabaty wolumenowe"],"47.52":["detal budowlany","POS","szybkie dostawy"],FALLBACK:["materiały uniwersalne","transport","usługi cięcia/rozładunku"]},potentialModel:{baseARPU:18000,multiplierByTier:{S:30,A:12,B:5,C:2}}};
+const DCFG=JSON.parse(JSON.stringify(CONFIG));
+const PKD={"41":"Roboty budowlane – wznoszenie budynków","42":"Inżynieria lądowa i wodna","43":"Roboty budowlane specjalistyczne","46.73":"Hurt: drewno, mat. bud., sanitarne","47.52":"Detal: sprzęt, farby, szkło"};
+const SKU={'materiały konstrukcyjne':['bloczek 24','cement CEM I 42,5','nadproże 120'],stal:['#12 żebrowana','strzemiona 25','siatka 5/5'],'chemia bud.':['grunt 10l','klej C2TE','tynk akryl 25kg'],'narzędzia PRO':['niwelator','laser krzyżowy','mieszarka 1400W'],kruszywa:['podsypka 0–31','żwir 8–16','piasek płukany'],beton:['C20/25','C25/30','posadzka mixokret'],'geowłókniny':['180g/m²','250g/m²','300g/m²'],'wykończeniówka':['gładź 20kg','farba lateks 10l','listwy przyp.'],elektryka:['peszel 20','YDYp 3×2,5','gniazda IP44'],HVAC:['rury preizol','kolana 90°','taśma alu'],'hurt budowlany':['palety mix','cennik projektowy','warunki ramowe'],'współpraca B2B':['kredyt kupiecki','EDI','harmonogram dostaw'],'rabaty wolumenowe':['rabaty 5/10/15%','transport 24h','koszt 0 >25k'],'detal budowlany':['POS standy','hity sezonu','pakiety DIY'],POS:['ekspozytory','etykiety cen.','ulotki techn.'],'szybkie dostawy':['same day','tracking SMS','okno 2h'],'materiały uniwersalne':['cement 32,5','piana mont.','wkręty 4.2×25'],transport:['HDS 12t','wywrotka 8t','bus 1.5t'],'usługi cięcia/rozładunku':['cięcie stali','rozładunek HDS','pakietowanie']};
+let apiOn=false,leads=[],curLead=null,pg={off:0,lim:25,tot:0};
 
-// ——— Mock enrichment (offline) ———
-function mockEnrich(query){
-  const seed = (query.q + (query.city||"")).toLowerCase().replace(/\D/g,"");
-  const h = hash(seed || Math.random().toString());
-  const emp = [6,18,55,130,320][h % 5];
-  const rev = [1_800_000, 6_200_000, 18_500_000, 74_000_000, 210_000_000][(h>>2) % 5];
-  const pkdPool = ["41","42","43","46.73","47.52"]; const pkd = pkdPool[(h>>4)%pkdPool.length];
-  const yrs = [0.8, 2.5, 5, 9, 14][(h>>6)%5];
-  const cityHit = CONFIG.localityCities.includes((query.city||"").trim());
-  const vat = ["Czynny VAT","Zwolniony","Niepewny"][h % 3];
-  return {
-    name: guessName(query.q),
-    nip: guessNip(query.q),
-    city: query.city || ["Warszawa","Kraków","Wrocław","Poznań","Gdańsk"][h%5],
-    employees: emp,
-    revenuePLN: rev,
-    revenueBand: bandOf(rev),
-    pkd,
-    pkdDesc: pkdDict[pkd]||"działalność budowlana/handel",
-    yearsActive: yrs,
-    vatStatus: vat,
-    localityHit: cityHit,
-    sources: ["offline:heuristic"]
-  };
+// ═══ API ═══
+async function apic(p,o={}){const r=await fetch(API+p,{headers:{'Content-Type':'application/json',...(o.headers||{})},...o});if(!r.ok){const t=await r.text().catch(()=>'');throw new Error(r.status+': '+t)}return r.status===204?null:r.json()}
+async function checkApi(){try{await apic('/health');apiOn=true}catch{apiOn=false}document.getElementById('connDot').className='dot '+(apiOn?'on':'off');document.getElementById('connLbl').textContent=apiOn?'API online':'Offline'}
+
+// ═══ OFFLINE SCORING ═══
+function hash(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return Math.abs(h)}
+function bandOf(v){for(const b of CONFIG.revenueBands)if(v>=b.min&&v<b.max)return b.key;return"micro"}
+function scl(sc,v){for(const e of sc)if(v<=e.max)return e.score;return 50}
+
+function offScore(d){
+  const w=CONFIG.weights,emp=scl(CONFIG.employeesScale,d.employees||0),rb=bandOf(d.revenue_pln||0),
+  rev=CONFIG.revenueBands.find(b=>b.key===rb)?.score||50,yrs=scl(CONFIG.yearsScale,d.years_active||0),
+  vat=d.vat_status==="Czynny VAT"?80:d.vat_status==="Zwolniony"?55:35,
+  pk=d.pkd||"",fb=pk?70:50,fa=(d.employees||0)>200?12:(d.employees||0)>50?6:0,fit=Math.min(92,fb+fa),
+  bs=Math.min(1,(d.basket_pln||0)/CONFIG.basketCalibration.pivot)**CONFIG.basketCalibration.alpha,
+  bsc=30+bs*60,loc=CONFIG.localityCities.includes((d.city||"").trim())?75:55,
+  raw=emp*w.employees+rev*w.revenueBand+yrs*w.yearsActive+vat*w.vatStatus+fit*w.pkdFit+bsc*w.basketSignal+loc*w.locality,
+  sc=Math.round(raw),tier=sc>=85?"S":sc>=70?"A":sc>=55?"B":"C",
+  m=CONFIG.potentialModel,ann=Math.round(m.baseARPU*(m.multiplierByTier[tier]||1)),
+  cats=CONFIG.pkdToCategories[pk]||CONFIG.pkdToCategories.FALLBACK;
+  return{score:sc,tier,annual_potential:ann,revenue_band:rb,categories:cats,recommended_actions:bldAct(tier,d)}
 }
 
-const pkdDict = { "41":"Roboty budowlane związane ze wznoszeniem budynków",
-  "42":"Roboty związane z budową obiektów inżynierii lądowej i wodnej",
-  "43":"Roboty budowlane specjalistyczne",
-  "46.73":"Sprzedaż hurtowa drewna, materiałów budowlanych i wyposażenia sanitarnego",
-  "47.52":"Sprzedaż detaliczna sprzętu, farb i szkła w wyspecjalizowanych sklepach" };
-
-function bandOf(v){
-  for(const b of CONFIG.revenueBands){ if(v>=b.min && v<b.max) return b.key; }
-  return "micro";
+function bldAct(tier,d){
+  const s=[];
+  if(tier==='S')s.push('Zadzwoń dziś i zaproponuj spotkanie onsite z opiekunem.');
+  if(tier==='A')s.push('Wyślij ofertę z rabatem wolumenowym i transportem 24–48h.');
+  if(tier==='B')s.push('Dodaj do kampanii remarketingowej. Follow-up za 7 dni.');
+  if(tier==='C')s.push('Oznacz jako lead do obserwacji. Follow-up za 30 dni.');
+  if(d.pkd)s.push('Dopasuj ofertę do PKD '+d.pkd+' – '+(PKD[d.pkd]||'bud/handel')+'.');
+  if(d.vat_status!=='Czynny VAT')s.push('Zweryfikuj status VAT na Białej Liście MF.');
+  if((d.basket_pln||0)>0&&(d.basket_pln||0)<3000)s.push('Upsell: pakiet PRO + darmowy transport >5k.');
+  if((d.employees||0)>50)s.push('Zaproponuj umowę ramową i ceny projektowe.');
+  return s
 }
 
-// ——— Scoring ———
-function score(en, basket){
-  const w = CONFIG.weights;
-  const empScore = CONFIG.employeesScale.find(x=>en.employees<=x.max)?.score||50;
-  const revScore = CONFIG.revenueBands.find(x=>x.key===en.revenueBand)?.score||50;
-  const yrsScore = CONFIG.yearsScale.find(x=>en.yearsActive<=x.max)?.score||50;
-  const vatScore = en.vatStatus==="Czynny VAT"?80: en.vatStatus==="Zwolniony"?55:35;
-  const fit = fitScore(en.pkd, en);
-  const basketSignal = Math.min(1, (basket||0)/CONFIG.basketCalibration.pivot) ** CONFIG.basketCalibration.alpha; // 0..1
-  const basketScore = 30 + basketSignal * 60; // 30..90
-  const locScore = en.localityHit? 75: 55;
-  const s = (
-    empScore*w.employees + revScore*w.revenueBand + yrsScore*w.yearsActive +
-    vatScore*w.vatStatus + fit*w.pkdFit + basketScore*w.basketSignal + locScore*w.locality
-  );
-  const score = Math.round(s);
-  const tier = score>=85?"S": score>=70?"A": score>=55?"B":"C";
-  const annual = estAnnual(tier);
-  return { score, tier, annual };
+function mockEn(q,city){
+  const s=(q+city).toLowerCase().replace(/\D/g,"")||"default",h=hash(s),
+  emp=[6,18,55,130,320][h%5],rev=[1.8e6,6.2e6,18.5e6,74e6,210e6][(h>>2)%5],
+  pp=["41","42","43","46.73","47.52"],pk=pp[(h>>4)%pp.length],
+  yrs=[.8,2.5,5,9,14][(h>>6)%5],vat=["Czynny VAT","Zwolniony","Niepewny"][h%3];
+  return{employees:emp,revenue_pln:rev,pkd:pk,pkd_desc:PKD[pk]||"",years_active:yrs,vat_status:vat,city:city||["Warszawa","Kraków","Wrocław","Poznań","Gdańsk"][h%5]}
 }
 
-function fitScore(pkd, en){
-  const base = pkd? 70: 50;
-  const sizeAdj = en.employees>200? +12: en.employees>50? +6: +0;
-  return Math.min(92, base + sizeAdj);
+// ═══ OSINT PASTE ═══
+function parsePaste(t){
+  const dm=t.match(/https?:\/\/(?:www\.)?([a-z0-9.-]+)\b/i),em=t.match(/(\d{1,4})\s*[–—\-to]+\s*(\d{1,4})/i),
+  kw=(t.toLowerCase().match(/[a-ząćęłńóśżź]{4,}/g)||[]).slice(0,200).join(' ');
+  return{domain:dm?dm[1]:'',empMin:em?+em[1]:null,empMax:em?+em[2]:null,keywords:kw}
+}
+function guessPKD(t){
+  const s=(t||'').toLowerCase();
+  if(/(instal|wykońc|remont|dociepl|elektryk|hydraul)/.test(s))return'43';
+  if(/(dewelop|general|budow|konstruk)/.test(s))return'41';
+  if(/(inżyni|drog|most|kanaliz)/.test(s))return'42';
+  if(/(hurt|dystryb|wholesale)/.test(s))return'46.73';
+  if(/(market|sklep|detal|retail)/.test(s))return'47.52';
+  return''
 }
 
-function estAnnual(tier){
-  const m = CONFIG.potentialModel;
-  return Math.round(m.baseARPU * (m.multiplierByTier[tier]||1));
+// ═══ RENDER UTILS ═══
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function fmtP(v){return(v||0).toLocaleString('pl-PL')}
+function tCls(t){return'badge-'+(t||'c').toLowerCase()}
+function tCol(t){return({S:'var(--accent)',A:'var(--blue)',B:'var(--warn)',C:'var(--danger)'})[t]||'var(--muted)'}
+
+function ringHTML(sc,tier){
+  const c=2*Math.PI*46,off=c-c*Math.min(sc,100)/100;
+  return '<div class="score-ring"><svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="46"/><circle class="bar" cx="50" cy="50" r="46" stroke="'+tCol(tier)+'" stroke-dasharray="'+c+'" stroke-dashoffset="'+off+'"/></svg><div class="center"><div class="num" style="color:'+tCol(tier)+'">'+sc+'</div><div class="sub">Tier '+tier+'</div></div></div><div style="flex:1"><div class="small muted mb16">S(85+) A(70+) B(55+) C(&lt;55)</div><div class="prog"><i style="width:'+Math.min(100,sc)+'%;background:'+tCol(tier)+'"></i></div></div>'
 }
 
-// ——— OSINT launcher ———
-let OSINT_OVERRIDES = null;
-function inputQuery(){ const v=document.querySelector('#q').value.trim(); return v; }
-function enc(s){ return encodeURIComponent(s||''); }
-function openSearch(url){ window.open(url, '_blank'); }
-function buildNameOrNip(){ const v=inputQuery(); const nip=(v.match(/\d{10}/)||[])[0]||''; return nip? nip : v; }
-function attachOsintButtons(){
-  const base = ()=> enc(buildNameOrNip());
-  const map = {
-    gLinkedin: ()=> `https://www.google.com/search?q=site%3Alinkedin.com/company+${base()}`,
-    gPrzetargi: ()=> `https://www.google.com/search?q=${base()}+przetarg+ogloszenie+zamowienia` ,
-    gEKRS: ()=> `https://www.google.com/search?q=site%3Aekrs.ms.gov.pl+${base()}`,
-    gCEIDG: ()=> `https://www.google.com/search?q=site%3Aprod.ceidg.gov.pl+${base()}`,
-    gStrona: ()=> `https://www.google.com/search?q=${base()}+oficjalna+strona+kontakt` ,
-    gPanorama: ()=> `https://www.google.com/search?q=site%3Apanoramafirm.pl+${base()}`
-  };
-  Object.entries(map).forEach(([id,fn])=>{ const el=document.getElementById(id); if(el){ el.onclick=()=> openSearch(fn()); }});
+function actsHTML(acts){return acts.map(a=>'<li>'+esc(a)+'</li>').join('')}
+function tagsHTML(cats){return(cats||[]).map(c=>'<span class="pill">'+esc(c)+'</span>').join('')}
+
+function firmoHTML(l){
+  const rows=[['Nazwa',l.name||'–'],['NIP',l.nip||'–'],['Miasto',l.city||'–'],['Pracownicy',l.employees??'–'],['Przychód',l.revenue_pln?fmtP(l.revenue_pln)+' PLN':'–'],['Próg',l.revenue_band||'–'],['PKD',l.pkd?l.pkd+' – '+(l.pkd_desc||PKD[l.pkd]||''):'–'],['Lata',l.years_active??'–'],['VAT',l.vat_status||'–'],['WWW',l.website||'–'],['Źródła',(l.sources||[]).join(', ')||'–']];
+  return'<tr><th>Pole</th><th>Wartość</th></tr>'+rows.map(r=>'<tr><td>'+esc(String(r[0]))+'</td><td>'+esc(String(r[1]))+'</td></tr>').join('')
 }
-function parseOsint(text){
-  const t=(text||'');
-  const domainMatch = t.match(/https?:\/\/(?:www\.)?([a-z0-9.-]+)\b/i);
-  const empMatch = t.match(/(\d{1,3})\s*[–—-to]+\s*(\d{1,3})/i);
-  const keywords = (t.toLowerCase().match(/[a-ząćęłńóśżź]{4,}/g)||[]).slice(0,200).join(' ');
-  return {
-    domain: domainMatch? domainMatch[1] : '',
-    empMin: empMatch? Number(empMatch[1]) : null,
-    empMax: empMatch? Number(empMatch[2]) : null,
-    keywords
-  };
+
+function offerAngle(c){
+  if(c.includes('hurt')||c.includes('B2B'))return'Umowa ramowa. Ceny projektowe + SLA.';
+  if(c.includes('wykończen'))return'Dostawy JIT. Paletyzacja i zwroty.';
+  if(c.includes('stal'))return'Cięcie pod wymiar. Stałe wolumeny.';
+  if(c.includes('chemia'))return'Dowozy 24h. Wsparcie technologa.';
+  return'Cross-sell z logistyką i finansowaniem.'
 }
-function guessPKD(text){
-  const tt=(text||'').toLowerCase();
-  if(/(instal|wykońc|remont|dociepl|elektryk|hydraul)/.test(tt)) return '43';
-  if(/(dewelop|general|budow|konstruk)/.test(tt)) return '41';
-  if(/(inżyni|drog|most|kanaliz|kolej)/.test(tt)) return '42';
-  if(/(hurt|dystryb|dystrybu|wholesale)/.test(tt)) return '46.73';
-  if(/(market|sklep|detal|retail)/.test(tt)) return '47.52';
-  return '';
+function offerHTML(pk){
+  const cats=CONFIG.pkdToCategories[pk]||CONFIG.pkdToCategories.FALLBACK;
+  return'<tr><th>Kategoria</th><th>SKU</th><th>Kąt sprzedażowy</th></tr>'+cats.map(c=>'<tr><td>'+esc(c)+'</td><td>'+esc((SKU[c]||['asortyment bazowy']).join(', '))+'</td><td>'+esc(offerAngle(c))+'</td></tr>').join('')
 }
-function applyOsintOverrides(en){
-  if(!OSINT_OVERRIDES) return en;
-  const out = { ...en };
-  if(OSINT_OVERRIDES.empMin && OSINT_OVERRIDES.empMax){
-    const est = Math.round((OSINT_OVERRIDES.empMin + OSINT_OVERRIDES.empMax)/2);
-    if(est>0) out.employees = Math.max(out.employees||0, est);
+
+// ═══ NAVIGATION ═══
+function go(v){
+  document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('active');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  if(v==='dashboard')loadDash();
+  if(v==='config')document.getElementById('cfgEd').value=JSON.stringify(CONFIG,null,2);
+  if(v==='newlead')clearNL();
+  document.getElementById('navDet').classList.toggle('hidden',v!=='detail');
+}
+document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.v)));
+
+// ═══ TOAST ═══
+function toast(type,msg){
+  const w=document.getElementById('toasts'),t=document.createElement('div');
+  t.className='toast '+type;t.textContent=msg;w.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},4000)
+}
+
+// ═══ DASHBOARD ═══
+function renderKpis(){
+  const ti={S:0,A:0,B:0,C:0};leads.forEach(l=>{if(l.tier&&ti[l.tier]!==undefined)ti[l.tier]++});
+  document.getElementById('kpis').innerHTML='<div class="kpi accent"><div class="val">'+ti.S+'</div><div class="lbl">Tier S</div></div><div class="kpi blue"><div class="val">'+ti.A+'</div><div class="lbl">Tier A</div></div><div class="kpi warn"><div class="val">'+ti.B+'</div><div class="lbl">Tier B</div></div><div class="kpi danger"><div class="val">'+ti.C+'</div><div class="lbl">Tier C</div></div>'
+}
+
+function renderTable(){
+  const tb=document.getElementById('leadsTb');
+  if(!leads.length){tb.innerHTML='<tr><td colspan="9" class="muted" style="text-align:center;padding:40px">'+(apiOn?'Brak leadów. Dodaj pierwszy!':'Tryb offline – użyj "Nowy lead".')+'</td></tr>';renderPg();return}
+  tb.innerHTML=leads.map(l=>'<tr onclick="openLead(\''+l.id+'\')"><td class="truncate">'+esc(l.name||'–')+'</td><td class="mono small">'+esc(l.nip||'–')+'</td><td>'+esc(l.city||'–')+'</td><td class="mono">'+esc(l.pkd||'–')+'</td><td class="num">'+(l.employees??'–')+'</td><td class="num">'+(l.revenue_pln?fmtP(l.revenue_pln):'–')+'</td><td>'+(l.tier?'<span class="badge '+tCls(l.tier)+'">'+l.tier+'</span>':'–')+'</td><td class="num" style="font-weight:700">'+(l.score??'–')+'</td><td class="num">'+(l.annual_potential?fmtP(l.annual_potential)+' PLN':'–')+'</td></tr>').join('');
+  renderPg()
+}
+function renderPg(){
+  const el=document.getElementById('pager'),pages=Math.ceil(pg.tot/pg.lim)||1,cur=Math.floor(pg.off/pg.lim)+1;
+  el.innerHTML='<span class="small muted">'+pg.tot+' leadów</span><div class="btn-group">'+(cur>1?'<button class="btn btn-s btn-sm" onclick="goP('+(cur-2)+')">&larr;</button>':'')+'<span class="small" style="padding:6px 8px">'+cur+'/'+pages+'</span>'+(cur<pages?'<button class="btn btn-s btn-sm" onclick="goP('+cur+')">&rarr;</button>':'')+'</div>'
+}
+function goP(p){pg.off=p*pg.lim;loadDash()}
+
+async function loadDash(){
+  if(apiOn){
+    try{
+      const q=document.getElementById('searchQ').value.trim(),tier=document.getElementById('filterTier').value;
+      const params=new URLSearchParams({offset:pg.off,limit:pg.lim});
+      if(q)params.set('q',q);if(tier)params.set('tier',tier);
+      const data=await apic('/api/leads?'+params);
+      leads=data.items;pg.tot=data.total;
+    }catch(e){toast('err','Błąd: '+e.message);leads=[];pg.tot=0}
+  }else{
+    leads=JSON.parse(localStorage.getItem('pot_leads')||'[]');pg.tot=leads.length
   }
-  if(OSINT_OVERRIDES.domain){ out.website = OSINT_OVERRIDES.domain; }
-  if(OSINT_OVERRIDES.keywords){
-    const pkd = guessPKD(OSINT_OVERRIDES.keywords);
-    if(pkd){ out.pkd = pkd; out.pkdDesc = pkdDict[pkd]||out.pkdDesc; }
+  renderTable();renderKpis()
+}
+
+let sTimer;
+document.getElementById('searchQ').addEventListener('input',()=>{clearTimeout(sTimer);sTimer=setTimeout(()=>{pg.off=0;loadDash()},350)});
+document.getElementById('filterTier').addEventListener('change',()=>{pg.off=0;loadDash()});
+
+// ═══ NEW LEAD ═══
+function clearNL(){
+  ['nl-nip','nl-name','nl-city','nl-pkd','nl-emp','nl-rev','nl-years','nl-basket','nl-web','nl-paste'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+  document.getElementById('nl-vat').value='';
+  document.getElementById('nl-result').style.display='none'
+}
+function getForm(){
+  return{nip:document.getElementById('nl-nip').value.trim()||null,name:document.getElementById('nl-name').value.trim()||'Firma',city:document.getElementById('nl-city').value.trim()||null,pkd:document.getElementById('nl-pkd').value.trim()||null,employees:+document.getElementById('nl-emp').value||null,revenue_pln:+document.getElementById('nl-rev').value||null,years_active:+document.getElementById('nl-years').value||null,vat_status:document.getElementById('nl-vat').value||null,basket_pln:+document.getElementById('nl-basket').value||0,website:document.getElementById('nl-web').value.trim()||null}
+}
+function fillForm(d){
+  if(d.nip)document.getElementById('nl-nip').value=d.nip;
+  if(d.name)document.getElementById('nl-name').value=d.name;
+  if(d.city)document.getElementById('nl-city').value=d.city;
+  if(d.pkd)document.getElementById('nl-pkd').value=d.pkd;
+  if(d.employees)document.getElementById('nl-emp').value=d.employees;
+  if(d.revenue_pln)document.getElementById('nl-rev').value=d.revenue_pln;
+  if(d.years_active)document.getElementById('nl-years').value=d.years_active;
+  if(d.vat_status)document.getElementById('nl-vat').value=d.vat_status;
+  if(d.website)document.getElementById('nl-web').value=d.website
+}
+function showNLResult(r){
+  document.getElementById('nl-result').style.display='block';
+  document.getElementById('nl-scoreArea').innerHTML=ringHTML(r.score,r.tier);
+  document.getElementById('nl-actions').innerHTML=actsHTML(r.recommended_actions);
+  document.getElementById('nl-tags').innerHTML=tagsHTML(r.categories)
+}
+
+document.getElementById('nl-save').addEventListener('click',async()=>{
+  const d=getForm();
+  if(!d.name||d.name==='Firma'){toast('err','Podaj nazwę firmy.');return}
+  if(apiOn){
+    try{
+      const lead=await apic('/api/leads',{method:'POST',body:JSON.stringify(d)});
+      const sc=await apic('/api/scoring/leads/'+lead.id,{method:'POST'});
+      toast('ok','Zapisano. Tier '+sc.tier+', score '+sc.score);
+      openLead(lead.id)
+    }catch(e){toast('err',e.message)}
+  }else{
+    const r=offScore(d);
+    const lead={...d,id:crypto.randomUUID(),score:r.score,tier:r.tier,annual_potential:r.annual_potential,revenue_band:r.revenue_band,sources:['offline'],created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    const st=JSON.parse(localStorage.getItem('pot_leads')||'[]');st.unshift(lead);localStorage.setItem('pot_leads',JSON.stringify(st));
+    toast('ok','Offline: Tier '+r.tier+', score '+r.score);showNLResult(r)
   }
-  return out;
+});
+
+document.getElementById('nl-offline').addEventListener('click',()=>{
+  const d=getForm();
+  if(!d.employees&&!d.revenue_pln){
+    const m=mockEn(d.nip||d.name,d.city||'');
+    if(!d.employees)d.employees=m.employees;if(!d.revenue_pln)d.revenue_pln=m.revenue_pln;
+    if(!d.pkd)d.pkd=m.pkd;if(!d.years_active)d.years_active=m.years_active;
+    if(!d.vat_status)d.vat_status=m.vat_status;if(!d.city)d.city=m.city;
+    fillForm(d)
+  }
+  showNLResult(offScore(d))
+});
+
+document.getElementById('nl-enrich').addEventListener('click',async()=>{
+  const nip=document.getElementById('nl-nip').value.trim();
+  if(!nip||!/^\d{10}$/.test(nip)){toast('err','Podaj NIP (10 cyfr).');return}
+  if(!apiOn){toast('info','Enrichment wymaga backendu.');return}
+  try{
+    toast('info','Enrichuję...');
+    const d=getForm();if(!d.name||d.name==='Firma')d.name='Firma NIP '+nip;
+    const lead=await apic('/api/leads',{method:'POST',body:JSON.stringify(d)});
+    await apic('/api/osint/enrich/'+lead.id,{method:'POST'});
+    const up=await apic('/api/leads/'+lead.id);
+    fillForm(up);
+    const sc=await apic('/api/scoring/leads/'+lead.id,{method:'POST'});
+    toast('ok','Tier '+sc.tier+', score '+sc.score);openLead(lead.id)
+  }catch(e){toast('err',e.message)}
+});
+
+document.getElementById('nl-applyPaste').addEventListener('click',()=>{
+  const raw=document.getElementById('nl-paste').value.trim();
+  if(!raw){toast('info','Wklej dane.');return}
+  const p=parsePaste(raw);
+  if(p.empMin&&p.empMax){const est=Math.round((p.empMin+p.empMax)/2);const cur=+document.getElementById('nl-emp').value||0;if(est>cur)document.getElementById('nl-emp').value=est}
+  if(p.domain)document.getElementById('nl-web').value=p.domain;
+  const pk=guessPKD(p.keywords);if(pk&&!document.getElementById('nl-pkd').value)document.getElementById('nl-pkd').value=pk;
+  toast('ok','Wklejka zastosowana.')
+});
+
+// ═══ LEAD DETAIL ═══
+async function openLead(id){
+  if(!id)return;go('detail');
+  if(apiOn){try{curLead=await apic('/api/leads/'+id)}catch(e){toast('err',e.message);return}}
+  else{const st=JSON.parse(localStorage.getItem('pot_leads')||'[]');curLead=st.find(l=>l.id===id);if(!curLead){toast('err','Nie znaleziono.');return}}
+  renderDet()
 }
 
-// ——— UI ———
-const $ = (q)=> document.querySelector(q);
-const out = $('#out');
-const barFill = $('#barFill');
-const tierEl = $('#tier');
-const scoreEl = $('#score');
-const annualEl = $('#annual');
-const bandEl = $('#band');
-const actionsEl = $('#actions');
-const tagsEl = $('#tags');
-const firmoEl = $('#firmo');
-const offerEl = $('#offer');
-
-$('#cfg').value = JSON.stringify(CONFIG, null, 2);
-$('#applyCfg').onclick = ()=>{ try{ CONFIG = JSON.parse($('#cfg').value); alert('Zastosowano konfigurację.'); } catch(e){ alert('Błąd JSON.'); } };
-
-function runCheck(){
-  const q = $('#q').value.trim();
-  if(!q){ alert('Podaj NIP lub nazwę.'); return; }
-  const city = $('#city').value.trim();
-  const basket = Number($('#basket').value||0);
-  let en = mockEnrich({ q, city });
-  en = applyOsintOverrides(en);
-  const { score: sc, tier } = score(en, basket);
-  const annual = estAnnual(tier);
-  renderScore(sc, tier, annual);
-  renderActions(en, sc, tier, basket);
-  renderFirmo(en);
-  renderOffer(en);
-  out.style.display = 'grid';
+function renderDet(){
+  const l=curLead;
+  document.getElementById('det-title').textContent=l.name||'Lead';
+  document.getElementById('det-badge').innerHTML=l.tier?'<span class="badge '+tCls(l.tier)+'">Tier '+l.tier+'</span>':'';
+  document.getElementById('det-firmo').innerHTML=firmoHTML(l);
+  if(l.score!=null){
+    document.getElementById('det-scoreArea').innerHTML=ringHTML(l.score,l.tier);
+    document.getElementById('det-actions').innerHTML=actsHTML(bldAct(l.tier,l));
+    document.getElementById('det-tags').innerHTML=tagsHTML(CONFIG.pkdToCategories[l.pkd]||CONFIG.pkdToCategories.FALLBACK)
+  }else{
+    document.getElementById('det-scoreArea').innerHTML='<span class="muted">Brak scoringu.</span>';
+    document.getElementById('det-actions').innerHTML='';document.getElementById('det-tags').innerHTML=''
+  }
+  document.getElementById('det-offer').innerHTML=offerHTML(l.pkd||'');
+  loadHist()
 }
 
-$('#checkBtn').onclick = runCheck;
-$('#clearBtn').onclick = ()=>{ ['#q','#city','#basket','#osintPaste'].forEach(id=> {const el=$(id); if(el) el.value='';}); out.style.display='none'; OSINT_OVERRIDES=null; };
-$('#exportCsv').onclick = exportCsv;
-$('#printBtn').onclick = ()=> window.print();
-
-function renderScore(sc, tier, annual){
-  scoreEl.textContent = sc;
-  tierEl.textContent = `Tier ${tier}`;
-  barFill.style.width = Math.max(0, Math.min(100, sc))+'%';
-  annualEl.textContent = annual.toLocaleString('pl-PL');
-  const low = Math.round(annual*0.7).toLocaleString('pl-PL');
-  const high = Math.round(annual*1.3).toLocaleString('pl-PL');
-  bandEl.textContent = `${low} – ${high}`;
+async function loadHist(){
+  const el=document.getElementById('det-hist');
+  if(!apiOn||!curLead?.id){el.innerHTML='<tr><td class="muted">Historia wymaga backendu.</td></tr>';return}
+  try{
+    const h=await apic('/api/scoring/leads/'+curLead.id+'/history');
+    if(!h.length){el.innerHTML='<tr><td class="muted" colspan="4">Brak historii.</td></tr>';return}
+    el.innerHTML='<tr><th>Data</th><th>Score</th><th>Tier</th><th class="num">Potencjał</th></tr>'+h.map(x=>'<tr><td class="small">'+new Date(x.scored_at).toLocaleDateString('pl-PL')+'</td><td>'+x.score+'</td><td><span class="badge '+tCls(x.tier)+'">'+x.tier+'</span></td><td class="num">'+fmtP(x.annual_potential)+' PLN</td></tr>').join('')
+  }catch{el.innerHTML='<tr><td class="muted">Błąd historii.</td></tr>'}
 }
 
-function renderActions(en, sc, tier, basket){
-  actionsEl.innerHTML = '';
-  const steps = [];
-  if(tier==='S') steps.push('Zadzwoń dziś i zaproponuj spotkanie onsite z opiekunem.');
-  if(tier==='A') steps.push('Wyślij ofertę z rabatem wolumenowym i transportem 24–48h.');
-  if(tier==='B') steps.push('Dodaj do kampanii remarketingowej. Follow-up za 7 dni.');
-  if(tier==='C') steps.push('Oznacz jako lead do obserwacji. Follow-up za 30 dni.');
-  steps.push(`Dopasuj ofertę do PKD ${en.pkd} – ${en.pkdDesc}.`);
-  if(en.vatStatus!=="Czynny VAT") steps.push('Zweryfikuj status VAT na Białej Liście MF przed fakturą.');
-  if(basket>0 && basket<3000) steps.push('Propozycja upsell: pakiet startowy PRO + darmowy transport powyżej 5k.');
-  if(en.employees>50) steps.push('Zaproponuj umowę ramową i ceny projektowe.');
-  steps.forEach(t=>{ const li = document.createElement('li'); li.textContent = t; actionsEl.appendChild(li); });
+document.getElementById('det-score').addEventListener('click',async()=>{
+  if(!curLead)return;
+  if(apiOn){
+    try{const r=await apic('/api/scoring/leads/'+curLead.id,{method:'POST'});curLead=await apic('/api/leads/'+curLead.id);renderDet();toast('ok','Tier '+r.tier+', score '+r.score)}catch(e){toast('err',e.message)}
+  }else{
+    const r=offScore(curLead);Object.assign(curLead,{score:r.score,tier:r.tier,annual_potential:r.annual_potential,revenue_band:r.revenue_band});
+    const st=JSON.parse(localStorage.getItem('pot_leads')||'[]');const i=st.findIndex(l=>l.id===curLead.id);
+    if(i>=0){st[i]=curLead;localStorage.setItem('pot_leads',JSON.stringify(st))}
+    renderDet();toast('ok','Offline: Tier '+r.tier+', score '+r.score)
+  }
+});
 
-  tagsEl.innerHTML = '';
-  const cats = CONFIG.pkdToCategories[en.pkd] || CONFIG.pkdToCategories.FALLBACK;
-  cats.forEach(c=>{ const s=document.createElement('span'); s.className='pill'; s.textContent=c; tagsEl.appendChild(s); });
+document.getElementById('det-enrich').addEventListener('click',async()=>{
+  if(!curLead?.nip){toast('err','Brak NIP.');return}
+  if(!apiOn){toast('info','Wymaga backendu.');return}
+  try{toast('info','Enrichuję...');await apic('/api/osint/enrich/'+curLead.id,{method:'POST'});curLead=await apic('/api/leads/'+curLead.id);renderDet();toast('ok','Enrichment OK.')}catch(e){toast('err',e.message)}
+});
+
+document.getElementById('det-del').addEventListener('click',async()=>{
+  if(!curLead||!confirm('Usunąć lead?'))return;
+  if(apiOn){try{await apic('/api/leads/'+curLead.id,{method:'DELETE'});toast('ok','Usunięto.');go('dashboard')}catch(e){toast('err',e.message)}}
+  else{const st=JSON.parse(localStorage.getItem('pot_leads')||'[]').filter(l=>l.id!==curLead.id);localStorage.setItem('pot_leads',JSON.stringify(st));toast('ok','Usunięto.');go('dashboard')}
+});
+
+document.getElementById('det-csv').addEventListener('click',()=>{
+  if(!curLead)return;const l=curLead;
+  const rows=[['Pole','Wartość'],['Nazwa',l.name],['NIP',l.nip||''],['Miasto',l.city||''],['Pracownicy',l.employees||''],['Przychód',l.revenue_pln||''],['PKD',l.pkd||''],['VAT',l.vat_status||''],['Score',l.score||''],['Tier',l.tier||''],['Potencjał',l.annual_potential||'']];
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='lead_'+(l.nip||'export')+'.csv';a.click()
+});
+
+// ═══ CONFIG ═══
+document.getElementById('cfgApply').addEventListener('click',()=>{try{CONFIG=JSON.parse(document.getElementById('cfgEd').value);toast('ok','Konfiguracja zastosowana.')}catch(e){toast('err','Błąd JSON: '+e.message)}});
+document.getElementById('cfgReset').addEventListener('click',()=>{CONFIG=JSON.parse(JSON.stringify(DCFG));document.getElementById('cfgEd').value=JSON.stringify(CONFIG,null,2);toast('ok','Przywrócono domyślne.')});
+
+// ═══ OSINT BUTTONS ═══
+function initOsint(){
+  const c=document.getElementById('osintBtns');
+  const btns=[{l:'LinkedIn',q:()=>'site:linkedin.com/company '+tm()},{l:'Przetargi',q:()=>tm()+' przetarg ogłoszenie'},{l:'eKRS',q:()=>'site:ekrs.ms.gov.pl '+tm()},{l:'CEIDG',q:()=>'site:prod.ceidg.gov.pl '+tm()},{l:'Strona WWW',q:()=>tm()+' oficjalna strona kontakt'},{l:'Panorama Firm',q:()=>'site:panoramafirm.pl '+tm()}];
+  function tm(){return document.getElementById('nl-nip').value.trim()||document.getElementById('nl-name').value.trim()||''}
+  c.innerHTML=btns.map((b,i)=>'<button class="btn btn-s btn-sm" id="ob'+i+'">'+esc(b.l)+'</button>').join('');
+  btns.forEach((b,i)=>document.getElementById('ob'+i).addEventListener('click',()=>{const t=tm();if(!t){toast('info','Wpisz NIP lub nazwę.');return}window.open('https://www.google.com/search?q='+encodeURIComponent(b.q()),'_blank')}))
 }
 
-function renderFirmo(en){
-  const rows = [
-    ['Nazwa', en.name],
-    ['NIP', en.nip||'–'],
-    ['Miasto', en.city],
-    ['Pracownicy', en.employees],
-    ['Przychód szac.', en.revenuePLN.toLocaleString('pl-PL')+' PLN'],
-    ['Próg wielkości', en.revenueBand],
-    ['PKD', `${en.pkd} – ${en.pkdDesc}`],
-    ['Lata na rynku', en.yearsActive],
-    ['VAT', en.vatStatus],
-    ['WWW', en.website||'—'],
-    ['Źródła', en.sources.join(', ')+(OSINT_OVERRIDES? ', osint:wklejka' : '')]
-  ];
-  firmoEl.innerHTML = '<tr><th>Pole</th><th>Wartość</th></tr>' + rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
-}
-
-function renderOffer(en){
-  const cats = CONFIG.pkdToCategories[en.pkd] || CONFIG.pkdToCategories.FALLBACK;
-  const recs = cats.map((c)=>({
-    kategoria: c,
-    SKU_flagowe: sampleSkus(c),
-    argument: offerAngle(c, en)
-  }));
-  offerEl.innerHTML = '<tr><th>Kategoria</th><th>Propozycje SKU</th><th>Kąt sprzedażowy</th></tr>'+
-    recs.map(r=>`<tr><td>${r.kategoria}</td><td>${r.SKU_flagowe.join(', ')}</td><td>${r.argument}</td></tr>`).join('');
-}
-
-function sampleSkus(cat){
-  const dict={
-    'materiały konstrukcyjne':['bloczek 24','cement CEM I 42,5','nadproże 120'],
-    'stal':['#12 żebrowana','strzemiona 25','siatka 5/5'],
-    'chemia bud.':['grunt 10l','klej C2TE','tynk akryl 25kg'],
-    'narzędzia PRO':['niwelator','laser krzyżowy','mieszarka 1400W'],
-    'kruszywa':['podsypka 0–31','żwir 8–16','piasek płukany'],
-    'beton':['C20/25','C25/30','posadzka mixokret'],
-    'geowłókniny':['180g/m²','250g/m²','300g/m²'],
-    'wykończeniówka':['gładź 20kg','farba lateks 10l','listwy przyp.'],
-    'elektryka':['peszel 20','przewód YDYp 3×2,5','gniazda IP44'],
-    'HVAC':['rury preizol','kolana 90°','taśma alu'],
-    'hurt budowlany':['palety mix','cennik projektowy','warunki ramowe'],
-    'współpraca B2B':['kredyt kupiecki','EDI','harmonogram dostaw'],
-    'rabaty wolumenowe':['rabaty progowe 5/10/15%','transport 24h','koszt 0 przy >25k'],
-    'detal budowlany':['POS standy','hity sezonu','pakiety DIY'],
-    'POS':['ekspozytory','etykiety cen.','ulotki techn.'],
-    'szybkie dostawy':['dostawa same day','tracking SMS','okno 2h'],
-    'materiały uniwersalne':['cement 32,5','piana mont.','wkręty 4.2×25'],
-    'transport':['HDS 12t','wywrotka 8t','bus 1.5t'],
-    'usługi cięcia/rozładunku':['cięcie stali','rozładunek HDS','pakietowanie']
-  };
-  return dict[cat] || ['asortyment bazowy','oferta sezonowa','pakiet logistyczny'];
-}
-
-function offerAngle(cat,en){
-  if(cat.includes('hurt')||cat.includes('B2B')) return 'Skalowanie zakupów. Umowa ramowa. Ceny projektowe + SLA dostaw.';
-  if(cat.includes('wykończen')) return 'Szybka rotacja. Dostawy JIT na inwestycję. Paletyzacja i zwroty.';
-  if(cat.includes('stal')) return 'Składowanie + cięcie pod wymiar. Lepsza cena przy stałych wolumenach.';
-  if(cat.includes('chemia')) return 'Dowozy w 24h. Próbki i wsparcie technologa na budowie.';
-  return 'Oferta dopasowana do PKD. Cross-sell z logistyką i finansowaniem.';
-}
-
-function exportCsv(){
-  const rows = Array.from(document.querySelectorAll('#firmo tr')).slice(1).map(tr=>[
-    tr.children[0].textContent, tr.children[1].textContent
-  ]);
-  const extra = [ ['Wynik', $('#score').textContent], ['Tier', $('#tier').textContent], ['Potencjał roczny', $('#annual').textContent+' PLN'] ];
-  const all = rows.concat(extra);
-  const csv = 'Pole,Wartość\n' + all.map(r=> r.map(v=> '"'+ String(v).replaceAll('"','""') +'"').join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'lead_potencjal_osint.csv';
-  a.click();
-}
-
-// ——— Helpers ———
-function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; } return Math.abs(h); }
-function guessName(q){ if(/\d{10}/.test(q)) return 'Firma – wg NIP'; return q.replace(/\s+/g,' ').trim(); }
-function guessNip(q){ const m=q.match(/\d{10}/); return m?m[0]:''; }
-
-// init
-(function init(){ attachOsintButtons(); })();
+// ═══ INIT ═══
+(async()=>{await checkApi();initOsint();loadDash()})();
 </script>
 </body>
 </html>
