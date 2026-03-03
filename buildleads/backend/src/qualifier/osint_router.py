@@ -54,6 +54,7 @@ async def ekrs_lookup(nip: str):
             "name": result.name,
             "city": result.city,
             "pkd": result.pkd,
+            "pkd_desc": result.pkd_desc,
             "years_active": result.years_active,
             "krs": result.krs,
             "regon": result.regon,
@@ -117,7 +118,9 @@ async def enrich(
 
     # Apply merged data to lead (first-non-null for each field)
     update_data = {}
-    for key in ["name", "city", "employees", "revenue_pln", "pkd", "pkd_desc", "years_active", "vat_status", "website"]:
+    merge_fields = ["name", "city", "employees", "revenue_pln", "pkd", "pkd_desc",
+                    "years_active", "vat_status", "website"]
+    for key in merge_fields:
         current = getattr(lead, key, None)
         new_val = merged.get(key)
         if new_val is not None and current is None:

@@ -194,11 +194,41 @@ export default function LeadDetailPage() {
   const circumference = 2 * Math.PI * 54;
   const strokeDashoffset = circumference - (circumference * scorePercent) / 100;
 
-  // Extract useful data from OSINT raw
-  const vatSubject = (lead.osint_raw?.vat_whitelist as Record<string, unknown>)?.result
-    ? ((lead.osint_raw?.vat_whitelist as Record<string, unknown>)?.result as Record<string, unknown>)?.subject as Record<string, unknown> | undefined
+  // Extract structured data from OSINT raw
+  const vatRaw = lead.osint_raw?.vat_whitelist as Record<string, unknown> | undefined;
+  const vatSubject = vatRaw?.result
+    ? (vatRaw.result as Record<string, unknown>)?.subject as Record<string, unknown> | undefined
     : undefined;
   const ekrsRaw = lead.osint_raw?.ekrs as Record<string, unknown> | undefined;
+  const ekrsParsed = ekrsRaw?._parsed as Record<string, unknown> | undefined;
+  const gusRaw = lead.osint_raw?.gus as Record<string, unknown> | undefined;
+  const gusParsed = gusRaw?._parsed as Record<string, unknown> | undefined;
+
+  // Board of directors
+  const board = (ekrsParsed?.board as Array<{name: string; function: string}>) || [];
+  const boardOrganName = ekrsParsed?.board_organ_name as string || "Zarząd";
+  const supervisory = (ekrsParsed?.supervisory as Array<{name: string; function: string}>) || [];
+  // Shareholders
+  const shareholders = (ekrsParsed?.shareholders as Array<{name: string; shares: string}>) || [];
+  const shareCapital = ekrsParsed?.capital as string | null;
+  // PKD codes
+  const pkdAll = (ekrsParsed?.pkd_all as Array<{code: string; desc: string}>) || [];
+  // Legal form
+  const legalForm = ekrsParsed?.legal_form as string | null;
+  const ekrsAddress = ekrsParsed?.full_address as Record<string, string> | undefined;
+  // VAT representatives
+  const vatRepresentatives = (vatSubject?.representatives as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
+  const vatPartners = (vatSubject?.partners as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
+  // Bank accounts
+  const bankAccounts = Array.isArray(vatSubject?.accountNumbers) ? vatSubject.accountNumbers as string[] : [];
+  // Addresses
+  const residenceAddress = vatSubject?.residenceAddress ? String(vatSubject.residenceAddress) : null;
+  const workingAddress = vatSubject?.workingAddress ? String(vatSubject.workingAddress) : null;
+  // Registration
+  const regDate = vatSubject?.registrationLegalDate ? String(vatSubject.registrationLegalDate) : ekrsParsed?.registration_date as string | null;
+  // Identifiers
+  const regon = vatSubject?.regon ? String(vatSubject.regon) : null;
+  const krsNum = vatSubject?.krs ? String(vatSubject.krs) : ekrsParsed?.nip ? null : null;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -380,19 +410,180 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {/* Row 3: Contact + OSINT Sources + Notes */}
+      {/* Row 2.5: Registry IDs + Addresses + Board/Representatives */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        {/* Contact */}
+        {/* Registry Identifiers + Addresses */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Kontakt</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Dane rejestrowe</h2>
+          <div className="space-y-3 text-sm">
+            <FirmoRow label="NIP" value={lead.nip} mono />
+            <FirmoRow label="REGON" value={regon} mono />
+            <FirmoRow label="KRS" value={vatSubject?.krs ? String(vatSubject.krs) : null} mono />
+            <FirmoRow label="Forma prawna" value={legalForm} />
+            <FirmoRow label="Data rejestracji" value={regDate} />
+            {lead.years_active != null && <FirmoRow label="Lata działalności" value={`${lead.years_active.toFixed(1)} lat`} />}
+          </div>
+          {(residenceAddress || workingAddress) && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Adresy</p>
+              {residenceAddress && (
+                <div className="mb-2">
+                  <p className="text-xs text-slate-500">Adres siedziby</p>
+                  <p className="text-sm text-slate-300">{residenceAddress}</p>
+                </div>
+              )}
+              {workingAddress && workingAddress !== residenceAddress && (
+                <div>
+                  <p className="text-xs text-slate-500">Adres prowadzenia działalności</p>
+                  <p className="text-sm text-slate-300">{workingAddress}</p>
+                </div>
+              )}
+            </div>
+          )}
+          {ekrsAddress && Object.keys(ekrsAddress).length > 0 && !residenceAddress && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Adres z KRS</p>
+              <p className="text-sm text-slate-300">
+                {[ekrsAddress.ulica, ekrsAddress.nrDomu, ekrsAddress.nrLokalu].filter(Boolean).join(" ")}
+                {ekrsAddress.kodPocztowy ? `, ${ekrsAddress.kodPocztowy}` : ""}
+                {ekrsAddress.miejscowosc ? ` ${ekrsAddress.miejscowosc}` : ""}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Board of Directors + Representatives */}
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Zarząd i Reprezentacja</h2>
+          {board.length > 0 ? (
+            <div>
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">{boardOrganName}</p>
+              <div className="space-y-2">
+                {board.map((m, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg">
+                    <span className="text-sm text-white font-medium">{m.name}</span>
+                    <span className="text-xs text-slate-400">{m.function}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : vatRepresentatives.length > 0 ? (
+            <div>
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Reprezentanci (Biała Lista VAT)</p>
+              <div className="space-y-2">
+                {vatRepresentatives.map((r, i) => (
+                  <div key={i} className="p-2 bg-slate-700/30 rounded-lg text-sm text-white">
+                    {r.companyName || `${r.firstName || ""} ${r.lastName || ""}`.trim() || "—"}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm">Brak danych o zarządzie. Kliknij &quot;Odśwież dane&quot; aby pobrać z KRS.</p>
+          )}
+          {supervisory.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Rada Nadzorcza</p>
+              <div className="space-y-2">
+                {supervisory.map((m, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg">
+                    <span className="text-sm text-white">{m.name}</span>
+                    <span className="text-xs text-slate-400">{m.function}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {vatPartners.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Wspólnicy (VAT)</p>
+              <div className="space-y-1">
+                {vatPartners.map((p, i) => (
+                  <p key={i} className="text-sm text-slate-300">
+                    {p.companyName || `${p.firstName || ""} ${p.lastName || ""}`.trim()}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* PKD + Shareholders + Capital */}
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+          {pkdAll.length > 0 ? (
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">Kody PKD ({pkdAll.length})</h2>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {pkdAll.map((p, i) => (
+                  <div key={i} className={`flex gap-2 text-sm p-1.5 rounded ${i === 0 ? "bg-blue-500/10 border border-blue-500/20" : ""}`}>
+                    <span className="font-mono text-blue-400 flex-shrink-0 w-14">{p.code}</span>
+                    <span className="text-slate-300 text-xs">{p.desc || "—"}</span>
+                    {i === 0 && <span className="text-xs text-blue-400 flex-shrink-0">(główny)</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : lead.pkd ? (
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">PKD</h2>
+              <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <span className="font-mono text-blue-400">{lead.pkd}</span>
+                {lead.pkd_desc && <span className="text-sm text-slate-300 ml-2">{lead.pkd_desc}</span>}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-4">PKD</h2>
+              <p className="text-slate-500 text-sm">Brak danych PKD</p>
+            </div>
+          )}
+
+          {(shareholders.length > 0 || shareCapital) && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              {shareCapital && (
+                <div className="mb-3">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider">Kapitał zakładowy</p>
+                  <p className="text-sm text-white font-medium">{shareCapital}</p>
+                </div>
+              )}
+              {shareholders.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Wspólnicy ({shareholders.length})</p>
+                  <div className="space-y-2">
+                    {shareholders.map((s, i) => (
+                      <div key={i} className="p-2 bg-slate-700/30 rounded-lg">
+                        <p className="text-sm text-white">{s.name}</p>
+                        {s.shares && <p className="text-xs text-slate-400">{s.shares}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Row 3: Bank Accounts + Contact + OSINT Sources + Notes */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        {/* Bank Accounts + Contact */}
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Kontakt i Konta bankowe</h2>
           <div className="space-y-3 text-sm">
             <FirmoRow label="Firma" value={lead.contact_company || lead.name} />
             <FirmoRow label="Osoba kontaktowa" value={lead.contact_person} />
             <FirmoRow label="Telefon" value={lead.contact_phone} />
             <FirmoRow label="Email" value={lead.contact_email} />
           </div>
-          {vatSubject && (
-            <VatDetails subject={vatSubject as Record<string, unknown>} />
+          {bankAccounts.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Konta bankowe — Biała Lista ({bankAccounts.length})</p>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {bankAccounts.map((acc, i) => (
+                  <p key={i} className="text-xs font-mono text-slate-400 bg-slate-700/30 p-1.5 rounded">{String(acc)}</p>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
@@ -565,27 +756,3 @@ function FirmoRow({ label, value, mono, link, highlight }: {
   );
 }
 
-function VatDetails({ subject }: { subject: Record<string, unknown> }) {
-  const residenceAddr = subject.residenceAddress ? String(subject.residenceAddress) : null;
-  const workingAddr = subject.workingAddress ? String(subject.workingAddress) : null;
-  const accounts = Array.isArray(subject.accountNumbers) ? subject.accountNumbers as string[] : [];
-
-  return (
-    <div className="mt-4 pt-3 border-t border-slate-700">
-      <p className="text-xs text-slate-500 mb-2">Z Białej Listy VAT:</p>
-      {residenceAddr && <p className="text-sm text-slate-300">{residenceAddr}</p>}
-      {workingAddr && workingAddr !== residenceAddr && <p className="text-sm text-slate-300">{workingAddr}</p>}
-      {accounts.length > 0 && (
-        <div className="mt-2">
-          <p className="text-xs text-slate-500">Konta bankowe (Biała Lista):</p>
-          {accounts.slice(0, 3).map((acc, i) => (
-            <p key={i} className="text-xs font-mono text-slate-400">{String(acc)}</p>
-          ))}
-          {accounts.length > 3 && (
-            <p className="text-xs text-slate-500">... i {accounts.length - 3} więcej</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
