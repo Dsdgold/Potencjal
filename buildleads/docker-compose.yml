@@ -68,6 +68,19 @@ services:
       - redis
     restart: unless-stopped
 
+  # === FRONTEND (Next.js) ===
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+    depends_on:
+      - api
+    restart: unless-stopped
+
   # === OLLAMA (Phase 3 — uncomment when AI qualification is needed) ===
   # ollama:
   #   image: ollama/ollama:latest
