@@ -12,6 +12,13 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # === REDIS ===
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   # === BACKEND API ===
   api:
     build:
@@ -29,41 +36,37 @@ services:
       - ENV=production
     depends_on:
       - db
+      - redis
     restart: unless-stopped
 
-  # === REDIS (Phase 2 — uncomment when Celery is needed) ===
-  # redis:
-  #   image: redis:7-alpine
-  #   ports:
-  #     - "6379:6379"
-  #   restart: unless-stopped
+  # === CELERY WORKER ===
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A src.tasks.celery_app worker -l info -c 4
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://buildleads:secret@db:5432/buildleads
+      - REDIS_URL=redis://redis:6379/0
+      - CEIDG_API_KEY=${CEIDG_API_KEY:-}
+      - GUS_API_KEY=${GUS_API_KEY:-}
+      - OLLAMA_URL=http://ollama:11434
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
 
-  # === CELERY WORKER (Phase 2) ===
-  # worker:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   command: celery -A src.tasks.celery_app worker -l info -c 4
-  #   environment:
-  #     - DATABASE_URL=postgresql+asyncpg://buildleads:secret@db:5432/buildleads
-  #     - REDIS_URL=redis://redis:6379/0
-  #     - OLLAMA_URL=http://ollama:11434
-  #   depends_on:
-  #     - db
-  #     - redis
-  #   restart: unless-stopped
-
-  # === CELERY BEAT (Phase 2) ===
-  # beat:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   command: celery -A src.tasks.celery_app beat -l info
-  #   environment:
-  #     - REDIS_URL=redis://redis:6379/0
-  #   depends_on:
-  #     - redis
-  #   restart: unless-stopped
+  # === CELERY BEAT (scheduler) ===
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A src.tasks.celery_app beat -l info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
 
   # === OLLAMA (Phase 3 — uncomment when AI qualification is needed) ===
   # ollama:

@@ -1,7 +1,9 @@
-"""Dashboard API — KPI summaries, top leads, timeline."""
+"""Dashboard API — KPI summaries, top leads, conversion funnel, breakdowns."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import cast, func, select, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.permissions import get_current_user
@@ -79,15 +81,16 @@ async def top_leads(
     leads = result.scalars().all()
     return [
         {
-            "id": str(l.id),
-            "name": l.name,
-            "city": l.city,
-            "score": l.score,
-            "tier": l.tier,
-            "annual_potential": l.annual_potential,
-            "status": l.status,
+            "id": str(lead.id),
+            "name": lead.name,
+            "city": lead.city,
+            "score": lead.score,
+            "tier": lead.tier,
+            "annual_potential": lead.annual_potential,
+            "status": lead.status,
+            "source": lead.source,
         }
-        for l in leads
+        for lead in leads
     ]
 
 
@@ -105,4 +108,119 @@ async def conversion(
             select(func.count()).select_from(Lead).where(*conds, Lead.status == stage)
         )).scalar() or 0
         result[stage] = count
+    return result
+
+
+@router.get("/by-source")
+async def by_source(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lead counts grouped by source (bzp, gunb, manual, osint, etc.)."""
+    conds = _base_filter(user)
+    result = await db.execute(
+        select(Lead.source, func.count())
+        .where(*conds)
+        .group_by(Lead.source)
+        .order_by(func.count().desc())
+    )
+    return {row[0]: row[1] for row in result}
+
+
+@router.get("/by-region")
+async def by_region(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lead counts grouped by region."""
+    from src.regions.models import Region
+
+    conds = _base_filter(user)
+    result = await db.execute(
+        select(Region.name, func.count())
+        .join(Lead, Lead.region_id == Region.id)
+        .where(*conds)
+        .group_by(Region.name)
+        .order_by(func.count().desc())
+    )
+    return {row[0]: row[1] for row in result}
+
+
+@router.get("/by-category")
+async def by_category(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lead counts grouped by material category."""
+    conds = _base_filter(user)
+    result = await db.execute(
+        select(Lead.category, func.count())
+        .where(*conds, Lead.category.isnot(None))
+        .group_by(Lead.category)
+        .order_by(func.count().desc())
+    )
+    return {row[0]: row[1] for row in result}
+
+
+@router.get("/by-tier")
+async def by_tier(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lead counts grouped by tier (S/A/B/C)."""
+    conds = _base_filter(user)
+    result = await db.execute(
+        select(Lead.tier, func.count())
+        .where(*conds, Lead.tier.isnot(None))
+        .group_by(Lead.tier)
+        .order_by(Lead.tier)
+    )
+    return {row[0]: row[1] for row in result}
+
+
+@router.get("/trends")
+async def trends(
+    days: int = Query(30, ge=7, le=90),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Daily new leads count over the past N days."""
+    conds = _base_filter(user)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    result = await db.execute(
+        select(
+            cast(Lead.created_at, Date).label("day"),
+            func.count().label("count"),
+        )
+        .where(*conds, Lead.created_at >= cutoff)
+        .group_by("day")
+        .order_by("day")
+    )
+
+    return [
+        {"date": str(row.day), "count": row.count}
+        for row in result
+    ]
+
+
+@router.get("/pipeline")
+async def pipeline_value(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Pipeline value breakdown by status."""
+    conds = _base_filter(user)
+    statuses = ["new", "contacted", "offer_sent"]
+    result = {}
+    for status in statuses:
+        value = (await db.execute(
+            select(func.coalesce(func.sum(Lead.annual_potential), 0))
+            .where(*conds, Lead.status == status, Lead.annual_potential.isnot(None))
+        )).scalar() or 0
+        count = (await db.execute(
+            select(func.count()).select_from(Lead)
+            .where(*conds, Lead.status == status)
+        )).scalar() or 0
+        result[status] = {"count": count, "value_pln": value}
     return result

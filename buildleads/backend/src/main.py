@@ -30,6 +30,8 @@ from src.dashboard.router import router as dashboard_router
 from src.notifications.router import router as notifications_router
 from src.admin.router import router as admin_router
 from src.billing.router import router as billing_router
+from src.collectors.router import router as collectors_router
+from src.qualifier.osint_router import router as osint_router
 
 from src.auth.passwords import hash_password
 
@@ -86,7 +88,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="BuildLeads API",
     description="B2B lead qualification platform for Polish construction materials sector",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -108,6 +110,8 @@ app.include_router(dashboard_router)
 app.include_router(notifications_router)
 app.include_router(admin_router)
 app.include_router(billing_router)
+app.include_router(collectors_router)
+app.include_router(osint_router)
 
 
 @app.get("/health")

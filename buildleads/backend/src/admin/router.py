@@ -91,5 +91,28 @@ async def list_scrape_jobs(
 
 
 @router.get("/system/health")
-async def system_health(_: User = Depends(require_admin)):
-    return {"status": "ok", "services": {"db": "ok", "redis": "pending", "ollama": "pending"}}
+async def system_health(
+    _: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    services = {"db": "ok"}
+
+    # Check Redis
+    try:
+        import redis as redis_lib
+        from src.config import settings as _settings
+        r = redis_lib.from_url(_settings.redis_url, socket_timeout=2)
+        r.ping()
+        services["redis"] = "ok"
+    except Exception:
+        services["redis"] = "unavailable"
+
+    # Check Ollama
+    try:
+        from src.qualifier.ollama_client import is_available
+        services["ollama"] = "ok" if await is_available() else "unavailable"
+    except Exception:
+        services["ollama"] = "unavailable"
+
+    overall = "ok" if services["db"] == "ok" and services["redis"] == "ok" else "degraded"
+    return {"status": overall, "services": services}
