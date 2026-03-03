@@ -47,4 +47,14 @@ async def score_lead(db: AsyncSession, lead: Lead) -> dict:
         "revenue_band": out.revenue_band,
         "categories": out.categories,
         "recommended_actions": out.recommended_actions,
+        "breakdown": [
+            {
+                "factor": b.factor,
+                "label": b.label,
+                "raw_score": round(b.raw_score, 1),
+                "weight": b.weight,
+                "weighted_score": round(b.weighted_score, 1),
+            }
+            for b in (out.breakdown or [])
+        ],
     }

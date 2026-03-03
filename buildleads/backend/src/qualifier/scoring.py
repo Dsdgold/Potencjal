@@ -102,6 +102,15 @@ class ScoringInput:
 
 
 @dataclass
+class FactorBreakdown:
+    factor: str
+    label: str
+    raw_score: float
+    weight: float
+    weighted_score: float
+
+
+@dataclass
 class ScoringOutput:
     score: int
     tier: str
@@ -109,6 +118,7 @@ class ScoringOutput:
     revenue_band: str
     categories: list[str]
     recommended_actions: list[str]
+    breakdown: list[FactorBreakdown] | None = None
 
 
 def calculate_score(inp: ScoringInput) -> ScoringOutput:
@@ -147,6 +157,16 @@ def calculate_score(inp: ScoringInput) -> ScoringOutput:
     categories = categories_for_pkd(inp.pkd)
     actions = _recommended_actions(tier, inp)
 
+    breakdown = [
+        FactorBreakdown("employees", "Pracownicy", emp_score, w.get("employees", 0), emp_score * w.get("employees", 0)),
+        FactorBreakdown("revenue_band", "Przychód", rev_score, w.get("revenue_band", 0), rev_score * w.get("revenue_band", 0)),
+        FactorBreakdown("pkd_fit", "Branża (PKD)", fit, w.get("pkd_fit", 0), fit * w.get("pkd_fit", 0)),
+        FactorBreakdown("years_active", "Lata działalności", yrs_score, w.get("years_active", 0), yrs_score * w.get("years_active", 0)),
+        FactorBreakdown("basket_signal", "Sygnał koszyka", round(basket_score, 1), w.get("basket_signal", 0), basket_score * w.get("basket_signal", 0)),
+        FactorBreakdown("vat_status", "Status VAT", vat_score, w.get("vat_status", 0), vat_score * w.get("vat_status", 0)),
+        FactorBreakdown("locality", "Lokalizacja", loc_score, w.get("locality", 0), loc_score * w.get("locality", 0)),
+    ]
+
     return ScoringOutput(
         score=score,
         tier=tier,
@@ -154,6 +174,7 @@ def calculate_score(inp: ScoringInput) -> ScoringOutput:
         revenue_band=rev_band,
         categories=categories,
         recommended_actions=actions,
+        breakdown=breakdown,
     )
 
 
