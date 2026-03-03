@@ -1,0 +1,86 @@
+services:
+  # === DATABASE ===
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: buildleads
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: buildleads
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # === REDIS ===
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    restart: unless-stopped
+
+  # === BACKEND API ===
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://buildleads:secret@db:5432/buildleads
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production-use-long-random-string-64chars}
+      - CEIDG_API_KEY=${CEIDG_API_KEY:-}
+      - GUS_API_KEY=${GUS_API_KEY:-}
+      - OLLAMA_URL=http://ollama:11434
+      - ENV=production
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  # === CELERY WORKER ===
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A src.tasks.celery_app worker -l info -c 4
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://buildleads:secret@db:5432/buildleads
+      - REDIS_URL=redis://redis:6379/0
+      - CEIDG_API_KEY=${CEIDG_API_KEY:-}
+      - GUS_API_KEY=${GUS_API_KEY:-}
+      - OLLAMA_URL=http://ollama:11434
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  # === CELERY BEAT (scheduler) ===
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A src.tasks.celery_app beat -l info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # === OLLAMA (Phase 3 — uncomment when AI qualification is needed) ===
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 4G
+
+volumes:
+  pgdata:
+  # ollama_data:

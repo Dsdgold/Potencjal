@@ -1,0 +1,83 @@
+name: Deploy BuildLeads
+
+on:
+  push:
+    branches: [ main, 'claude/**' ]
+    paths:
+      - 'buildleads/**'
+      - '.github/workflows/buildleads-deploy.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: buildleads/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy BuildLeads to server
+        run: |
+          rsync -avz --delete \
+            --exclude '.env' \
+            --exclude '__pycache__' \
+            --exclude '.venv' \
+            --exclude '*.pyc' \
+            --exclude '.pytest_cache' \
+            --exclude 'tests/' \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            buildleads/ \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/buildleads/"
+
+      - name: Start BuildLeads services
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              'cd /opt/buildleads && \
+               docker compose pull && \
+               docker compose up -d --build && \
+               echo "Waiting for services to start..." && \
+               sleep 5 && \
+               docker compose ps'
+
+      - name: Run Alembic migrations
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              'cd /opt/buildleads && \
+               docker compose exec -T api alembic upgrade head'
+
+      - name: Verify deployment
+        run: |
+          sleep 3
+          ssh -i ~/.ssh/id_ed25519 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              'curl -sf http://localhost:8001/health && echo " BuildLeads OK" || echo " BuildLeads starting..."'
+          echo ""
+          echo "BuildLeads API: http://${{ secrets.SSH_HOST }}:8001"
+          echo "Swagger docs:   http://${{ secrets.SSH_HOST }}:8001/docs"
