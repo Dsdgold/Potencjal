@@ -81,7 +81,18 @@ def _fit_score(pkd: str, employees: int) -> int:
 
 
 def categories_for_pkd(pkd: str) -> list[str]:
-    return PKD_TO_CATEGORIES.get(pkd, PKD_TO_CATEGORIES["FALLBACK"])
+    if not pkd:
+        return PKD_TO_CATEGORIES["FALLBACK"]
+    # Try exact match, then 4-char prefix, then 2-char section
+    if pkd in PKD_TO_CATEGORIES:
+        return PKD_TO_CATEGORIES[pkd]
+    prefix4 = pkd[:5]  # e.g. "46.73"
+    if prefix4 in PKD_TO_CATEGORIES:
+        return PKD_TO_CATEGORIES[prefix4]
+    prefix2 = pkd[:2]  # e.g. "43"
+    if prefix2 in PKD_TO_CATEGORIES:
+        return PKD_TO_CATEGORIES[prefix2]
+    return PKD_TO_CATEGORIES["FALLBACK"]
 
 
 def estimate_annual(tier: str) -> int:
@@ -189,7 +200,8 @@ def _recommended_actions(tier: str, inp: ScoringInput) -> list[str]:
     if tier in tier_actions:
         steps.append(tier_actions[tier])
     if inp.pkd:
-        desc = PKD_TO_CATEGORIES.get(inp.pkd, [""])[0] if inp.pkd in PKD_TO_CATEGORIES else ""
+        cats = categories_for_pkd(inp.pkd)
+        desc = cats[0] if cats and cats != PKD_TO_CATEGORIES["FALLBACK"] else ""
         steps.append(f"Dopasuj ofertę do PKD {inp.pkd}" + (f" – {desc}." if desc else "."))
     if inp.vat_status != "Czynny VAT":
         steps.append("Zweryfikuj status VAT na Białej Liście MF przed fakturą.")
