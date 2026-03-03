@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Lead {
   id: string;
@@ -25,12 +26,31 @@ const tierColors: Record<string, string> = {
   C: "bg-slate-500/20 text-slate-400 border-slate-500/30",
 };
 
+const steps = [
+  "Sprawdzam NIP w rejestrze VAT...",
+  "Pobieram dane z eKRS...",
+  "Pobieram dane z CEIDG...",
+  "Tworzę leada...",
+  "Enrich — uzupełniam dane z OSINT...",
+  "Obliczam scoring potencjału...",
+  "Gotowe!",
+];
+
 export default function LeadsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const autoStarted = useRef(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+
+  // NIP lookup state
+  const [nip, setNip] = useState("");
+  const [step, setStep] = useState(-1);
+  const [error, setError] = useState("");
+  const [processing, setProcessing] = useState(false);
 
   const load = async () => {
     const params = new URLSearchParams();
@@ -47,76 +67,179 @@ export default function LeadsPage() {
 
   useEffect(() => { load(); }, [search, tierFilter]);
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const body = {
-      name: fd.get("name"),
-      nip: fd.get("nip"),
-      city: fd.get("city"),
-      employees: fd.get("employees") ? Number(fd.get("employees")) : null,
-      revenue_band: fd.get("revenue_band") || null,
-    };
-    const res = await apiFetch("/api/v1/leads", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
-      setShowForm(false);
-      load();
+  const runNipLookup = useCallback(async (inputNip: string) => {
+    const cleanNip = inputNip.replace(/[\s-]/g, "");
+    if (!/^\d{10}$/.test(cleanNip)) {
+      setError("NIP musi mieć 10 cyfr");
+      return;
     }
+
+    setError("");
+    setProcessing(true);
+    setStep(0);
+
+    try {
+      // Step 1: VAT lookup to get company name
+      setStep(0);
+      const vatRes = await apiFetch(`/api/v1/osint/vat/${cleanNip}`);
+      let companyName = "";
+      let vatData = null;
+      if (vatRes.ok) {
+        vatData = await vatRes.json();
+        companyName = vatData.name || "";
+      }
+
+      // Step 2: eKRS lookup
+      setStep(1);
+      const ekrsRes = await apiFetch(`/api/v1/osint/ekrs/${cleanNip}`);
+      let ekrsData = null;
+      if (ekrsRes.ok) {
+        ekrsData = await ekrsRes.json();
+        if (!companyName && ekrsData.name) companyName = ekrsData.name;
+      }
+
+      // Step 3: CEIDG lookup
+      setStep(2);
+      const ceidgRes = await apiFetch(`/api/v1/osint/ceidg/${cleanNip}`);
+      let ceidgData = null;
+      if (ceidgRes.ok) {
+        ceidgData = await ceidgRes.json();
+        if (!companyName && ceidgData.name) companyName = ceidgData.name;
+      }
+
+      if (!companyName) {
+        companyName = `Firma NIP ${cleanNip}`;
+      }
+
+      // Step 4: Create lead with initial data
+      setStep(3);
+      const createBody: Record<string, unknown> = {
+        name: companyName,
+        nip: cleanNip,
+      };
+      // Pre-fill from VAT/eKRS data
+      if (vatData?.city) createBody.city = vatData.city;
+      if (vatData?.vat_status) createBody.vat_status = vatData.vat_status;
+      if (ekrsData?.pkd) createBody.pkd = ekrsData.pkd;
+      if (ekrsData?.years_active) createBody.years_active = ekrsData.years_active;
+      if (ceidgData?.website) createBody.website = ceidgData.website;
+
+      const createRes = await apiFetch("/api/v1/leads", {
+        method: "POST",
+        body: JSON.stringify(createBody),
+      });
+
+      if (!createRes.ok) {
+        const err = await createRes.json().catch(() => null);
+        throw new Error(err?.detail || "Nie udało się utworzyć leada");
+      }
+
+      const lead = await createRes.json();
+
+      // Step 5: Enrich from all OSINT sources
+      setStep(4);
+      await apiFetch(`/api/v1/osint/enrich/${lead.id}`, { method: "POST" });
+
+      // Step 6: Score the lead
+      setStep(5);
+      await apiFetch(`/api/v1/scoring/leads/${lead.id}`, { method: "POST" });
+
+      // Done!
+      setStep(6);
+      setTimeout(() => {
+        router.push(`/leads/${lead.id}`);
+      }, 600);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Wystąpił błąd");
+      setProcessing(false);
+      setStep(-1);
+    }
+  }, [router]);
+
+  const handleNipLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    runNipLookup(nip);
   };
+
+  // Auto-start from ?nip= query param (e.g. from dashboard quick check)
+  useEffect(() => {
+    const qnip = searchParams.get("nip");
+    if (qnip && !autoStarted.current) {
+      autoStarted.current = true;
+      setNip(qnip);
+      setShowForm(true);
+      runNipLookup(qnip);
+    }
+  }, [searchParams, runNipLookup]);
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white">Leady</h1>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { setShowForm(!showForm); setStep(-1); setProcessing(false); setError(""); setNip(""); }}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          {showForm ? "Anuluj" : "+ Nowy lead"}
+          {showForm ? "Anuluj" : "+ Sprawdź firmę"}
         </button>
       </div>
 
-      {/* New Lead Form */}
+      {/* NIP Lookup Form */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Dodaj leada</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm text-slate-300 mb-1">Nazwa firmy *</label>
-              <input name="name" required className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-300 mb-1">NIP *</label>
-              <input name="nip" required pattern="\d{10}" title="10 cyfr" className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-300 mb-1">Miasto</label>
-              <input name="city" className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-300 mb-1">Pracownicy</label>
-              <input name="employees" type="number" min="0" className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-300 mb-1">Przychód</label>
-              <select name="revenue_band" className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                <option value="">— wybierz —</option>
-                <option value="micro">&lt; 2M PLN (mikro)</option>
-                <option value="small">2–10M PLN (mała)</option>
-                <option value="medium">10–50M PLN (średnia)</option>
-                <option value="large">&gt; 50M PLN (duża)</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors">
-                Zapisz
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-white mb-2">Sprawdź potencjał firmy</h2>
+          <p className="text-slate-400 text-sm mb-4">Wpisz NIP — system automatycznie pobierze dane z rejestrów (VAT, eKRS, CEIDG, GUS), utworzy leada i obliczy scoring.</p>
+
+          {!processing ? (
+            <form onSubmit={handleNipLookup} className="flex gap-3 items-end">
+              <div className="flex-1 max-w-xs">
+                <label className="block text-sm text-slate-300 mb-1">NIP</label>
+                <input
+                  value={nip}
+                  onChange={(e) => setNip(e.target.value)}
+                  placeholder="np. 5272700021"
+                  className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-lg font-mono tracking-wider focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  maxLength={13}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors"
+              >
+                Sprawdź
               </button>
+            </form>
+          ) : (
+            <div className="space-y-2">
+              {steps.map((label, i) => (
+                <div key={i} className={`flex items-center gap-3 text-sm transition-all duration-300 ${
+                  i < step ? "text-emerald-400" : i === step ? "text-blue-400" : "text-slate-600"
+                }`}>
+                  <div className="w-5 h-5 flex items-center justify-center">
+                    {i < step ? (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : i === step ? (
+                      <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <div className="w-2 h-2 bg-slate-600 rounded-full" />
+                    )}
+                  </div>
+                  {label}
+                </div>
+              ))}
             </div>
-          </div>
-        </form>
+          )}
+
+          {error && (
+            <div className="mt-3 bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Filters */}
@@ -146,7 +269,9 @@ export default function LeadsPage() {
         {loading ? (
           <div className="p-8 text-center text-slate-400">Ładowanie...</div>
         ) : leads.length === 0 ? (
-          <div className="p-8 text-center text-slate-400">Brak leadów. Kliknij &quot;+ Nowy lead&quot; aby dodać pierwszego.</div>
+          <div className="p-8 text-center text-slate-400">
+            Brak leadów. Kliknij &quot;+ Sprawdź firmę&quot; i wpisz NIP.
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead>

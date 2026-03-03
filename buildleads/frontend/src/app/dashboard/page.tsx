@@ -82,8 +82,25 @@ export default function DashboardPage() {
           href="/leads"
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
         >
-          + Nowy lead
+          + Sprawdź firmę
         </Link>
+      </div>
+
+      {/* Quick NIP check */}
+      <div className="bg-gradient-to-r from-blue-600/20 to-emerald-600/20 border border-blue-500/30 rounded-xl p-6 mb-8">
+        <h2 className="text-lg font-semibold text-white mb-1">Szybkie sprawdzenie</h2>
+        <p className="text-slate-400 text-sm mb-3">Wpisz NIP firmy — automatycznie pobierzemy dane i policzymy potencjał</p>
+        <form onSubmit={(e) => { e.preventDefault(); const v = (e.currentTarget.elements.namedItem("qnip") as HTMLInputElement).value.replace(/[\s-]/g, ""); if (/^\d{10}$/.test(v)) { window.location.href = `/leads?nip=${v}`; } }} className="flex gap-3">
+          <input
+            name="qnip"
+            placeholder="Wpisz NIP, np. 5272700021"
+            className="flex-1 max-w-xs px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white font-mono text-lg tracking-wider focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            maxLength={13}
+          />
+          <button type="submit" className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors">
+            Sprawdź
+          </button>
+        </form>
       </div>
 
       {/* KPI Cards */}
