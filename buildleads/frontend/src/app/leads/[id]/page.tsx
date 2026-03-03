@@ -112,6 +112,21 @@ export default function LeadDetailPage() {
       }
       if (histRes.ok) setHistory(await histRes.json());
       setLoading(false);
+
+      // Auto-trigger scoring on load to get breakdown
+      try {
+        const scoreRes = await apiFetch(`/api/v1/scoring/leads/${id}`, { method: "POST" });
+        if (scoreRes.ok) {
+          const scoreData: ScoringResult = await scoreRes.json();
+          setScoringResult(scoreData);
+          setLead((prev) => prev ? { ...prev, score: scoreData.score, tier: scoreData.tier, annual_potential: scoreData.annual_potential, revenue_band: scoreData.revenue_band } : prev);
+          // Refresh history after auto-score
+          const hRes = await apiFetch(`/api/v1/scoring/leads/${id}/history`);
+          if (hRes.ok) setHistory(await hRes.json());
+        }
+      } catch {
+        // Scoring auto-trigger failed silently
+      }
     }
     load();
   }, [id]);
@@ -227,8 +242,15 @@ export default function LeadDetailPage() {
   // Registration
   const regDate = vatSubject?.registrationLegalDate ? String(vatSubject.registrationLegalDate) : ekrsParsed?.registration_date as string | null;
   // Identifiers
-  const regon = vatSubject?.regon ? String(vatSubject.regon) : null;
-  const krsNum = vatSubject?.krs ? String(vatSubject.krs) : ekrsParsed?.nip ? null : null;
+  const regon = vatSubject?.regon ? String(vatSubject.regon) : gusParsed?.regon ? String(gusParsed.regon) : null;
+  const krsNum = vatSubject?.krs ? String(vatSubject.krs) : gusParsed?.krs ? String(gusParsed.krs) : (ekrsParsed?.nip ? null : null);
+  const gusLegalForm = gusParsed?.legal_form ? String(gusParsed.legal_form) : null;
+  const gusPkd = gusParsed?.pkd ? String(gusParsed.pkd) : null;
+  const gusPkdDesc = gusParsed?.pkd_desc ? String(gusParsed.pkd_desc) : null;
+  const gusVoivodeship = gusParsed?.voivodeship ? String(gusParsed.voivodeship) : null;
+  const gusStreet = gusParsed?.street ? String(gusParsed.street) : null;
+  const gusBuilding = gusParsed?.building ? String(gusParsed.building) : null;
+  const gusPostalCode = gusParsed?.postal_code ? String(gusParsed.postal_code) : null;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -418,10 +440,12 @@ export default function LeadDetailPage() {
           <div className="space-y-3 text-sm">
             <FirmoRow label="NIP" value={lead.nip} mono />
             <FirmoRow label="REGON" value={regon} mono />
-            <FirmoRow label="KRS" value={vatSubject?.krs ? String(vatSubject.krs) : null} mono />
-            <FirmoRow label="Forma prawna" value={legalForm} />
+            <FirmoRow label="KRS" value={krsNum} mono />
+            <FirmoRow label="Forma prawna" value={legalForm || gusLegalForm} />
             <FirmoRow label="Data rejestracji" value={regDate} />
             {lead.years_active != null && <FirmoRow label="Lata działalności" value={`${lead.years_active.toFixed(1)} lat`} />}
+            {gusVoivodeship && <FirmoRow label="Województwo (GUS)" value={gusVoivodeship} />}
+            {gusPkd && !lead.pkd && <FirmoRow label="PKD (GUS)" value={`${gusPkd}${gusPkdDesc ? ` — ${gusPkdDesc}` : ""}`} />}
           </div>
           {(residenceAddress || workingAddress) && (
             <div className="mt-4 pt-3 border-t border-slate-700">
@@ -447,6 +471,16 @@ export default function LeadDetailPage() {
                 {[ekrsAddress.ulica, ekrsAddress.nrDomu, ekrsAddress.nrLokalu].filter(Boolean).join(" ")}
                 {ekrsAddress.kodPocztowy ? `, ${ekrsAddress.kodPocztowy}` : ""}
                 {ekrsAddress.miejscowosc ? ` ${ekrsAddress.miejscowosc}` : ""}
+              </p>
+            </div>
+          )}
+          {gusStreet && !residenceAddress && !ekrsAddress && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Adres z GUS</p>
+              <p className="text-sm text-slate-300">
+                {[gusStreet, gusBuilding].filter(Boolean).join(" ")}
+                {gusPostalCode ? `, ${gusPostalCode}` : ""}
+                {lead.city ? ` ${lead.city}` : ""}
               </p>
             </div>
           )}
@@ -523,13 +557,18 @@ export default function LeadDetailPage() {
                 ))}
               </div>
             </div>
-          ) : lead.pkd ? (
+          ) : (lead.pkd || gusPkd) ? (
             <div>
               <h2 className="text-lg font-semibold text-white mb-4">PKD</h2>
               <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <span className="font-mono text-blue-400">{lead.pkd}</span>
-                {lead.pkd_desc && <span className="text-sm text-slate-300 ml-2">{lead.pkd_desc}</span>}
+                <span className="font-mono text-blue-400">{lead.pkd || gusPkd}</span>
+                {(lead.pkd_desc || gusPkdDesc) && <span className="text-sm text-slate-300 ml-2">{lead.pkd_desc || gusPkdDesc}</span>}
               </div>
+              {gusPkd && lead.pkd && gusPkd !== lead.pkd && (
+                <div className="mt-2 p-2 bg-slate-700/30 rounded-lg text-xs text-slate-400">
+                  <span className="text-slate-500">PKD wg GUS:</span> <span className="font-mono">{gusPkd}</span> {gusPkdDesc}
+                </div>
+              )}
             </div>
           ) : (
             <div>
