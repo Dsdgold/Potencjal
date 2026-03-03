@@ -1,4 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+function getApiUrl(): string {
+  if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+  // In browser: use /api proxy (Next.js rewrites) to avoid CORS/Codespace port issues
+  return "";
+}
 
 interface TokenPair {
   access_token: string;
@@ -30,13 +34,13 @@ export async function apiFetch(path: string, opts: RequestInit = {}) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, { ...opts, headers });
+  const res = await fetch(`${getApiUrl()}${path}`, { ...opts, headers });
 
   if (res.status === 401 && token) {
     const refreshed = await tryRefresh();
     if (refreshed) {
       headers["Authorization"] = `Bearer ${getToken()}`;
-      return fetch(`${API_URL}${path}`, { ...opts, headers });
+      return fetch(`${getApiUrl()}${path}`, { ...opts, headers });
     }
     clearTokens();
     window.location.href = "/login";
@@ -49,7 +53,7 @@ async function tryRefresh(): Promise<boolean> {
   const refresh = localStorage.getItem("bl_refresh");
   if (!refresh) return false;
 
-  const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+  const res = await fetch(`${getApiUrl()}/api/v1/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: refresh }),
@@ -63,7 +67,7 @@ async function tryRefresh(): Promise<boolean> {
 }
 
 export async function login(email: string, password: string) {
-  const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+  const res = await fetch(`${getApiUrl()}/api/v1/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
