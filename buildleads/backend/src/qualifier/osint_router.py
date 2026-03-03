@@ -44,16 +44,17 @@ async def vat_lookup(nip: str):
 
 
 @router.get("/ekrs/{nip}")
-async def ekrs_lookup(nip: str):
-    """eKRS registry lookup — free, no auth required."""
+async def ekrs_lookup(nip: str, krs: str | None = None):
+    """eKRS registry lookup — free, no auth required. Pass ?krs=XXXXXXXXXX for reliable lookup."""
     try:
-        result = await fetch_ekrs(nip)
+        result = await fetch_ekrs(nip, krs_number=krs)
         return {
             "source": result.source,
             "nip": result.nip,
             "name": result.name,
             "city": result.city,
             "pkd": result.pkd,
+            "pkd_desc": result.pkd_desc,
             "years_active": result.years_active,
             "krs": result.krs,
             "regon": result.regon,
@@ -115,13 +116,21 @@ async def enrich(
 
     results, merged = await enrich_lead(lead.nip)
 
-    # Apply merged data to lead (first-non-null for each field)
+    # Apply merged data to lead — fill empty fields, and update key fields
+    # that might have been missing on initial quick-lookup creation
     update_data = {}
-    for key in ["name", "city", "employees", "revenue_pln", "pkd", "pkd_desc", "years_active", "vat_status", "website"]:
+    merge_fields = ["name", "city", "employees", "revenue_pln", "pkd", "pkd_desc",
+                    "years_active", "vat_status", "website", "voivodeship"]
+    # Fields that should always be updated from OSINT (even if already set to
+    # a default value) because the enrichment is more authoritative
+    always_update_fields = {"employees", "revenue_pln", "pkd", "pkd_desc",
+                            "years_active", "voivodeship"}
+    for key in merge_fields:
         current = getattr(lead, key, None)
         new_val = merged.get(key)
-        if new_val is not None and current is None:
-            update_data[key] = new_val
+        if new_val is not None:
+            if current is None or key in always_update_fields:
+                update_data[key] = new_val
 
     # Store raw OSINT data
     osint_raw = {r.source: r.raw for r in results if r.raw}

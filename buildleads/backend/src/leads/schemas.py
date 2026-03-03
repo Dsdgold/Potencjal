@@ -98,6 +98,7 @@ class LeadOut(BaseModel):
     annual_potential: int | None
     status: str
     ai_summary: str | None
+    osint_raw: dict | None
     sources: list[str] | None
     notes: str | None
     created_at: datetime
