@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const LeadMap = dynamic(() => import("@/components/lead-map"), { ssr: false });
 
 interface Lead {
   id: string;
@@ -11,6 +14,13 @@ interface Lead {
   nip: string;
   city: string;
   voivodeship: string | null;
+  street: string | null;
+  postal_code: string | null;
+  regon: string | null;
+  krs: string | null;
+  legal_form: string | null;
+  latitude: number | null;
+  longitude: number | null;
   employees: number | null;
   revenue_pln: number | null;
   revenue_band: string | null;
@@ -35,6 +45,8 @@ interface Lead {
   title: string | null;
   description: string | null;
   ai_summary: string | null;
+  board_members: Array<{name: string; function: string}> | null;
+  social_media: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }
@@ -416,16 +428,18 @@ export default function LeadDetailPage() {
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <FirmoRow label="Pełna nazwa" value={lead.name} />
             <FirmoRow label="NIP" value={lead.nip} mono />
-            <FirmoRow label="Miasto" value={lead.city} />
-            <FirmoRow label="Województwo" value={lead.voivodeship} />
-            <FirmoRow label="Pracownicy" value={lead.employees != null ? `${lead.employees} os.` : null} />
-            <FirmoRow label="Przychód roczny" value={lead.revenue_pln ? `${(lead.revenue_pln / 1_000_000).toFixed(1)}M PLN` : null} />
-            <FirmoRow label="Pasmo przychodów" value={lead.revenue_band ? revenueBandLabels[lead.revenue_band] || lead.revenue_band : null} />
+            <FirmoRow label="REGON" value={lead.regon || regon} mono />
+            <FirmoRow label="KRS" value={lead.krs || krsNum} mono />
+            <FirmoRow label="Forma prawna" value={lead.legal_form || legalForm || gusLegalForm} />
+            <FirmoRow label="Adres" value={lead.street ? [lead.street, lead.postal_code, lead.city].filter(Boolean).join(", ") : lead.city} />
+            <FirmoRow label="Województwo" value={lead.voivodeship || gusVoivodeship} />
             <FirmoRow label="PKD (główny)" value={lead.pkd ? `${lead.pkd}${lead.pkd_desc ? ` — ${lead.pkd_desc}` : ""}` : null} />
             <FirmoRow label="Lata działalności" value={lead.years_active != null ? `${lead.years_active.toFixed(1)} lat` : null} />
             <FirmoRow label="Status VAT" value={lead.vat_status} highlight={lead.vat_status === "Czynny VAT" ? "green" : lead.vat_status === "Zwolniony" ? "yellow" : "red"} />
             <FirmoRow label="Strona WWW" value={lead.website} link />
-            <FirmoRow label="Koszyk (PLN)" value={lead.basket_pln ? `${lead.basket_pln.toLocaleString("pl-PL")} PLN` : null} />
+            <FirmoRow label="Pracownicy" value={lead.employees != null ? `${lead.employees} os.` : null} />
+            <FirmoRow label="Przychód roczny" value={lead.revenue_pln ? `${(lead.revenue_pln / 1_000_000).toFixed(1)}M PLN` : null} />
+            <FirmoRow label="Pasmo przychodów" value={lead.revenue_band ? revenueBandLabels[lead.revenue_band] || lead.revenue_band : null} />
             <FirmoRow label="Kategoria" value={lead.category} />
             <FirmoRow label="Dodano" value={new Date(lead.created_at).toLocaleDateString("pl-PL", { year: "numeric", month: "long", day: "numeric" })} />
           </div>
@@ -603,20 +617,88 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {/* Row 3: Bank Accounts + Contact + OSINT Sources + Notes */}
+      {/* Row: Company Description + Map */}
+      {(lead.description || (lead.latitude && lead.longitude)) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          {/* Company Description */}
+          {lead.description && (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-white mb-3">Opis firmy</h2>
+              <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{lead.description}</p>
+              {lead.social_media && Object.keys(lead.social_media).length > 0 && (
+                <div className="mt-4 pt-3 border-t border-slate-700">
+                  <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Social Media</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(lead.social_media).map(([platform, url]) => (
+                      <a key={platform} href={url} target="_blank" rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs rounded-lg border border-blue-500/20 transition-colors capitalize">
+                        {platform}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {/* Map */}
+          {lead.latitude && lead.longitude && (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-2 min-h-[300px]">
+              <LeadMap
+                latitude={lead.latitude}
+                longitude={lead.longitude}
+                name={lead.name}
+                address={[lead.street, lead.postal_code, lead.city].filter(Boolean).join(", ")}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Row 3: Contact + Bank Accounts + OSINT Sources + Notes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        {/* Bank Accounts + Contact */}
+        {/* Contact & People */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Kontakt i Konta bankowe</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Kontakt</h2>
           <div className="space-y-3 text-sm">
             <FirmoRow label="Firma" value={lead.contact_company || lead.name} />
             <FirmoRow label="Osoba kontaktowa" value={lead.contact_person} />
-            <FirmoRow label="Telefon" value={lead.contact_phone} />
-            <FirmoRow label="Email" value={lead.contact_email} />
+            {lead.contact_phone ? (
+              <div>
+                <p className="text-slate-500 text-xs mb-0.5">Telefon</p>
+                <a href={`tel:${lead.contact_phone}`} className="text-blue-400 hover:text-blue-300 text-sm">{lead.contact_phone}</a>
+              </div>
+            ) : (
+              <FirmoRow label="Telefon" value={null} />
+            )}
+            {lead.contact_email ? (
+              <div>
+                <p className="text-slate-500 text-xs mb-0.5">Email</p>
+                <a href={`mailto:${lead.contact_email}`} className="text-blue-400 hover:text-blue-300 text-sm">{lead.contact_email}</a>
+              </div>
+            ) : (
+              <FirmoRow label="Email" value={null} />
+            )}
+            {lead.street && (
+              <FirmoRow label="Adres" value={[lead.street, lead.postal_code, lead.city].filter(Boolean).join(", ")} />
+            )}
           </div>
+          {/* Board members as contacts */}
+          {lead.board_members && lead.board_members.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-slate-700">
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Osoby w firmie</p>
+              <div className="space-y-2">
+                {lead.board_members.map((m, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg">
+                    <span className="text-sm text-white font-medium">{m.name}</span>
+                    <span className="text-xs text-blue-400">{m.function}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {bankAccounts.length > 0 && (
             <div className="mt-4 pt-3 border-t border-slate-700">
-              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Konta bankowe — Biała Lista ({bankAccounts.length})</p>
+              <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Konta bankowe ({bankAccounts.length})</p>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {bankAccounts.map((acc, i) => (
                   <p key={i} className="text-xs font-mono text-slate-400 bg-slate-700/30 p-1.5 rounded">{String(acc)}</p>
