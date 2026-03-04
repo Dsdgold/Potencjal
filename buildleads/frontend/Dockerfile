@@ -5,6 +5,9 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 
+# Cache buster — force rebuild when source changes
+ARG CACHEBUST=1
+
 # Build with empty API URL — nginx proxies /api/ to backend
 ENV NEXT_PUBLIC_API_URL=""
 RUN npm run build
