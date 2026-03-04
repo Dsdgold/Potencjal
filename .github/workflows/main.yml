@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy BuildLeads
 
 on:
   push:
@@ -20,44 +20,62 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy frontend to /var/www/html
-        shell: bash
-        run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/id_ed25519" \
-            mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/"
-
-      - name: Deploy backend
+      - name: Deploy BuildLeads to server
         shell: bash
         run: |
           rsync -avz --delete \
             --exclude '.env' \
             --exclude '__pycache__' \
             --exclude '.venv' \
+            --exclude 'node_modules' \
+            --exclude '.next' \
             --exclude '*.pyc' \
             -e "ssh -i ~/.ssh/id_ed25519" \
-            backend/ \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/potencjal/backend/"
+            buildleads/ \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/buildleads/"
 
-      - name: Start backend services on server
+      - name: Deploy legacy frontend (backward compat)
+        shell: bash
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_ed25519" \
+            mvp_osint_launcher_szybkie_sprawdzenie_potencjalu_html.html \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/" || true
+
+      - name: Stop legacy Potencjal backend
         shell: bash
         run: |
           ssh -i ~/.ssh/id_ed25519 \
               "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-              'cd /opt/potencjal/backend && \
-               docker compose up -d && \
-               if [ ! -d .venv ]; then python3 -m venv .venv; fi && \
-               .venv/bin/pip install -q -r requirements.txt && \
-               cp -n .env.example .env 2>/dev/null || true && \
-               .venv/bin/alembic upgrade head && \
-               (pkill -f "uvicorn app.main" || true) && \
-               nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/potencjal.log 2>&1 &'
+              'pkill -f "uvicorn app.main" || true
+               # Stop old potencjal docker compose if running
+               cd /opt/potencjal/backend 2>/dev/null && docker compose down 2>/dev/null || true'
+
+      - name: Build and start services
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              'cd /opt/buildleads && \
+               docker compose up --build -d && \
+               echo "Waiting for services to start..." && \
+               sleep 10 && \
+               docker compose ps'
+
+      - name: Run database migrations
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              'cd /opt/buildleads && \
+               docker compose exec -T api alembic upgrade head 2>&1 || echo "Migrations: using auto-create tables"'
 
       - name: Verify deployment
         shell: bash
         run: |
-          sleep 3
+          sleep 5
           ssh -i ~/.ssh/id_ed25519 \
               "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-              'curl -sf http://localhost:8000/health && echo " Backend OK" || echo " Backend starting..."'
+              'curl -sf http://localhost/health && echo " API OK" || echo " API not ready yet"
+               curl -sf http://localhost/ > /dev/null && echo " Frontend OK" || echo " Frontend not ready yet"
+               docker compose -f /opt/buildleads/docker-compose.yml logs --tail=20'
