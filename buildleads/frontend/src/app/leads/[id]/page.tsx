@@ -717,7 +717,7 @@ export default function LeadDetailPage() {
         <div className="space-y-4">
 
           {/* ── Score Card ── */}
-          <Section className={ti ? `bg-gradient-to-b from-slate-800/60 to-slate-800/40 ${ti.border}` : ""}>
+          <Section className={ti ? `border ${ti.border} bg-gradient-to-b from-white to-gray-50/80` : ""}>
             <div className="flex flex-col items-center">
               <Tip text="Scoring 0-100: pracownicy, przychody, lata, VAT, PKD, koszyk, lokalizacja">
                 <span className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Score</span>
