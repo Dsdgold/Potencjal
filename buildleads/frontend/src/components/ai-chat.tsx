@@ -118,8 +118,8 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
       {/* Floating button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] hover:from-[#818cf8] hover:to-[#a78bfa] text-white rounded-2xl shadow-xl shadow-[#6366f1]/25 flex items-center justify-center transition-all z-50 hover:scale-105 active:scale-95"
-        title={isClaude ? "Claude AI" : "Asystent AI"}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-[#0ea5e9] to-[#a855f7] hover:from-[#38bdf8] hover:to-[#c084fc] text-white rounded-2xl shadow-xl shadow-[#0ea5e9]/25 flex items-center justify-center transition-all z-50 hover:scale-105 active:scale-95"
+        title="Claude Haiku AI"
       >
         {open ? (
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -134,32 +134,30 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 w-[420px] max-h-[560px] bg-[#111118] border border-[#26263a] rounded-2xl shadow-2xl shadow-black/60 flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-24 right-6 w-[420px] max-h-[560px] bg-[#0a1014] border border-[rgba(14,165,233,0.12)] rounded-2xl shadow-2xl shadow-black/60 flex flex-col z-50 overflow-hidden animate-slide-up">
           {/* Header */}
-          <div className="bg-[#16161f] border-b border-[#26263a] px-4 py-3 flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] rounded-lg flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="bg-[#0f171e] border-b border-[rgba(14,165,233,0.08)] px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#0ea5e9] to-[#a855f7] rounded-xl flex items-center justify-center shadow-lg shadow-[#0ea5e9]/15">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-[#ededf0]">
-                {isClaude ? "Claude AI + Web" : "Asystent AI + Web"}
-              </p>
-              <p className="text-xs text-[#5e5e73] truncate">{leadName}</p>
+              <p className="text-sm font-semibold text-[#e8edf2]">Claude Haiku + Web</p>
+              <p className="text-[10px] text-[#455566] truncate">{leadName}</p>
             </div>
             <div className="flex items-center gap-2">
               {usageLabel && (
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
                   limitReached
                     ? "text-[#ef4444] bg-[#ef4444]/10 border-[#ef4444]/20"
-                    : "text-[#5e5e73] bg-[#1c1c28] border-[#26263a]"
+                    : "text-[#455566] bg-[#162028] border-[rgba(14,165,233,0.08)]"
                 }`}>
                   {usageLabel}
                 </span>
               )}
-              <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isClaude ? "text-[#a5b4fc] bg-[#6366f1]/10 border-[#6366f1]/20" : "text-[#10b981] bg-[#10b981]/10 border-[#10b981]/20"}`}>
-                {isClaude ? "Claude" : "Ollama"}
+              <span className="text-[10px] px-2 py-0.5 rounded-full border text-[#7dd3fc] bg-[#0ea5e9]/10 border-[#0ea5e9]/20">
+                Claude
               </span>
             </div>
           </div>
@@ -168,7 +166,7 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
           <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px] max-h-[380px]">
             {messages.length === 0 && (
               <div className="text-center py-4">
-                <p className="text-[#5e5e73] text-sm mb-3">Zapytaj o firme (szukam tez w internecie):</p>
+                <p className="text-[#455566] text-sm mb-3">Zapytaj o firme (szukam tez w internecie):</p>
                 <div className="space-y-2">
                   {[
                     "Jaki jest potencjal tej firmy?",
@@ -180,7 +178,7 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
                       key={i}
                       onClick={() => send(q)}
                       disabled={limitReached}
-                      className="block w-full text-left px-3 py-2 bg-[#1c1c28] hover:bg-[#26263a] border border-[#26263a] rounded-lg text-xs text-[#9494a8] transition-colors disabled:opacity-40"
+                      className="block w-full text-left px-3 py-2 bg-[#162028] hover:bg-[#1e2d3a] border border-[rgba(14,165,233,0.06)] rounded-xl text-xs text-[#7b8fa0] transition-all disabled:opacity-40 hover:border-[rgba(14,165,233,0.15)]"
                     >
                       {q}
                     </button>
@@ -193,27 +191,27 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
               <div key={i}>
                 <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+                    className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm whitespace-pre-wrap ${
                       msg.role === "user"
-                        ? "bg-[#6366f1] text-white"
+                        ? "bg-gradient-to-r from-[#0ea5e9] to-[#38bdf8] text-white"
                         : msg.role === "system"
-                        ? "bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/20"
-                        : "bg-[#1c1c28] text-[#ededf0] border border-[#26263a]"
+                        ? "bg-[#ef4444]/8 text-[#ef4444] border border-[#ef4444]/20"
+                        : "bg-[#162028] text-[#e8edf2] border border-[rgba(14,165,233,0.08)]"
                     }`}
                   >
                     {msg.content}
                   </div>
                 </div>
                 {msg.sources && msg.sources.length > 0 && (
-                  <div className="mt-1 ml-1">
-                    <p className="text-[10px] text-[#5e5e73] mb-1">Zrodla:</p>
+                  <div className="mt-1.5 ml-1">
+                    <p className="text-[10px] text-[#455566] mb-1">Zrodla:</p>
                     <div className="flex flex-wrap gap-1">
                       {msg.sources.slice(0, 3).map((url, j) => {
                         let domain = "";
                         try { domain = new URL(url).hostname.replace("www.", ""); } catch { domain = url.slice(0, 30); }
                         return (
                           <a key={j} href={url} target="_blank" rel="noopener noreferrer"
-                            className="text-[10px] text-[#a5b4fc] hover:text-[#c7d2fe] bg-[#6366f1]/10 px-2 py-0.5 rounded border border-[#6366f1]/20 truncate max-w-[140px]">
+                            className="text-[10px] text-[#7dd3fc] hover:text-[#bae6fd] bg-[#0ea5e9]/10 px-2 py-0.5 rounded-lg border border-[#0ea5e9]/20 truncate max-w-[140px] transition-colors">
                             {domain}
                           </a>
                         );
@@ -226,16 +224,14 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
 
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-[#1c1c28] border border-[#26263a] rounded-lg px-4 py-2">
+                <div className="bg-[#162028] border border-[rgba(14,165,233,0.08)] rounded-xl px-4 py-2.5">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <div className="w-2 h-2 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <div className="w-2 h-2 bg-[#6366f1] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                      <div className="w-2 h-2 bg-[#0ea5e9] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-2 h-2 bg-[#0ea5e9] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-2 h-2 bg-[#0ea5e9] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                     </div>
-                    <span className="text-xs text-[#5e5e73]">
-                      {isClaude ? "Claude analizuje..." : "szukam w internecie..."}
-                    </span>
+                    <span className="text-xs text-[#455566]">Claude analizuje...</span>
                   </div>
                 </div>
               </div>
@@ -243,7 +239,7 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
 
             {/* Limit reached banner */}
             {limitReached && (
-              <div className="bg-[#f59e0b]/5 border border-[#f59e0b]/20 rounded-lg p-3 text-center">
+              <div className="bg-[#f59e0b]/5 border border-[#f59e0b]/20 rounded-xl p-3 text-center">
                 <p className="text-xs text-[#f59e0b] font-medium mb-1">
                   Wykorzystano limit {queriesLimit} zapytan AI na dzis
                 </p>
@@ -257,7 +253,7 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
           </div>
 
           {/* Input */}
-          <div className="border-t border-[#26263a] p-3 bg-[#16161f]">
+          <div className="border-t border-[rgba(14,165,233,0.08)] p-3 bg-[#0f171e]">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -265,21 +261,21 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
                 placeholder={limitReached ? "Limit zapytan wyczerpany..." : "Zapytaj o firme..."}
-                className="flex-1 px-3 py-2 bg-[#0a0a0f] border border-[#26263a] rounded-lg text-sm text-[#ededf0] placeholder-[#5e5e73] focus:ring-2 focus:ring-[#6366f1]/50 focus:outline-none"
+                className="flex-1 px-3 py-2.5 bg-[#020709] border border-[rgba(14,165,233,0.08)] rounded-xl text-sm text-[#e8edf2] placeholder-[#455566] focus:ring-2 focus:ring-[#0ea5e9]/30 focus:outline-none transition-all"
                 disabled={loading || limitReached}
               />
               <button
                 onClick={() => send()}
                 disabled={loading || !input.trim() || limitReached}
-                className="px-3 py-2 bg-[#6366f1] hover:bg-[#818cf8] disabled:opacity-40 text-white rounded-lg transition-colors"
+                className="px-3 py-2.5 bg-gradient-to-r from-[#0ea5e9] to-[#38bdf8] hover:from-[#38bdf8] hover:to-[#7dd3fc] disabled:opacity-40 text-white rounded-xl transition-all"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               </button>
             </div>
-            <p className="text-[10px] text-[#33334d] mt-1 text-center">
-              {isClaude ? "Claude Haiku + Web Search" : "Ollama + Web Search (lokalne)"}
+            <p className="text-[10px] text-[#1e2d3a] mt-1.5 text-center">
+              Claude Haiku + Web Search
             </p>
           </div>
         </div>
