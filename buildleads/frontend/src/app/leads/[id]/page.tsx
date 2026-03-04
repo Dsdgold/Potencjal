@@ -771,14 +771,13 @@ export default function LeadDetailPage() {
                   </div>
                   {(() => {
                     const errStr = String(raw?.error);
-                    const isCeidgNA = src === "ceidg" && (errStr === "not_found" || errStr === "not_applicable");
+                    const isCeidgNA2 = src === "ceidg" && (errStr === "not_found" || errStr === "not_applicable");
                     return (
-                      <span className={`text-xs ${hasData ? "text-emerald-500" : isCeidgNA ? "text-slate-500" : hasError ? "text-amber-500" : "text-slate-600"}`}>
-                        {hasData ? "OK" : isCeidgNA ? "Nie dotyczy" : hasError ? "Pominięto" : "Brak danych"}
+                      <span className={`text-xs ${hasData ? "text-emerald-500" : isCeidgNA2 ? "text-slate-500" : hasError ? "text-amber-500" : "text-slate-600"}`}>
+                        {hasData ? "OK" : isCeidgNA2 ? "Nie dotyczy" : hasError ? "Pominięto" : "Brak danych"}
                       </span>
                     );
                   })()}
-                  </span>
                 </div>
               );
             })}
