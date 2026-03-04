@@ -24,10 +24,10 @@ interface Stats {
 }
 
 const tierColors: Record<string, string> = {
-  S: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  A: "bg-blue-50 text-blue-700 border-blue-200",
-  B: "bg-amber-50 text-amber-700 border-amber-200",
-  C: "bg-gray-100 text-gray-600 border-gray-200",
+  S: "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20",
+  A: "bg-[#6366f1]/10 text-[#a5b4fc] border-[#6366f1]/20",
+  B: "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20",
+  C: "bg-[#5e5e73]/10 text-[#9494a8] border-[#5e5e73]/20",
 };
 
 export default function DashboardPage() {
@@ -68,43 +68,51 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-gray-400">Ładowanie dashboardu...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-[#5e5e73] text-sm">Ładowanie dashboardu...</div>
+      </div>
+    );
   }
 
   return (
     <div>
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Witaj, {user?.first_name || "użytkowniku"}</p>
+          <h1 className="text-xl font-bold text-[#ededf0]">Dashboard</h1>
+          <p className="text-[#5e5e73] text-sm mt-0.5">Witaj, {user?.first_name || "użytkowniku"}</p>
         </div>
         <Link
           href="/leads"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-4 py-2 bg-[#6366f1] hover:bg-[#818cf8] text-white text-sm font-medium rounded-lg transition-all glow-accent"
         >
           + Sprawdź firmę
         </Link>
       </div>
 
       {/* Quick NIP check */}
-      <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-200 rounded-xl p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Szybkie sprawdzenie</h2>
-        <p className="text-gray-500 text-sm mb-3">Wpisz NIP firmy — automatycznie pobierzemy dane i policzymy potencjał</p>
-        <form onSubmit={(e) => { e.preventDefault(); const v = (e.currentTarget.elements.namedItem("qnip") as HTMLInputElement).value.replace(/[\s-]/g, ""); if (/^\d{10}$/.test(v)) { window.location.href = `/leads?nip=${v}`; } }} className="flex gap-3">
-          <input
-            name="qnip"
-            placeholder="Wpisz NIP, np. 5272700021"
-            className="flex-1 max-w-xs px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-mono text-lg tracking-wider focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            maxLength={13}
-          />
-          <button type="submit" className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors">
-            Sprawdź
-          </button>
-        </form>
+      <div className="bg-[#16161f] border border-[#26263a] rounded-xl p-6 mb-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#6366f1]/3 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3" />
+        <div className="relative">
+          <h2 className="text-base font-semibold text-[#ededf0] mb-1">Szybkie sprawdzenie</h2>
+          <p className="text-[#5e5e73] text-sm mb-4">Wpisz NIP — automatycznie pobierzemy dane i policzymy potencjał</p>
+          <form onSubmit={(e) => { e.preventDefault(); const v = (e.currentTarget.elements.namedItem("qnip") as HTMLInputElement).value.replace(/[\s-]/g, ""); if (/^\d{10}$/.test(v)) { window.location.href = `/leads?nip=${v}`; } }} className="flex gap-3">
+            <input
+              name="qnip"
+              placeholder="Wpisz NIP, np. 5272700021"
+              className="flex-1 max-w-xs px-4 py-2.5 bg-[#0a0a0f] border border-[#26263a] rounded-lg text-[#ededf0] font-mono text-lg tracking-wider placeholder-[#5e5e73] focus:ring-2 focus:ring-[#6366f1]/50 focus:outline-none"
+              maxLength={13}
+            />
+            <button type="submit" className="px-6 py-2.5 bg-[#10b981] hover:bg-[#34d399] text-white font-medium rounded-lg transition-all glow-success">
+              Sprawdź
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <KpiCard label="Wszystkie leady" value={stats.total.toString()} />
         <KpiCard label="Średni score" value={stats.avgScore.toString()} suffix="/100" />
         <KpiCard
@@ -116,49 +124,49 @@ export default function DashboardPage() {
       </div>
 
       {/* Tier Distribution */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Rozkład tierów</h2>
-        <div className="grid grid-cols-4 gap-4">
+      <div className="bg-[#16161f] border border-[#26263a] rounded-xl p-5 mb-6">
+        <h2 className="text-sm font-semibold text-[#ededf0] mb-4 uppercase tracking-wider">Rozkład tierów</h2>
+        <div className="grid grid-cols-4 gap-3">
           {(["S", "A", "B", "C"] as const).map((tier) => (
             <div key={tier} className={`text-center p-4 rounded-lg border ${tierColors[tier]}`}>
-              <div className="text-3xl font-bold">{stats.byTier[tier] || 0}</div>
-              <div className="text-sm mt-1 opacity-80">Tier {tier}</div>
+              <div className="text-2xl font-bold">{stats.byTier[tier] || 0}</div>
+              <div className="text-xs mt-1 opacity-70">Tier {tier}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Recent Leads */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="p-6 pb-0">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ostatnie leady</h2>
+      <div className="bg-[#16161f] border border-[#26263a] rounded-xl overflow-hidden">
+        <div className="px-5 py-4">
+          <h2 className="text-sm font-semibold text-[#ededf0] uppercase tracking-wider">Ostatnie leady</h2>
         </div>
         {leads.length === 0 ? (
-          <p className="text-gray-400 text-sm p-6 pt-0">Brak leadów. Dodaj pierwszego leada.</p>
+          <p className="text-[#5e5e73] text-sm px-5 pb-5">Brak leadów. Dodaj pierwszego leada.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500 border-b border-gray-100 bg-gray-50/50">
-                <th className="text-left py-3 px-4 font-medium">Nazwa</th>
-                <th className="text-left py-3 px-4 font-medium">NIP</th>
-                <th className="text-left py-3 px-4 font-medium">Miasto</th>
-                <th className="text-center py-3 px-4 font-medium">Score</th>
-                <th className="text-center py-3 px-4 font-medium">Tier</th>
-                <th className="text-right py-3 px-4 font-medium">Potencjał</th>
+              <tr className="text-[#5e5e73] border-t border-[#26263a] bg-[#111118]/50">
+                <th className="text-left py-3 px-4 font-medium text-xs uppercase tracking-wider">Nazwa</th>
+                <th className="text-left py-3 px-4 font-medium text-xs uppercase tracking-wider">NIP</th>
+                <th className="text-left py-3 px-4 font-medium text-xs uppercase tracking-wider">Miasto</th>
+                <th className="text-center py-3 px-4 font-medium text-xs uppercase tracking-wider">Score</th>
+                <th className="text-center py-3 px-4 font-medium text-xs uppercase tracking-wider">Tier</th>
+                <th className="text-right py-3 px-4 font-medium text-xs uppercase tracking-wider">Potencjał</th>
               </tr>
             </thead>
             <tbody>
               {leads.slice(0, 10).map((lead) => (
-                <tr key={lead.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <tr key={lead.id} className="border-t border-[#26263a]/50 hover:bg-[#1c1c28] transition-colors">
                   <td className="py-3 px-4">
-                    <Link href={`/leads/${lead.id}`} className="text-blue-600 hover:text-blue-800 font-medium">
+                    <Link href={`/leads/${lead.id}`} className="text-[#a5b4fc] hover:text-[#c7d2fe] font-medium">
                       {lead.name}
                     </Link>
                   </td>
-                  <td className="py-3 px-4 text-gray-500 font-mono text-xs">{lead.nip}</td>
-                  <td className="py-3 px-4 text-gray-600">{lead.city || "—"}</td>
+                  <td className="py-3 px-4 text-[#5e5e73] font-mono text-xs">{lead.nip}</td>
+                  <td className="py-3 px-4 text-[#9494a8]">{lead.city || "—"}</td>
                   <td className="py-3 px-4 text-center">
-                    <span className="text-gray-900 font-semibold">{lead.score ?? "—"}</span>
+                    <span className="text-[#ededf0] font-semibold">{lead.score ?? "—"}</span>
                   </td>
                   <td className="py-3 px-4 text-center">
                     {lead.tier ? (
@@ -167,7 +175,7 @@ export default function DashboardPage() {
                       </span>
                     ) : "—"}
                   </td>
-                  <td className="py-3 px-4 text-right text-gray-600">
+                  <td className="py-3 px-4 text-right text-[#9494a8]">
                     {lead.annual_potential ? `${(lead.annual_potential / 1000).toFixed(0)}k PLN` : "—"}
                   </td>
                 </tr>
@@ -182,10 +190,10 @@ export default function DashboardPage() {
 
 function KpiCard({ label, value, suffix, accent }: { label: string; value: string; suffix?: string; accent?: boolean }) {
   return (
-    <div className={`p-5 rounded-xl border shadow-sm ${accent ? "bg-emerald-50 border-emerald-200" : "bg-white border-gray-200"}`}>
-      <p className="text-sm text-gray-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${accent ? "text-emerald-700" : "text-gray-900"}`}>
-        {value}<span className="text-sm font-normal text-gray-400">{suffix}</span>
+    <div className={`p-4 rounded-xl border ${accent ? "bg-[#10b981]/5 border-[#10b981]/20" : "bg-[#16161f] border-[#26263a]"}`}>
+      <p className="text-xs text-[#5e5e73] mb-1 uppercase tracking-wider">{label}</p>
+      <p className={`text-xl font-bold ${accent ? "text-[#10b981]" : "text-[#ededf0]"}`}>
+        {value}<span className="text-sm font-normal text-[#5e5e73]">{suffix}</span>
       </p>
     </div>
   );

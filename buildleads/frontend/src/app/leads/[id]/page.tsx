@@ -83,10 +83,10 @@ interface HistoryEntry {
 // ── Constants ──
 
 const TIER: Record<string, { color: string; bg: string; border: string; label: string; action: string; ring: string }> = {
-  S: { color: "text-emerald-600", bg: "bg-emerald-500", border: "border-emerald-200", label: "PREMIUM", action: "Priorytetowy kontakt osobisty — zadzwon dzis!", ring: "#059669" },
-  A: { color: "text-blue-600", bg: "bg-blue-500", border: "border-blue-200", label: "WYSOKI", action: "Oferta rabatu ilosciowego, dostawa 24-48h", ring: "#2563eb" },
-  B: { color: "text-amber-600", bg: "bg-amber-500", border: "border-amber-200", label: "SREDNI", action: "Kampania remarketingowa, follow-up 7 dni", ring: "#d97706" },
-  C: { color: "text-gray-500", bg: "bg-slate-500", border: "border-gray-200", label: "NISKI", action: "Monitoruj, follow-up 30 dni", ring: "#6b7280" },
+  S: { color: "text-[#10b981]", bg: "bg-[#10b981]", border: "border-[#10b981]/20", label: "PREMIUM", action: "Priorytetowy kontakt osobisty — zadzwon dzis!", ring: "#10b981" },
+  A: { color: "text-[#6366f1]", bg: "bg-[#6366f1]", border: "border-[#6366f1]/20", label: "WYSOKI", action: "Oferta rabatu ilosciowego, dostawa 24-48h", ring: "#6366f1" },
+  B: { color: "text-[#f59e0b]", bg: "bg-[#f59e0b]", border: "border-[#f59e0b]/20", label: "SREDNI", action: "Kampania remarketingowa, follow-up 7 dni", ring: "#f59e0b" },
+  C: { color: "text-[#5e5e73]", bg: "bg-[#5e5e73]", border: "border-[#5e5e73]/20", label: "NISKI", action: "Monitoruj, follow-up 30 dni", ring: "#5e5e73" },
 };
 
 const REV_BAND: Record<string, string> = {
@@ -103,23 +103,17 @@ const SRC_LABEL: Record<string, { name: string; tip: string }> = {
   gus: { name: "GUS REGON", tip: "stat.gov.pl — REGON, PKD, adres, forma prawna" },
 };
 
-// ── Helper: check if name is RODO-masked ──
-function isMasked(s: string | null | undefined): boolean {
-  return !!s && s.includes("*");
-}
-
 // ── Tooltip component ──
 function Tip({ children, text }: { children: ReactNode; text: string }) {
   return (
     <span className="group/tip relative inline-flex items-center gap-1 cursor-help">
       {children}
-      <svg className="w-3 h-3 text-gray-400 group-hover/tip:text-gray-600 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="w-3 h-3 text-[#5e5e73] group-hover/tip:text-[#9494a8] transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <circle cx="12" cy="12" r="10" />
         <path d="M12 16v-4M12 8h.01" />
       </svg>
-      <span className="invisible group-hover/tip:visible opacity-0 group-hover/tip:opacity-100 transition-all absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-[11px] text-gray-600 whitespace-nowrap z-50 shadow-lg max-w-xs">
+      <span className="invisible group-hover/tip:visible opacity-0 group-hover/tip:opacity-100 transition-all absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1c1c28] border border-[#33334d] rounded-lg text-[11px] text-[#9494a8] whitespace-nowrap z-50 shadow-lg max-w-xs">
         {text}
-        <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-slate-600" />
       </span>
     </span>
   );
@@ -128,7 +122,7 @@ function Tip({ children, text }: { children: ReactNode; text: string }) {
 // ── Section wrapper ──
 function Section({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`bg-white border border-gray-200 rounded-xl p-4 shadow-sm ${className}`}>
+    <div className={`bg-[#16161f] border border-[#26263a] rounded-xl p-4 ${className}`}>
       {children}
     </div>
   );
@@ -139,9 +133,9 @@ function SectionTitle({ children, tip, right }: { children: ReactNode; tip?: str
   return (
     <div className="flex items-center justify-between mb-3">
       {tip ? (
-        <Tip text={tip}><h2 className="text-sm font-semibold text-gray-900">{children}</h2></Tip>
+        <Tip text={tip}><h2 className="text-sm font-semibold text-[#ededf0]">{children}</h2></Tip>
       ) : (
-        <h2 className="text-sm font-semibold text-gray-900">{children}</h2>
+        <h2 className="text-sm font-semibold text-[#ededf0]">{children}</h2>
       )}
       {right}
     </div>
@@ -156,7 +150,6 @@ function Row({
   mono,
   href,
   highlight,
-  masked,
   sub,
 }: {
   label: string;
@@ -165,29 +158,27 @@ function Row({
   mono?: boolean;
   href?: string;
   highlight?: "green" | "yellow" | "red" | "blue";
-  masked?: boolean;
   sub?: string;
 }) {
-  if (!value && !masked) return null;
-  const hc = highlight === "green" ? "text-emerald-700" : highlight === "yellow" ? "text-amber-700" : highlight === "red" ? "text-red-700" : highlight === "blue" ? "text-blue-600" : "text-gray-900";
+  if (!value) return null;
+  const hc = highlight === "green" ? "text-[#10b981]" : highlight === "yellow" ? "text-[#f59e0b]" : highlight === "red" ? "text-[#ef4444]" : highlight === "blue" ? "text-[#a5b4fc]" : "text-[#ededf0]";
 
   return (
-    <div className="flex items-baseline justify-between py-1.5 border-b border-gray-100 last:border-0 gap-3">
-      <span className="text-xs text-gray-400 flex-shrink-0 w-36">
+    <div className="flex items-baseline justify-between py-1.5 border-b border-[#26263a]/50 last:border-0 gap-3">
+      <span className="text-xs text-[#5e5e73] flex-shrink-0 w-36">
         {tip ? <Tip text={tip}>{label}</Tip> : label}
       </span>
       <span className={`text-sm text-right truncate ${mono ? "font-mono" : ""}`}>
         {href && value ? (
-          <a href={href.startsWith("http") ? href : `https://${href}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-500 hover:underline transition-colors">
+          <a href={href.startsWith("http") ? href : `https://${href}`} target="_blank" rel="noopener noreferrer" className="text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline transition-colors">
             {value}
           </a>
         ) : (
-          <span className={masked ? "text-gray-500 italic" : hc}>
+          <span className={hc}>
             {value || "—"}
-            {masked && <span className="ml-1.5 text-[9px] text-amber-600 bg-amber-500/10 px-1 py-px rounded">RODO</span>}
           </span>
         )}
-        {sub && <span className="text-[11px] text-gray-400 ml-1">{sub}</span>}
+        {sub && <span className="text-[11px] text-[#5e5e73] ml-1">{sub}</span>}
       </span>
     </div>
   );
@@ -196,12 +187,12 @@ function Row({
 // ── Badge ──
 function Badge({ text, color = "slate" }: { text: string; color?: "emerald" | "blue" | "amber" | "red" | "purple" | "slate" }) {
   const cls: Record<string, string> = {
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    blue: "bg-blue-50 text-blue-600 border-blue-200",
-    amber: "bg-amber-50 text-amber-700 border-amber-200",
-    red: "bg-red-50 text-red-700 border-red-200",
-    purple: "bg-purple-50 text-purple-600 border-purple-200",
-    slate: "bg-gray-100 text-gray-500 border-gray-200",
+    emerald: "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20",
+    blue: "bg-[#6366f1]/10 text-[#a5b4fc] border-[#6366f1]/20",
+    amber: "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20",
+    red: "bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20",
+    purple: "bg-[#a78bfa]/10 text-[#a78bfa] border-[#a78bfa]/20",
+    slate: "bg-[#5e5e73]/10 text-[#9494a8] border-[#5e5e73]/20",
   };
   return <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium border ${cls[color]}`}>{text}</span>;
 }
@@ -210,7 +201,7 @@ function Badge({ text, color = "slate" }: { text: string; color?: "emerald" | "b
 function QLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer"
-      className="px-2.5 py-1.5 bg-gray-50 hover:bg-gray-100/60 text-gray-500 hover:text-gray-900 text-[11px] rounded-lg border border-gray-200 transition-all">
+      className="px-2.5 py-1.5 bg-[#1c1c28] hover:bg-[#26263a] text-[#9494a8] hover:text-[#ededf0] text-[11px] rounded-lg border border-[#26263a] transition-all">
       {children}
     </a>
   );
@@ -313,8 +304,8 @@ export default function LeadDetailPage() {
     if (res.ok) { setLead((prev) => prev ? { ...prev, notes: notesValue } : prev); setEditingNotes(false); }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-gray-500"><div className="w-6 h-6 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-3" />Ladowanie danych firmy...</div>;
-  if (!lead) return <div className="text-red-700 p-8 text-center">Lead nie znaleziony</div>;
+  if (loading) return <div className="flex items-center justify-center h-64 text-[#5e5e73]"><div className="w-6 h-6 border-2 border-[#6366f1] border-t-transparent rounded-full animate-spin mr-3" />Ladowanie danych firmy...</div>;
+  if (!lead) return <div className="text-[#ef4444] p-8 text-center">Lead nie znaleziony</div>;
 
   // ── Extract data ──
   const ti = lead.tier ? TIER[lead.tier] : null;
@@ -370,16 +361,16 @@ export default function LeadDetailPage() {
     <div className="max-w-7xl mx-auto space-y-4">
 
       {/* ═══ HEADER BAR ═══ */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-[#16161f] border border-[#26263a] rounded-xl p-4">
         <div className="flex items-start gap-3">
-          <Link href="/leads" className="mt-1 p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all flex-shrink-0">
+          <Link href="/leads" className="mt-1 p-1.5 rounded-lg hover:bg-[#1c1c28] text-[#5e5e73] hover:text-[#ededf0] transition-all flex-shrink-0">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </Link>
 
           <div className="flex-1 min-w-0">
             {/* Company name + badges */}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h1 className="text-xl font-bold text-gray-900 truncate">{lead.name}</h1>
+              <h1 className="text-xl font-bold text-[#ededf0] truncate">{lead.name}</h1>
               {lead.tier && <Badge text={`${lead.tier} — ${ti?.label}`} color={lead.tier === "S" ? "emerald" : lead.tier === "A" ? "blue" : lead.tier === "B" ? "amber" : "slate"} />}
               <Badge
                 text={lead.vat_status || "VAT?"}
@@ -387,9 +378,9 @@ export default function LeadDetailPage() {
               />
             </div>
             {/* Identifiers row */}
-            <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
+            <div className="flex items-center gap-4 text-xs text-[#5e5e73] flex-wrap">
               <Tip text="Numer Identyfikacji Podatkowej — kliknij aby sprawdzic w rejestr.io">
-                <a href={`https://rejestr.io/krs?q=${lead.nip}`} target="_blank" rel="noopener noreferrer" className="font-mono text-blue-600 hover:text-blue-500 hover:underline">
+                <a href={`https://rejestr.io/krs?q=${lead.nip}`} target="_blank" rel="noopener noreferrer" className="font-mono text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline">
                   NIP {lead.nip}
                 </a>
               </Tip>
@@ -398,7 +389,7 @@ export default function LeadDetailPage() {
               )}
               {(lead.krs || krsNum) && (
                 <Tip text="Numer KRS — kliknij aby sprawdzic w rejestr.io">
-                  <a href={`https://rejestr.io/krs/${lead.krs || krsNum}`} target="_blank" rel="noopener noreferrer" className="font-mono text-blue-600 hover:text-blue-500 hover:underline">
+                  <a href={`https://rejestr.io/krs/${lead.krs || krsNum}`} target="_blank" rel="noopener noreferrer" className="font-mono text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline">
                     KRS {lead.krs || krsNum}
                   </a>
                 </Tip>
@@ -412,14 +403,14 @@ export default function LeadDetailPage() {
             <button
               onClick={handleEnrichAndScore}
               disabled={enriching || scoring}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-300 text-white text-xs rounded-lg font-semibold whitespace-nowrap shadow-lg shadow-emerald-200 transition-all"
+              className="px-4 py-2 bg-[#10b981] hover:bg-[#34d399] disabled:opacity-40 text-white text-xs rounded-lg font-semibold whitespace-nowrap glow-success transition-all"
             >
               {enriching ? "Pobieranie..." : scoring ? "Scoring..." : "Wzbogac + Score"}
             </button>
-            <Link href={`/leads/${id}/edit`} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-all">
+            <Link href={`/leads/${id}/edit`} className="px-3 py-2 bg-[#1c1c28] hover:bg-[#26263a] text-[#9494a8] text-xs rounded-lg border border-[#26263a] transition-all">
               Edytuj
             </Link>
-            <button onClick={handleDelete} className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-xs rounded-lg border border-red-200 transition-all">
+            <button onClick={handleDelete} className="px-3 py-2 bg-[#ef4444]/10 hover:bg-[#ef4444]/20 text-[#ef4444] text-xs rounded-lg border border-[#ef4444]/20 transition-all">
               Usun
             </button>
           </div>
@@ -463,7 +454,7 @@ export default function LeadDetailPage() {
             <SectionTitle
               tip="Scoring skladniowy: kazdy czynnik ma wage i wynik surowy (0-100). Suma wazona = koncowy score."
               right={
-                <button onClick={handleScore} disabled={scoring} className="text-[11px] text-blue-600 hover:text-blue-500 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-all">
+                <button onClick={handleScore} disabled={scoring} className="text-[11px] text-[#a5b4fc] hover:text-[#c7d2fe] px-2.5 py-1 rounded-lg hover:bg-[#6366f1]/10 transition-all">
                   {scoring ? "Liczenie..." : "Przelicz"}
                 </button>
               }
@@ -486,30 +477,30 @@ export default function LeadDetailPage() {
                     <div key={b.factor}>
                       <div className="flex justify-between text-xs mb-1">
                         <Tip text={tips[b.factor] || b.factor}>
-                          <span className="text-gray-600">{b.label}</span>
+                          <span className="text-[#9494a8]">{b.label}</span>
                         </Tip>
-                        <span className="text-gray-400 tabular-nums">
-                          <span className="text-gray-900 font-semibold">{b.raw_score}</span>/100 x {(b.weight * 100).toFixed(0)}% = <span className="text-gray-900 font-semibold">{b.weighted_score.toFixed(1)}</span>
+                        <span className="text-[#5e5e73] tabular-nums">
+                          <span className="text-[#ededf0] font-semibold">{b.raw_score}</span>/100 x {(b.weight * 100).toFixed(0)}% = <span className="text-[#ededf0] font-semibold">{b.weighted_score.toFixed(1)}</span>
                         </span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-[#1c1c28] rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-700 ${b.raw_score >= 70 ? "bg-emerald-500" : b.raw_score >= 50 ? "bg-blue-500" : b.raw_score >= 30 ? "bg-amber-500" : "bg-red-500"}`}
+                          className={`h-full rounded-full transition-all duration-700 ${b.raw_score >= 70 ? "bg-[#10b981]" : b.raw_score >= 50 ? "bg-[#6366f1]" : b.raw_score >= 30 ? "bg-[#f59e0b]" : "bg-[#ef4444]"}`}
                           style={{ width: `${b.raw_score}%` }}
                         />
                       </div>
                     </div>
                   );
                 })}
-                <div className="border-t border-gray-100 pt-2 mt-3 flex justify-between items-center">
-                  <span className="text-xs text-gray-400">Suma wazona</span>
-                  <span className="text-gray-900 font-black text-lg">{lead.score ?? "—"}<span className="text-gray-400 text-xs font-normal"> / 100</span></span>
+                <div className="border-t border-[#26263a] pt-2 mt-3 flex justify-between items-center">
+                  <span className="text-xs text-[#5e5e73]">Suma wazona</span>
+                  <span className="text-[#ededf0] font-black text-lg">{lead.score ?? "—"}<span className="text-[#5e5e73] text-xs font-normal"> / 100</span></span>
                 </div>
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-400 text-sm mb-2">Kliknij aby obliczyc scoring</p>
-                <button onClick={handleScore} disabled={scoring} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition-all">
+                <p className="text-[#5e5e73] text-sm mb-2">Kliknij aby obliczyc scoring</p>
+                <button onClick={handleScore} disabled={scoring} className="px-4 py-2 bg-[#6366f1] hover:bg-[#818cf8] text-white text-xs rounded-lg transition-all">
                   Przelicz scoring
                 </button>
               </div>
@@ -522,83 +513,67 @@ export default function LeadDetailPage() {
 
             {board.length > 0 ? (
               <div>
-                <p className="text-[10px] text-gray-400 mb-2 uppercase tracking-wider">{boardOrganName}</p>
+                <p className="text-[10px] text-[#5e5e73] mb-2 uppercase tracking-wider">{boardOrganName}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {board.map((m, i) => {
-                    const masked = isMasked(m.name);
-                    return (
-                      <div key={i} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${masked ? "bg-amber-500/20 text-amber-700" : "bg-gray-200 text-gray-700"}`}>
-                            {masked ? "?" : m.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <span className={`text-xs block truncate ${masked ? "text-gray-500 italic" : "text-gray-900"}`}>
-                              {m.name}
-                              {masked && <span className="ml-1 text-[9px] text-amber-600 bg-amber-500/10 px-1 py-px rounded">RODO</span>}
-                            </span>
-                            <span className="text-[10px] text-gray-400">{m.function || "Czlonek"}</span>
-                          </div>
+                  {board.map((m, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 bg-[#1c1c28] rounded-lg">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 bg-[#6366f1]/20 text-[#a5b4fc]">
+                          {m.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs block truncate text-[#ededf0]">
+                            {m.name}
+                          </span>
+                          <span className="text-[10px] text-[#5e5e73]">{m.function || "Czlonek"}</span>
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
-              <p className="text-gray-400 text-xs py-3 text-center">Brak danych — kliknij &quot;Wzbogac + Score&quot;</p>
+              <p className="text-[#5e5e73] text-xs py-3 text-center">Brak danych — kliknij &quot;Wzbogac + Score&quot;</p>
             )}
 
             {/* Supervisory Board */}
             {supervisory.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-[#26263a]">
                 <Tip text="Rada Nadzorcza — organ nadzoru spolki, dane z eKRS">
-                  <p className="text-[10px] text-gray-400 mb-2 uppercase tracking-wider">Rada Nadzorcza ({supervisory.length})</p>
+                  <p className="text-[10px] text-[#5e5e73] mb-2 uppercase tracking-wider">Rada Nadzorcza ({supervisory.length})</p>
                 </Tip>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                  {supervisory.map((m, i) => {
-                    const masked = isMasked(m.name);
-                    return (
-                      <div key={i} className="flex items-center justify-between p-1.5 bg-gray-50 rounded-lg text-xs">
-                        <span className={masked ? "text-gray-500 italic" : "text-gray-900"}>
-                          {m.name}
-                          {masked && <span className="ml-1 text-[9px] text-amber-600 bg-amber-500/10 px-1 py-px rounded">RODO</span>}
-                        </span>
-                        <span className="text-gray-400 text-[10px]">{m.function}</span>
-                      </div>
-                    );
-                  })}
+                  {supervisory.map((m, i) => (
+                    <div key={i} className="flex items-center justify-between p-1.5 bg-[#1c1c28] rounded-lg text-xs">
+                      <span className="text-[#ededf0]">{m.name}</span>
+                      <span className="text-[#5e5e73] text-[10px]">{m.function}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
             {/* Shareholders */}
             {shareholders.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-[#26263a]">
                 <Tip text="Wspolnicy/udzialowcy spolki — dane z eKRS">
-                  <p className="text-[10px] text-gray-400 mb-2 uppercase tracking-wider">Wspolnicy ({shareholders.length})</p>
+                  <p className="text-[10px] text-[#5e5e73] mb-2 uppercase tracking-wider">Wspolnicy ({shareholders.length})</p>
                 </Tip>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                  {shareholders.map((s, i) => {
-                    const masked = isMasked(s.name);
-                    return (
-                      <div key={i} className="p-1.5 bg-gray-50 rounded-lg text-xs">
-                        <span className={masked ? "text-gray-500 italic" : "text-gray-900"}>
-                          {s.name}
-                          {masked && <span className="ml-1 text-[9px] text-amber-600 bg-amber-500/10 px-1 py-px rounded">RODO</span>}
-                        </span>
-                        {s.shares && <span className="text-gray-400 text-[10px] ml-2">{s.shares}</span>}
-                      </div>
-                    );
-                  })}
+                  {shareholders.map((s, i) => (
+                    <div key={i} className="p-1.5 bg-[#1c1c28] rounded-lg text-xs">
+                      <span className="text-[#ededf0]">{s.name}</span>
+                      {s.shares && <span className="text-[#5e5e73] text-[10px] ml-2">{s.shares}</span>}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
             {shareCapital && (
-              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
-                <Tip text="Kapital zakladowy spolki"><span className="text-[10px] text-gray-400">Kapital zakladowy:</span></Tip>
-                <span className="text-xs text-gray-900 font-medium">{shareCapital}</span>
+              <div className="mt-3 pt-3 border-t border-[#26263a] flex items-center gap-2">
+                <Tip text="Kapital zakladowy spolki"><span className="text-[10px] text-[#5e5e73]">Kapital zakladowy:</span></Tip>
+                <span className="text-xs text-[#ededf0] font-medium">{shareCapital}</span>
               </div>
             )}
           </Section>
@@ -612,10 +587,10 @@ export default function LeadDetailPage() {
                   <a key={i}
                     href={`https://www.biznes.gov.pl/pl/tabela-pkd/pkd/${p.code.replace(".", "")}`}
                     target="_blank" rel="noopener noreferrer"
-                    className={`flex gap-2 text-xs p-2 rounded-lg hover:bg-gray-100 transition-all ${i === 0 ? "bg-blue-50 border border-blue-200" : ""}`}
+                    className={`flex gap-2 text-xs p-2 rounded-lg hover:bg-[#1c1c28] transition-all ${i === 0 ? "bg-[#6366f1]/5 border border-[#6366f1]/20" : ""}`}
                   >
-                    <span className="font-mono text-blue-600 flex-shrink-0 w-12">{p.code}</span>
-                    <span className="text-gray-500 flex-1 truncate">{p.desc || "—"}</span>
+                    <span className="font-mono text-[#a5b4fc] flex-shrink-0 w-12">{p.code}</span>
+                    <span className="text-[#9494a8] flex-1 truncate">{p.desc || "—"}</span>
                     {i === 0 && <Badge text="glowny" color="blue" />}
                   </a>
                 ))}
@@ -627,13 +602,13 @@ export default function LeadDetailPage() {
           {lead.description && (
             <Section>
               <SectionTitle tip="Opis firmy z rejestrow, strony WWW, Google i portali">Opis firmy</SectionTitle>
-              <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{lead.description}</p>
+              <p className="text-xs text-[#9494a8] whitespace-pre-wrap leading-relaxed">{lead.description}</p>
             </Section>
           )}
 
           {/* ── Map ── */}
           {lead.latitude && lead.longitude && (
-            <div className="bg-white border border-gray-200 rounded-xl p-1.5 h-[280px]">
+            <div className="bg-[#16161f] border border-[#26263a] rounded-xl p-1.5 h-[280px]">
               <LeadMap latitude={lead.latitude} longitude={lead.longitude} name={lead.name} address={fullAddress} />
             </div>
           )}
@@ -644,7 +619,7 @@ export default function LeadDetailPage() {
             <Section>
               <SectionTitle tip="Twoje notatki do tego leada" right={
                 !editingNotes ? (
-                  <button onClick={() => setEditingNotes(true)} className="text-[11px] text-blue-600 hover:text-blue-500 px-2 py-1 rounded-lg hover:bg-blue-50 transition-all">
+                  <button onClick={() => setEditingNotes(true)} className="text-[11px] text-[#a5b4fc] hover:text-[#c7d2fe] px-2 py-1 rounded-lg hover:bg-[#6366f1]/10 transition-all">
                     Edytuj
                   </button>
                 ) : undefined
@@ -657,21 +632,21 @@ export default function LeadDetailPage() {
                     value={notesValue}
                     onChange={(e) => setNotesValue(e.target.value)}
                     rows={5}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none placeholder-gray-400"
+                    className="w-full px-3 py-2 bg-[#0a0a0f] border border-[#26263a] rounded-lg text-[#ededf0] text-xs focus:ring-2 focus:ring-[#6366f1]/50 focus:outline-none resize-none placeholder-[#5e5e73]"
                     placeholder="Dodaj notatki..."
                   />
                   <div className="flex gap-2 mt-2">
-                    <button onClick={saveNotes} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] rounded-lg transition-all">Zapisz</button>
-                    <button onClick={() => { setEditingNotes(false); setNotesValue(lead.notes || ""); }} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] rounded-lg transition-all">Anuluj</button>
+                    <button onClick={saveNotes} className="px-3 py-1.5 bg-[#10b981] hover:bg-[#34d399] text-white text-[11px] rounded-lg transition-all">Zapisz</button>
+                    <button onClick={() => { setEditingNotes(false); setNotesValue(lead.notes || ""); }} className="px-3 py-1.5 bg-[#1c1c28] hover:bg-[#26263a] text-[#9494a8] text-[11px] rounded-lg transition-all">Anuluj</button>
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-600 text-xs whitespace-pre-wrap">{lead.notes || "Brak notatek."}</p>
+                <p className="text-[#9494a8] text-xs whitespace-pre-wrap">{lead.notes || "Brak notatek."}</p>
               )}
               {lead.ai_summary && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <Tip text="Podsumowanie AI"><p className="text-[10px] text-purple-600 font-medium mb-1">AI Summary</p></Tip>
-                  <p className="text-xs text-gray-600">{lead.ai_summary}</p>
+                <div className="mt-3 pt-3 border-t border-[#26263a]">
+                  <Tip text="Podsumowanie AI"><p className="text-[10px] text-[#a78bfa] font-medium mb-1">AI Summary</p></Tip>
+                  <p className="text-xs text-[#9494a8]">{lead.ai_summary}</p>
                 </div>
               )}
             </Section>
@@ -683,7 +658,7 @@ export default function LeadDetailPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-gray-400 border-b border-gray-100">
+                      <tr className="text-[#5e5e73] border-b border-[#26263a]">
                         <th className="text-left py-1.5 pr-3 font-medium text-[10px] uppercase">Data</th>
                         <th className="text-center py-1.5 px-2 font-medium text-[10px] uppercase">Score</th>
                         <th className="text-center py-1.5 px-2 font-medium text-[10px] uppercase">Tier</th>
@@ -692,22 +667,22 @@ export default function LeadDetailPage() {
                     </thead>
                     <tbody>
                       {history.map((h, i) => (
-                        <tr key={h.id} className={`border-b border-gray-50 ${i === 0 ? "bg-gray-50/50" : ""}`}>
-                          <td className="py-1.5 pr-3 text-gray-500 text-[11px]">
+                        <tr key={h.id} className={`border-b border-[#26263a]/50 ${i === 0 ? "bg-[#1c1c28]/50" : ""}`}>
+                          <td className="py-1.5 pr-3 text-[#5e5e73] text-[11px]">
                             {new Date(h.scored_at).toLocaleString("pl-PL", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </td>
-                          <td className="py-1.5 px-2 text-center text-gray-900 font-bold">{h.score}</td>
+                          <td className="py-1.5 px-2 text-center text-[#ededf0] font-bold">{h.score}</td>
                           <td className="py-1.5 px-2 text-center">
                             <Badge text={h.tier} color={h.tier === "S" ? "emerald" : h.tier === "A" ? "blue" : h.tier === "B" ? "amber" : "slate"} />
                           </td>
-                          <td className="py-1.5 pl-2 text-right text-gray-500">{(h.annual_potential / 1000).toFixed(0)}k</td>
+                          <td className="py-1.5 pl-2 text-right text-[#5e5e73]">{(h.annual_potential / 1000).toFixed(0)}k</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-400 text-xs text-center py-6">Brak historii — przelicz scoring</p>
+                <p className="text-[#5e5e73] text-xs text-center py-6">Brak historii — przelicz scoring</p>
               )}
             </Section>
           </div>
@@ -717,44 +692,44 @@ export default function LeadDetailPage() {
         <div className="space-y-4">
 
           {/* ── Score Card ── */}
-          <Section className={ti ? `border ${ti.border} bg-gradient-to-b from-white to-gray-50/80` : ""}>
+          <Section className={ti ? `border ${ti.border}` : ""}>
             <div className="flex flex-col items-center">
               <Tip text="Scoring 0-100: pracownicy, przychody, lata, VAT, PKD, koszyk, lokalizacja">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Score</span>
+                <span className="text-[10px] text-[#5e5e73] uppercase tracking-wider mb-2">Score</span>
               </Tip>
               <div className="relative w-28 h-28 mb-2">
                 <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="54" fill="none" stroke="#e5e7eb" strokeWidth="8" />
-                  <circle cx="60" cy="60" r="54" fill="none" stroke={ti?.ring || "#475569"} strokeWidth="8" strokeLinecap="round"
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="#26263a" strokeWidth="8" />
+                  <circle cx="60" cy="60" r="54" fill="none" stroke={ti?.ring || "#5e5e73"} strokeWidth="8" strokeLinecap="round"
                     strokeDasharray={circ} strokeDashoffset={dashOff} className="transition-all duration-1000 ease-out" />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className={`text-3xl font-black ${ti?.color || "text-gray-500"}`}>{lead.score ?? "—"}</span>
-                  <span className="text-[10px] text-gray-400">/100</span>
+                  <span className={`text-3xl font-black ${ti?.color || "text-[#5e5e73]"}`}>{lead.score ?? "—"}</span>
+                  <span className="text-[10px] text-[#5e5e73]">/100</span>
                 </div>
               </div>
               {lead.tier && <Badge text={`Tier ${lead.tier} — ${ti?.label}`} color={lead.tier === "S" ? "emerald" : lead.tier === "A" ? "blue" : lead.tier === "B" ? "amber" : "slate"} />}
             </div>
 
             {/* Potential + revenue */}
-            <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+            <div className="mt-4 pt-3 border-t border-[#26263a] text-center">
               <Tip text="Roczny potencjal = ARPU 18k x mnoznik tier (S:30x, A:12x, B:5x, C:2x)">
-                <p className="text-[10px] text-gray-400 uppercase mb-1">Potencjal roczny</p>
+                <p className="text-[10px] text-[#5e5e73] uppercase mb-1">Potencjal roczny</p>
               </Tip>
-              <p className="text-2xl font-black text-gray-900">
+              <p className="text-2xl font-black text-[#ededf0]">
                 {lead.annual_potential ? `${(lead.annual_potential / 1000).toFixed(0)}k` : "—"}
-                <span className="text-sm font-normal text-gray-400 ml-1">PLN</span>
+                <span className="text-sm font-normal text-[#5e5e73] ml-1">PLN</span>
               </p>
               {lead.revenue_band && (
-                <p className="text-[11px] text-gray-500 mt-1">{REV_BAND[lead.revenue_band] || lead.revenue_band}</p>
+                <p className="text-[11px] text-[#5e5e73] mt-1">{REV_BAND[lead.revenue_band] || lead.revenue_band}</p>
               )}
             </div>
 
             {/* Recommended action */}
             {ti && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-[#26263a]">
                 <Tip text="Rekomendacja handlowa na podstawie tier scoringowego">
-                  <p className="text-[10px] text-gray-400 uppercase mb-1">Rekomendacja</p>
+                  <p className="text-[10px] text-[#5e5e73] uppercase mb-1">Rekomendacja</p>
                 </Tip>
                 <p className={`text-xs font-medium ${ti.color} leading-snug`}>{ti.action}</p>
               </div>
@@ -762,9 +737,9 @@ export default function LeadDetailPage() {
 
             {/* Categories */}
             {scoringResult?.categories && scoringResult.categories.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-[#26263a]">
                 <Tip text="Kategorie produktow budowlanych dopasowane na podstawie PKD">
-                  <p className="text-[10px] text-gray-400 uppercase mb-1.5">Kategorie</p>
+                  <p className="text-[10px] text-[#5e5e73] uppercase mb-1.5">Kategorie</p>
                 </Tip>
                 <div className="flex flex-wrap gap-1">
                   {scoringResult.categories.map((c, i) => (
@@ -781,19 +756,16 @@ export default function LeadDetailPage() {
             <div className="space-y-2.5">
               {lead.contact_person && (
                 <div>
-                  <span className="text-[10px] text-gray-400 block mb-0.5">Osoba kontaktowa</span>
-                  <span className={`text-xs ${isMasked(lead.contact_person) ? "text-gray-500 italic" : "text-gray-900"}`}>
-                    {lead.contact_person}
-                    {isMasked(lead.contact_person) && <span className="ml-1 text-[9px] text-amber-600 bg-amber-500/10 px-1 py-px rounded">RODO</span>}
-                  </span>
+                  <span className="text-[10px] text-[#5e5e73] block mb-0.5">Osoba kontaktowa</span>
+                  <span className="text-xs text-[#ededf0]">{lead.contact_person}</span>
                 </div>
               )}
               {lead.contact_phone && (
                 <div>
-                  <span className="text-[10px] text-gray-400 block mb-0.5">
+                  <span className="text-[10px] text-[#5e5e73] block mb-0.5">
                     <Tip text="Kliknij aby zadzwonic">Telefon</Tip>
                   </span>
-                  <a href={`tel:${lead.contact_phone}`} className="text-xs text-blue-600 hover:text-blue-500 hover:underline flex items-center gap-1.5">
+                  <a href={`tel:${lead.contact_phone}`} className="text-xs text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                     {lead.contact_phone}
                   </a>
@@ -801,10 +773,10 @@ export default function LeadDetailPage() {
               )}
               {lead.contact_email && (
                 <div>
-                  <span className="text-[10px] text-gray-400 block mb-0.5">
+                  <span className="text-[10px] text-[#5e5e73] block mb-0.5">
                     <Tip text="Kliknij aby wyslac email">Email</Tip>
                   </span>
-                  <a href={`mailto:${lead.contact_email}`} className="text-xs text-blue-600 hover:text-blue-500 hover:underline flex items-center gap-1.5">
+                  <a href={`mailto:${lead.contact_email}`} className="text-xs text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                     {lead.contact_email}
                   </a>
@@ -812,38 +784,38 @@ export default function LeadDetailPage() {
               )}
               {lead.website && (
                 <div>
-                  <span className="text-[10px] text-gray-400 block mb-0.5">
+                  <span className="text-[10px] text-[#5e5e73] block mb-0.5">
                     <Tip text="Strona internetowa firmy">WWW</Tip>
                   </span>
-                  <a href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-500 hover:underline truncate block">
+                  <a href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline truncate block">
                     {lead.website}
                   </a>
                 </div>
               )}
               {fullAddress && (
                 <div>
-                  <span className="text-[10px] text-gray-400 block mb-0.5">
+                  <span className="text-[10px] text-[#5e5e73] block mb-0.5">
                     <Tip text="Kliknij aby otworzyc w Google Maps">Adres</Tip>
                   </span>
-                  <a href={`https://www.google.com/maps/search/${encodeURIComponent(fullAddress)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-500 hover:underline">
+                  <a href={`https://www.google.com/maps/search/${encodeURIComponent(fullAddress)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline">
                     {fullAddress}
                   </a>
                 </div>
               )}
               {(residenceAddress || workingAddress) && (
-                <div className="pt-2 border-t border-gray-100 space-y-2">
+                <div className="pt-2 border-t border-[#26263a] space-y-2">
                   {residenceAddress && (
                     <div>
-                      <span className="text-[10px] text-gray-400 block mb-0.5">Adres siedziby (VAT)</span>
-                      <a href={`https://www.google.com/maps/search/${encodeURIComponent(residenceAddress)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-500 hover:underline">
+                      <span className="text-[10px] text-[#5e5e73] block mb-0.5">Adres siedziby (VAT)</span>
+                      <a href={`https://www.google.com/maps/search/${encodeURIComponent(residenceAddress)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline">
                         {residenceAddress}
                       </a>
                     </div>
                   )}
                   {workingAddress && workingAddress !== residenceAddress && (
                     <div>
-                      <span className="text-[10px] text-gray-400 block mb-0.5">Adres dzialalnosci</span>
-                      <a href={`https://www.google.com/maps/search/${encodeURIComponent(workingAddress)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-500 hover:underline">
+                      <span className="text-[10px] text-[#5e5e73] block mb-0.5">Adres dzialalnosci</span>
+                      <a href={`https://www.google.com/maps/search/${encodeURIComponent(workingAddress)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#a5b4fc] hover:text-[#c7d2fe] hover:underline">
                         {workingAddress}
                       </a>
                     </div>
@@ -854,12 +826,12 @@ export default function LeadDetailPage() {
 
             {/* Social Media */}
             {lead.social_media && Object.keys(lead.social_media).length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <p className="text-[10px] text-gray-400 mb-1.5 uppercase">Social Media</p>
+              <div className="mt-3 pt-3 border-t border-[#26263a]">
+                <p className="text-[10px] text-[#5e5e73] mb-1.5 uppercase">Social Media</p>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(lead.social_media).map(([platform, url]) => (
                     <a key={platform} href={url} target="_blank" rel="noopener noreferrer"
-                      className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-[10px] rounded-lg border border-blue-200 transition-all capitalize">
+                      className="px-2 py-1 bg-[#6366f1]/10 hover:bg-[#6366f1]/20 text-[#a5b4fc] text-[10px] rounded-lg border border-[#6366f1]/20 transition-all capitalize">
                       {platform}
                     </a>
                   ))}
@@ -869,13 +841,13 @@ export default function LeadDetailPage() {
 
             {/* Bank accounts */}
             {bankAccounts.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-3 pt-3 border-t border-[#26263a]">
                 <Tip text="Konta bankowe z Bialej Listy VAT — zweryfikowane przez MF">
-                  <p className="text-[10px] text-gray-400 mb-1.5 uppercase">Konta bankowe ({bankAccounts.length})</p>
+                  <p className="text-[10px] text-[#5e5e73] mb-1.5 uppercase">Konta bankowe ({bankAccounts.length})</p>
                 </Tip>
                 <div className="space-y-1 max-h-20 overflow-y-auto">
                   {bankAccounts.map((acc, i) => (
-                    <p key={i} className="text-[10px] font-mono text-gray-500 bg-gray-50 p-1 rounded">{String(acc)}</p>
+                    <p key={i} className="text-[10px] font-mono text-[#5e5e73] bg-[#1c1c28] p-1 rounded">{String(acc)}</p>
                   ))}
                 </div>
               </div>
@@ -895,10 +867,10 @@ export default function LeadDetailPage() {
                 const srcInfo = SRC_LABEL[src];
                 return (
                   <Tip key={src} text={srcInfo.tip}>
-                    <div className={`flex items-center gap-2 p-2 rounded-lg cursor-help w-full ${hasData ? "bg-emerald-50 border border-emerald-200" : hasError && !isCeidgNA ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-200"}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${hasData ? "bg-emerald-500" : isCeidgNA ? "bg-slate-500" : hasError ? "bg-amber-500" : "bg-slate-600"}`} />
-                      <span className={`text-xs flex-1 ${hasData ? "text-emerald-700" : "text-gray-500"}`}>{srcInfo.name}</span>
-                      <span className={`text-[10px] ${hasData ? "text-emerald-600" : isCeidgNA ? "text-gray-400" : hasError ? "text-amber-600" : "text-gray-300"}`}>
+                    <div className={`flex items-center gap-2 p-2 rounded-lg cursor-help w-full ${hasData ? "bg-[#10b981]/5 border border-[#10b981]/20" : hasError && !isCeidgNA ? "bg-[#f59e0b]/5 border border-[#f59e0b]/20" : "bg-[#1c1c28] border border-[#26263a]"}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${hasData ? "bg-[#10b981] pulse-dot" : isCeidgNA ? "bg-[#5e5e73]" : hasError ? "bg-[#f59e0b]" : "bg-[#5e5e73]"}`} />
+                      <span className={`text-xs flex-1 ${hasData ? "text-[#10b981]" : "text-[#5e5e73]"}`}>{srcInfo.name}</span>
+                      <span className={`text-[10px] ${hasData ? "text-[#10b981]" : isCeidgNA ? "text-[#5e5e73]" : hasError ? "text-[#f59e0b]" : "text-[#33334d]"}`}>
                         {hasData ? "OK" : isCeidgNA ? "N/D" : hasError ? "Blad" : "—"}
                       </span>
                     </div>
@@ -906,11 +878,11 @@ export default function LeadDetailPage() {
                 );
               })}
             </div>
-            <button onClick={() => setShowOsintRaw(!showOsintRaw)} className="mt-2 text-[10px] text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={() => setShowOsintRaw(!showOsintRaw)} className="mt-2 text-[10px] text-[#5e5e73] hover:text-[#9494a8] transition-colors">
               {showOsintRaw ? "Ukryj JSON" : "Pokaz JSON"}
             </button>
             {showOsintRaw && lead.osint_raw && (
-              <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-[10px] text-gray-500 overflow-x-auto max-h-40 overflow-y-auto">
+              <pre className="mt-2 p-2 bg-[#0a0a0f] rounded-lg text-[10px] text-[#5e5e73] overflow-x-auto max-h-40 overflow-y-auto border border-[#26263a]">
                 {JSON.stringify(lead.osint_raw, null, 2)}
               </pre>
             )}
@@ -920,10 +892,10 @@ export default function LeadDetailPage() {
           <Section>
             <SectionTitle tip="Szybkie linki do rejestrow i narzedzi">Szybkie akcje</SectionTitle>
             <div className="flex flex-wrap gap-1.5">
-              <button onClick={handleEnrich} disabled={enriching} className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-600 text-[11px] rounded-lg border border-purple-200 transition-all">
+              <button onClick={handleEnrich} disabled={enriching} className="px-2.5 py-1.5 bg-[#a78bfa]/10 hover:bg-[#a78bfa]/20 text-[#a78bfa] text-[11px] rounded-lg border border-[#a78bfa]/20 transition-all">
                 {enriching ? "Trwa..." : "Tylko OSINT"}
               </button>
-              <button onClick={handleScore} disabled={scoring} className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] rounded-lg border border-blue-200 transition-all">
+              <button onClick={handleScore} disabled={scoring} className="px-2.5 py-1.5 bg-[#6366f1]/10 hover:bg-[#6366f1]/20 text-[#a5b4fc] text-[11px] rounded-lg border border-[#6366f1]/20 transition-all">
                 {scoring ? "Trwa..." : "Tylko Scoring"}
               </button>
               {lead.website && <QLink href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}>WWW</QLink>}
