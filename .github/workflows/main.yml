@@ -51,16 +51,16 @@ jobs:
                # Stop old potencjal docker compose if running
                cd /opt/potencjal/backend 2>/dev/null && docker compose down 2>/dev/null || true'
 
-      - name: Build and start services (no cache for frontend)
+      - name: Force frontend rebuild and start services
         shell: bash
         run: |
           ssh -i ~/.ssh/id_ed25519 \
               "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
               'cd /opt/buildleads && \
-               docker compose build --no-cache frontend api && \
-               docker compose up -d && \
+               echo "${{ github.sha }}" > frontend/.build-hash && \
+               docker compose up --build -d --force-recreate frontend api && \
                echo "Waiting for services to start..." && \
-               sleep 10 && \
+               sleep 15 && \
                docker compose ps'
 
       - name: Run database migrations

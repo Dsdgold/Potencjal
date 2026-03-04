@@ -3,10 +3,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
-COPY . .
 
-# Cache buster — force rebuild when source changes
-ARG CACHEBUST=1
+# Copy source — Docker invalidates cache when files change
+COPY . .
 
 # Build with empty API URL — nginx proxies /api/ to backend
 ENV NEXT_PUBLIC_API_URL=""
