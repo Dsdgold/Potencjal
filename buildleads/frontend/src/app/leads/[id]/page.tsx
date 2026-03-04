@@ -231,9 +231,11 @@ export default function LeadDetailPage() {
   const gusRaw = lead.osint_raw?.gus as Record<string, unknown> | undefined;
   const gusParsed = gusRaw?._parsed as Record<string, unknown> | undefined;
 
-  // Board of directors
-  const board = (ekrsParsed?.board as Array<{name: string; function: string}>) || [];
+  // Board of directors — eKRS may return anonymized names (RODO: "J**** K****")
+  // In that case, prefer VAT White List representatives which have full names
+  const ekrsBoard = (ekrsParsed?.board as Array<{name: string; function: string}>) || [];
   const boardOrganName = ekrsParsed?.board_organ_name as string || "Zarząd";
+  const ekrsBoardMasked = ekrsBoard.length > 0 && ekrsBoard.some(m => (m.name || "").includes("*"));
   const supervisory = (ekrsParsed?.supervisory as Array<{name: string; function: string}>) || [];
   // Shareholders
   const shareholders = (ekrsParsed?.shareholders as Array<{name: string; shares: string}>) || [];
@@ -243,9 +245,22 @@ export default function LeadDetailPage() {
   // Legal form
   const legalForm = ekrsParsed?.legal_form as string | null;
   const ekrsAddress = ekrsParsed?.full_address as Record<string, string> | undefined;
-  // VAT representatives
+  // VAT representatives (always have full, non-anonymized names)
   const vatRepresentatives = (vatSubject?.representatives as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
   const vatPartners = (vatSubject?.partners as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
+  // Build effective board: prefer lead.board_members (backend already demasked), then VAT reps, then eKRS
+  const savedBoard = lead.board_members || [];
+  const savedBoardMasked = savedBoard.length > 0 && savedBoard.some(m => (m.name || "").includes("*"));
+  const vatBoardMembers = vatRepresentatives
+    .map(r => ({ name: (r.companyName || `${r.firstName || ""} ${r.lastName || ""}`.trim()) || "—", function: "Reprezentant" }))
+    .filter(m => m.name !== "—" && !m.name.includes("*"));
+  const vatPartnerMembers = vatPartners
+    .map(p => ({ name: (p.companyName || `${p.firstName || ""} ${p.lastName || ""}`.trim()) || "—", function: "Wspólnik" }))
+    .filter(m => m.name !== "—" && !m.name.includes("*"));
+  // Choose the best source of board members
+  const board = (savedBoard.length > 0 && !savedBoardMasked)
+    ? savedBoard
+    : (vatBoardMembers.length > 0 ? [...vatBoardMembers, ...vatPartnerMembers] : (!ekrsBoardMasked ? ekrsBoard : []));
   // Bank accounts
   const bankAccounts = Array.isArray(vatSubject?.accountNumbers) ? vatSubject.accountNumbers as string[] : [];
   // Addresses
@@ -682,12 +697,12 @@ export default function LeadDetailPage() {
               <FirmoRow label="Adres" value={[lead.street, lead.postal_code, lead.city].filter(Boolean).join(", ")} />
             )}
           </div>
-          {/* Board members as contacts */}
-          {lead.board_members && lead.board_members.length > 0 && (
+          {/* Board members as contacts — use demasked board variable */}
+          {board.length > 0 && (
             <div className="mt-4 pt-3 border-t border-slate-700">
               <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Osoby w firmie</p>
               <div className="space-y-2">
-                {lead.board_members.map((m, i) => (
+                {board.map((m, i) => (
                   <div key={i} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-lg">
                     <span className="text-sm text-white font-medium">{m.name}</span>
                     <span className="text-xs text-blue-400">{m.function}</span>
