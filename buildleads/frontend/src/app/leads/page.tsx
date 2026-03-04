@@ -20,10 +20,10 @@ interface Lead {
 }
 
 const tierColors: Record<string, string> = {
-  S: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  A: "bg-blue-50 text-blue-700 border-blue-200",
-  B: "bg-amber-50 text-amber-700 border-amber-200",
-  C: "bg-gray-100 text-gray-600 border-gray-200",
+  S: "bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20",
+  A: "bg-[#6366f1]/10 text-[#a5b4fc] border-[#6366f1]/20",
+  B: "bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20",
+  C: "bg-[#5e5e73]/10 text-[#9494a8] border-[#5e5e73]/20",
 };
 
 const steps = [
@@ -167,10 +167,10 @@ export default function LeadsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Leady</h1>
+        <h1 className="text-xl font-bold text-[#ededf0]">Leady</h1>
         <button
           onClick={() => { setShowForm(!showForm); setStep(-1); setProcessing(false); setError(""); setNip(""); }}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-5 py-2.5 bg-gradient-to-r from-[#6366f1] to-[#818cf8] hover:from-[#818cf8] hover:to-[#a78bfa] text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6366f1]/20 hover:shadow-[#6366f1]/30 hover:-translate-y-0.5 active:translate-y-0"
         >
           {showForm ? "Anuluj" : "+ Sprawdź firmę"}
         </button>
@@ -178,26 +178,26 @@ export default function LeadsPage() {
 
       {/* NIP Lookup Form */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Sprawdź potencjał firmy</h2>
-          <p className="text-gray-500 text-sm mb-4">Wpisz NIP — system automatycznie pobierze dane z rejestrów (VAT, eKRS, CEIDG, GUS), utworzy leada i obliczy scoring.</p>
+        <div className="bg-[#16161f] border border-[#26263a] rounded-2xl p-6 mb-6">
+          <h2 className="text-base font-semibold text-[#ededf0] mb-2">Sprawdź potencjał firmy</h2>
+          <p className="text-[#5e5e73] text-sm mb-4">Wpisz NIP — system automatycznie pobierze dane z rejestrów (VAT, eKRS, CEIDG, GUS), utworzy leada i obliczy scoring.</p>
 
           {!processing ? (
             <form onSubmit={handleNipLookup} className="flex gap-3 items-end">
               <div className="flex-1 max-w-xs">
-                <label className="block text-sm text-gray-600 mb-1">NIP</label>
+                <label className="block text-xs text-[#5e5e73] mb-1 uppercase tracking-wider">NIP</label>
                 <input
                   value={nip}
                   onChange={(e) => setNip(e.target.value)}
                   placeholder="np. 5272700021"
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-lg font-mono tracking-wider focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-[#26263a] rounded-lg text-[#ededf0] text-lg font-mono tracking-wider placeholder-[#5e5e73] focus:ring-2 focus:ring-[#6366f1]/50 focus:outline-none"
                   maxLength={13}
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors"
+                className="px-6 py-2.5 bg-[#10b981] hover:bg-[#34d399] text-white font-medium rounded-lg transition-all"
               >
                 Sprawdź
               </button>
@@ -206,7 +206,7 @@ export default function LeadsPage() {
             <div className="space-y-2">
               {steps.map((label, i) => (
                 <div key={i} className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-                  i < step ? "text-emerald-600" : i === step ? "text-blue-600" : "text-gray-300"
+                  i < step ? "text-[#10b981]" : i === step ? "text-[#6366f1]" : "text-[#33334d]"
                 }`}>
                   <div className="w-5 h-5 flex items-center justify-center">
                     {i < step ? (
@@ -214,9 +214,9 @@ export default function LeadsPage() {
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     ) : i === step ? (
-                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-[#6366f1] border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <div className="w-2 h-2 bg-gray-300 rounded-full" />
+                      <div className="w-2 h-2 bg-[#33334d] rounded-full" />
                     )}
                   </div>
                   {label}
@@ -226,7 +226,7 @@ export default function LeadsPage() {
           )}
 
           {error && (
-            <div className="mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
+            <div className="mt-3 bg-[#ef4444]/10 border border-[#ef4444]/20 text-[#ef4444] px-4 py-2 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -234,18 +234,18 @@ export default function LeadsPage() {
       )}
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-3 mb-6">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Szukaj po nazwie, NIP..."
-          className="flex-1 max-w-sm px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+          className="flex-1 max-w-sm px-4 py-2 bg-[#16161f] border border-[#26263a] rounded-lg text-[#ededf0] text-sm placeholder-[#5e5e73] focus:ring-2 focus:ring-[#6366f1]/50 focus:outline-none"
         />
         <select
           value={tierFilter}
           onChange={(e) => setTierFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+          className="px-4 py-2 bg-[#16161f] border border-[#26263a] rounded-lg text-[#ededf0] text-sm focus:ring-2 focus:ring-[#6366f1]/50 focus:outline-none"
         >
           <option value="">Wszystkie tiery</option>
           <option value="S">Tier S</option>
@@ -256,42 +256,42 @@ export default function LeadsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-[#16161f] border border-[#26263a] rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Ładowanie...</div>
+          <div className="p-8 text-center text-[#5e5e73]">Ładowanie...</div>
         ) : leads.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
+          <div className="p-8 text-center text-[#5e5e73]">
             Brak leadów. Kliknij &quot;+ Sprawdź firmę&quot; i wpisz NIP.
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-500 border-b border-gray-100 bg-gray-50/50">
-                <th className="text-left py-3 px-4 font-medium">Nazwa</th>
-                <th className="text-left py-3 px-4 font-medium">NIP</th>
-                <th className="text-left py-3 px-4 font-medium">Miasto</th>
-                <th className="text-center py-3 px-4 font-medium">Pracownicy</th>
-                <th className="text-center py-3 px-4 font-medium">VAT</th>
-                <th className="text-center py-3 px-4 font-medium">Score</th>
-                <th className="text-center py-3 px-4 font-medium">Tier</th>
-                <th className="text-right py-3 px-4 font-medium">Potencjał roczny</th>
+              <tr className="text-[#5e5e73] border-b border-[#26263a] bg-[#111118]/50">
+                <th className="text-left py-3 px-4 font-medium text-xs uppercase tracking-wider">Nazwa</th>
+                <th className="text-left py-3 px-4 font-medium text-xs uppercase tracking-wider">NIP</th>
+                <th className="text-left py-3 px-4 font-medium text-xs uppercase tracking-wider">Miasto</th>
+                <th className="text-center py-3 px-4 font-medium text-xs uppercase tracking-wider">Pracownicy</th>
+                <th className="text-center py-3 px-4 font-medium text-xs uppercase tracking-wider">VAT</th>
+                <th className="text-center py-3 px-4 font-medium text-xs uppercase tracking-wider">Score</th>
+                <th className="text-center py-3 px-4 font-medium text-xs uppercase tracking-wider">Tier</th>
+                <th className="text-right py-3 px-4 font-medium text-xs uppercase tracking-wider">Potencjał roczny</th>
               </tr>
             </thead>
             <tbody>
               {leads.map((lead) => (
-                <tr key={lead.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <tr key={lead.id} className="border-b border-[#26263a]/50 hover:bg-[#1c1c28] transition-colors">
                   <td className="py-3 px-4">
-                    <Link href={`/leads/${lead.id}`} className="text-blue-600 hover:text-blue-800 font-medium">
+                    <Link href={`/leads/${lead.id}`} className="text-[#a5b4fc] hover:text-[#c7d2fe] font-medium">
                       {lead.name}
                     </Link>
                   </td>
-                  <td className="py-3 px-4 text-gray-500 font-mono text-xs">{lead.nip}</td>
-                  <td className="py-3 px-4 text-gray-600">{lead.city || "—"}</td>
-                  <td className="py-3 px-4 text-center text-gray-600">{lead.employees ?? "—"}</td>
-                  <td className="py-3 px-4 text-center text-gray-500 text-xs">{lead.vat_status || "—"}</td>
+                  <td className="py-3 px-4 text-[#5e5e73] font-mono text-xs">{lead.nip}</td>
+                  <td className="py-3 px-4 text-[#9494a8]">{lead.city || "—"}</td>
+                  <td className="py-3 px-4 text-center text-[#9494a8]">{lead.employees ?? "—"}</td>
+                  <td className="py-3 px-4 text-center text-[#5e5e73] text-xs">{lead.vat_status || "—"}</td>
                   <td className="py-3 px-4 text-center">
                     {lead.score != null ? (
-                      <span className="text-gray-900 font-bold">{lead.score}</span>
+                      <span className="text-[#ededf0] font-bold">{lead.score}</span>
                     ) : "—"}
                   </td>
                   <td className="py-3 px-4 text-center">
@@ -301,7 +301,7 @@ export default function LeadsPage() {
                       </span>
                     ) : "—"}
                   </td>
-                  <td className="py-3 px-4 text-right text-gray-600">
+                  <td className="py-3 px-4 text-right text-[#9494a8]">
                     {lead.annual_potential ? `${(lead.annual_potential / 1000).toFixed(0)}k PLN` : "—"}
                   </td>
                 </tr>

@@ -254,8 +254,8 @@ async def enrich(
             elif "*" not in name:
                 board_members.append({"name": name, "function": func})
             else:
-                # No more VAT names to match — skip masked entry
-                pass
+                # No more VAT names to match — keep masked entry as-is
+                board_members.append({"name": name, "function": func})
         # Add remaining VAT reps not matched to eKRS
         for i in range(vat_idx, len(vat_representatives)):
             board_members.append({"name": vat_representatives[i], "function": "Reprezentant"})
