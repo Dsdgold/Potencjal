@@ -103,14 +103,14 @@ const SRC_LABEL: Record<string, { name: string; tip: string }> = {
   gus: { name: "GUS REGON", tip: "stat.gov.pl — REGON, PKD, adres, forma prawna" },
 };
 
-// ── Helper: strip asterisks from any displayed name ──
-function clean(s: string | null | undefined): string {
-  if (!s) return "";
-  return s.includes("*") ? "" : s;
+// ── Helper: check if name is RODO-masked ──
+function isMasked(s: string | null | undefined): boolean {
+  return !!s && s.includes("*");
 }
 
-function cleanList<T extends { name: string }>(arr: T[]): T[] {
-  return arr.filter((m) => m.name && !m.name.includes("*"));
+function clean(s: string | null | undefined): string {
+  if (!s) return "";
+  return s;
 }
 
 // ── Tooltip component ──
@@ -149,6 +149,7 @@ function Field({
   highlight,
   icon,
   onClick,
+  masked,
 }: {
   label: string;
   value: string | null | undefined;
@@ -158,9 +159,9 @@ function Field({
   highlight?: "green" | "yellow" | "red" | "blue";
   icon?: ReactNode;
   onClick?: () => void;
+  masked?: boolean;
 }) {
   const hc = highlight === "green" ? "text-emerald-400" : highlight === "yellow" ? "text-amber-400" : highlight === "red" ? "text-red-400" : highlight === "blue" ? "text-blue-400" : "";
-  const cleanVal = clean(value as string) || value;
 
   return (
     <div className={`group ${onClick ? "cursor-pointer" : ""}`} onClick={onClick}>
@@ -172,7 +173,7 @@ function Field({
           <span className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">{label}</span>
         )}
       </div>
-      {href && cleanVal ? (
+      {href && value ? (
         <a
           href={href.startsWith("http") ? href : `https://${href}`}
           target="_blank"
@@ -180,12 +181,15 @@ function Field({
           className="text-sm text-blue-400 hover:text-blue-300 hover:underline truncate block transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
-          {cleanVal}
+          {value}
         </a>
       ) : (
-        <p className={`text-sm truncate ${cleanVal ? (hc || "text-white") : "text-slate-600 italic"} ${mono ? "font-mono" : ""} ${onClick ? "group-hover:text-blue-400 transition-colors" : ""}`}>
-          {cleanVal || "brak"}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className={`text-sm truncate ${value ? (masked ? "text-slate-400 italic" : (hc || "text-white")) : "text-slate-600 italic"} ${mono ? "font-mono" : ""} ${onClick ? "group-hover:text-blue-400 transition-colors" : ""}`}>
+            {value || "brak"}
+          </p>
+          {masked && <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded flex-shrink-0">RODO</span>}
+        </div>
       )}
     </div>
   );
@@ -315,8 +319,8 @@ export default function LeadDetailPage() {
 
   const boardOrganName = ekrsParsed?.board_organ_name as string || "Zarzad";
   const rawSupervisory = (ekrsParsed?.supervisory as Array<{ name: string; function: string }>) || [];
-  const supervisory = cleanList(rawSupervisory);
-  const shareholders = cleanList((ekrsParsed?.shareholders as Array<{ name: string; shares: string }>) || []);
+  const supervisory = rawSupervisory.filter((m) => m.name);
+  const shareholders = ((ekrsParsed?.shareholders as Array<{ name: string; shares: string }>) || []).filter((m) => m.name);
   const shareCapital = ekrsParsed?.capital as string | null;
   const pkdAll = (ekrsParsed?.pkd_all as Array<{ code: string; desc: string }>) || [];
   const legalForm = ekrsParsed?.legal_form as string | null;
@@ -324,15 +328,16 @@ export default function LeadDetailPage() {
   const vatRepresentatives = (vatSubject?.representatives as Array<{ firstName?: string; lastName?: string; companyName?: string }>) || [];
   const vatPartners = (vatSubject?.partners as Array<{ firstName?: string; lastName?: string; companyName?: string }>) || [];
 
-  const savedBoard = cleanList(lead.board_members || []);
-  const ekrsBoard = cleanList((ekrsParsed?.board as Array<{ name: string; function: string }>) || []);
+  // Board: prefer clean names, but KEEP masked names if no clean alternative
+  const savedBoard = (lead.board_members || []).filter((m) => m.name);
+  const ekrsBoard = ((ekrsParsed?.board as Array<{ name: string; function: string }>) || []).filter((m) => m.name);
   const vatBoardFallback = [
     ...vatRepresentatives
       .map((r) => ({ name: (r.companyName || `${r.firstName || ""} ${r.lastName || ""}`.trim()) || "", function: "Reprezentant" }))
-      .filter((m) => m.name && !m.name.includes("*")),
+      .filter((m) => m.name),
     ...vatPartners
       .map((p) => ({ name: (p.companyName || `${p.firstName || ""} ${p.lastName || ""}`.trim()) || "", function: "Wspolnik" }))
-      .filter((m) => m.name && !m.name.includes("*")),
+      .filter((m) => m.name),
   ];
   const board = savedBoard.length > 0 ? savedBoard : ekrsBoard.length > 0 ? ekrsBoard : vatBoardFallback;
 
@@ -602,19 +607,23 @@ export default function LeadDetailPage() {
             <div>
               <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-wider">{boardOrganName}</p>
               <div className="space-y-2">
-                {board.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 bg-slate-700/30 hover:bg-slate-700/50 rounded-xl transition-colors group/person">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-slate-600/50 flex items-center justify-center text-xs font-bold text-slate-300">
-                        {clean(m.name).split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                {board.map((m, i) => {
+                  const masked = isMasked(m.name);
+                  return (
+                    <div key={i} className="flex items-center justify-between p-2.5 bg-slate-700/30 hover:bg-slate-700/50 rounded-xl transition-colors">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${masked ? "bg-amber-500/20 text-amber-400" : "bg-slate-600/50 text-slate-300"}`}>
+                          {masked ? "?" : m.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <span className={`text-sm font-medium ${masked ? "text-slate-400 italic" : "text-white"}`}>{m.name}</span>
+                          {masked && <span className="ml-2 text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">RODO</span>}
+                        </div>
                       </div>
-                      <Tip text={`${m.function || "Czlonek"} — dane z eKRS / Biala Lista VAT`}>
-                        <span className="text-sm text-white font-medium">{clean(m.name)}</span>
-                      </Tip>
+                      <Badge text={m.function || "Czlonek"} color="purple" />
                     </div>
-                    <Badge text={m.function || "Czlonek"} color="purple" />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -623,16 +632,22 @@ export default function LeadDetailPage() {
 
           {supervisory.length > 0 && (
             <div className="mt-4 pt-3 border-t border-slate-700/50">
-              <Tip text="Rada Nadzorcza — organ nadzoru spolki, dane z eKRS">
-                <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-wider">Rada Nadzorcza</p>
+              <Tip text="Rada Nadzorcza — organ nadzoru spolki, dane z eKRS. Imiona zanonimizowane (RODO) przez eKRS.">
+                <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-wider">Rada Nadzorcza ({supervisory.length})</p>
               </Tip>
               <div className="space-y-2">
-                {supervisory.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-xl">
-                    <span className="text-sm text-white">{clean(m.name)}</span>
-                    <span className="text-[11px] text-slate-400">{m.function}</span>
-                  </div>
-                ))}
+                {supervisory.map((m, i) => {
+                  const masked = isMasked(m.name);
+                  return (
+                    <div key={i} className="flex items-center justify-between p-2 bg-slate-700/30 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm ${masked ? "text-slate-400 italic" : "text-white"}`}>{m.name}</span>
+                        {masked && <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">RODO</span>}
+                      </div>
+                      <span className="text-[11px] text-slate-400">{m.function}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -643,12 +658,18 @@ export default function LeadDetailPage() {
                 <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-wider">Wspolnicy ({shareholders.length})</p>
               </Tip>
               <div className="space-y-2">
-                {shareholders.map((s, i) => (
-                  <div key={i} className="p-2 bg-slate-700/30 rounded-xl">
-                    <p className="text-sm text-white">{clean(s.name)}</p>
-                    {s.shares && <p className="text-[11px] text-slate-400 mt-0.5">{s.shares}</p>}
-                  </div>
-                ))}
+                {shareholders.map((s, i) => {
+                  const masked = isMasked(s.name);
+                  return (
+                    <div key={i} className="p-2 bg-slate-700/30 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm ${masked ? "text-slate-400 italic" : "text-white"}`}>{s.name}</p>
+                        {masked && <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">RODO</span>}
+                      </div>
+                      {s.shares && <p className="text-[11px] text-slate-400 mt-0.5">{s.shares}</p>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -669,7 +690,7 @@ export default function LeadDetailPage() {
             <h2 className="text-base font-semibold text-white mb-4">Kontakt</h2>
           </Tip>
           <div className="space-y-4">
-            <Field label="Osoba kontaktowa" value={clean(lead.contact_person)} tip="Osoba kontaktowa — najczesciej prezes/wlasciciel z KRS lub VAT" />
+            <Field label="Osoba kontaktowa" value={lead.contact_person} tip="Osoba kontaktowa — najczesciej prezes/wlasciciel z KRS lub VAT" masked={isMasked(lead.contact_person)} />
             {lead.contact_phone ? (
               <div>
                 <Tip text="Telefon — kliknij aby zadzwonic"><p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-0.5">Telefon</p></Tip>

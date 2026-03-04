@@ -391,11 +391,7 @@ async def fetch_ekrs(nip: str, krs_number: str | None = None) -> OsintResult:
             shares = udzialy
         shareholders.append({"name": person["name"], "shares": shares})
 
-    # Filter out RODO-masked names (containing asterisks) from all person lists
-    clean_board = [m for m in board_members if "*" not in (m.get("name", "") or "")]
-    clean_supervisory = [m for m in supervisory if "*" not in (m.get("name", "") or "")]
-    clean_shareholders = [s for s in shareholders if "*" not in (s.get("name", "") or "")]
-
+    # Keep all person data (including RODO-masked) — frontend shows masked with RODO tag
     enriched_raw = dict(data)
     enriched_raw["_parsed"] = {
         "legal_form": legal_form,
@@ -403,11 +399,11 @@ async def fetch_ekrs(nip: str, krs_number: str | None = None) -> OsintResult:
         "full_address": addr,
         "pkd_main": {"code": pkd_code, "desc": pkd_desc} if pkd_code else None,
         "pkd_all": pkd_main_list + pkd_rest_list,
-        "board": clean_board,
+        "board": board_members,
         "board_organ_name": organ_name,
-        "supervisory": clean_supervisory,
+        "supervisory": supervisory,
         "capital": capital,
-        "shareholders": clean_shareholders,
+        "shareholders": shareholders,
         "registration_date": reg_date_str,
         "nip": nip_from_krs,
     }

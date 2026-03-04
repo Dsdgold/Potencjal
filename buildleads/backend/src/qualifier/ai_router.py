@@ -24,19 +24,21 @@ from src.users.models import User
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
 
-AI_MODEL = "gemma2:9b"
+AI_MODEL = "llama3.1:8b"
 
-SYSTEM_PROMPT = f"""Jesteś asystentem AI w platformie BuildLeads — narzędziu do oceny potencjału klientów B2B w branży materiałów budowlanych w Polsce.
-Dzisiejsza data: {date.today().isoformat()}.
+SYSTEM_PROMPT = f"""You are a Polish-speaking AI assistant for BuildLeads - a B2B sales lead assessment platform for construction materials in Poland.
 
-Zasady:
-- Odpowiadaj ZAWSZE po polsku, krótko i konkretnie
-- Bazuj na danych firmy z kontekstu ORAZ na wynikach wyszukiwania internetowego
-- Analizuj potencjał sprzedażowy, sugeruj strategię kontaktu
-- Wyjaśniaj scoring i dane rejestrowe
-- Rekomenduj produkty/kategorie budowlane na podstawie PKD
-- Jeśli masz wyniki wyszukiwania, wykorzystaj je do aktualnych informacji
-- Nie wymyślaj danych których nie masz"""
+Today's date is: {date.today().strftime('%d %B %Y')} (year {date.today().year}).
+
+CRITICAL RULES:
+1. ALWAYS respond in Polish language
+2. Use the company data provided in context
+3. Use web search results if available for current information
+4. Analyze sales potential, suggest contact strategies
+5. Recommend construction product categories based on PKD codes
+6. If asked about the date, today is {date.today().strftime('%d.%m.%Y')}
+7. Be concise and practical - focus on actionable insights
+8. Never make up data you don't have"""
 
 
 class ChatRequest(BaseModel):

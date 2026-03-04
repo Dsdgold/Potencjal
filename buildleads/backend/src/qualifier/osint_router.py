@@ -268,18 +268,18 @@ async def enrich(
         if not any(m.get("name") == p for m in board_members):
             board_members.append({"name": p, "function": "Wspólnik"})
 
-    # NEVER save board members with asterisks to DB
-    board_members = [m for m in board_members if "*" not in (m.get("name", "") or "")]
-
+    # Save board members to DB (including masked — frontend shows them with RODO tag)
     if board_members:
         update_data["board_members"] = board_members
-        # Always update contact_person from clean board data
-        ceo = next(
-            (m for m in board_members if "prezes" in (m.get("function", "") or "").lower()),
-            board_members[0] if board_members else None,
-        )
-        if ceo:
-            update_data["contact_person"] = ceo.get("name", "")
+        # Set contact_person from clean (non-masked) board member
+        clean_members = [m for m in board_members if "*" not in (m.get("name", "") or "")]
+        if clean_members:
+            ceo = next(
+                (m for m in clean_members if "prezes" in (m.get("function", "") or "").lower()),
+                clean_members[0],
+            )
+            if ceo:
+                update_data["contact_person"] = ceo.get("name", "")
 
     # Apply partial update before web scraping
     lead = await update_lead(db, lead, **update_data)
@@ -330,17 +330,36 @@ async def enrich(
         if web_result.social_media:
             web_update["social_media"] = web_result.social_media
 
-    # Fill gaps from panoramafirm / aleo
+    # Fill gaps from panoramafirm / aleo — but validate emails belong to this company
     if not web_update.get("contact_phone"):
         for src in [pano_result, aleo_result]:
             if src and isinstance(src, dict) and src.get("phones"):
                 web_update["contact_phone"] = src["phones"][0]
                 break
+
+    # Only use scraped email if it likely belongs to this company
+    def _email_matches_company(email: str, company_name: str, website: str | None) -> bool:
+        email_domain = email.split("@")[-1].lower()
+        # If company has a website, email domain should match
+        if website:
+            site = website.lower().replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
+            if email_domain == site or site.endswith(email_domain) or email_domain.endswith(site.split(".")[0]):
+                return True
+        # Check if company name words appear in email domain
+        name_words = [w.lower() for w in company_name.split() if len(w) > 3]
+        for w in name_words:
+            if w in email_domain or w in email.split("@")[0].lower():
+                return True
+        # Generic business domains are OK only from company website
+        return False
+
     if not web_update.get("contact_email"):
         for src in [pano_result, aleo_result]:
             if src and isinstance(src, dict) and src.get("emails"):
-                web_update["contact_email"] = src["emails"][0]
-                break
+                candidate = src["emails"][0]
+                if _email_matches_company(candidate, lead.name, lead.website):
+                    web_update["contact_email"] = candidate
+                    break
 
     # Employees from aleo (if we only have estimates)
     if aleo_result and isinstance(aleo_result, dict) and aleo_result.get("employees"):
