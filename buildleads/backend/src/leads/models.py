@@ -27,6 +27,15 @@ class Lead(Base):
     latitude: Mapped[float | None] = mapped_column(Float)
     longitude: Mapped[float | None] = mapped_column(Float)
 
+    # Address
+    street: Mapped[str | None] = mapped_column(String(200))
+    postal_code: Mapped[str | None] = mapped_column(String(10))
+
+    # Registry identifiers
+    regon: Mapped[str | None] = mapped_column(String(14))
+    krs: Mapped[str | None] = mapped_column(String(10))
+    legal_form: Mapped[str | None] = mapped_column(String(200))
+
     # Company data
     employees: Mapped[int | None] = mapped_column(Integer)
     revenue_pln: Mapped[float | None] = mapped_column(Float)
@@ -36,6 +45,10 @@ class Lead(Base):
     years_active: Mapped[float | None] = mapped_column(Float)
     vat_status: Mapped[str | None] = mapped_column(String(30))
     website: Mapped[str | None] = mapped_column(String(300))
+
+    # People & social
+    board_members: Mapped[list | None] = mapped_column(JSONB, default=list)
+    social_media: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # New BuildLeads fields
     title: Mapped[str | None] = mapped_column(String(500))  # tender title
