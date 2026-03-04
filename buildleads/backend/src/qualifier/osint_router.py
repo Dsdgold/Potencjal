@@ -210,6 +210,39 @@ async def enrich(
             if board:
                 board_members = board
                 break
+
+    # VAT White List returns full (non-anonymized) names for representatives.
+    # eKRS API anonymizes personal names (RODO) → "J**** K****".
+    # Prefer VAT names when eKRS names contain asterisks.
+    vat_representatives = []
+    for r in results:
+        if r.source == "vat_whitelist" and r.raw:
+            subject = (r.raw.get("result") or {}).get("subject") or {}
+            reps = subject.get("representatives") or []
+            for rep in reps:
+                first = rep.get("firstName", "") or ""
+                last = rep.get("lastName", "") or ""
+                company = rep.get("companyName", "") or ""
+                full = f"{first} {last}".strip() or company
+                if full and "*" not in full:
+                    vat_representatives.append({"name": full, "function": "Reprezentant"})
+            # Also check partners
+            partners = subject.get("partners") or []
+            for p in partners:
+                first = p.get("firstName", "") or ""
+                last = p.get("lastName", "") or ""
+                company = p.get("companyName", "") or ""
+                full = f"{first} {last}".strip() or company
+                if full and "*" not in full:
+                    vat_representatives.append({"name": full, "function": "Wspólnik"})
+
+    # If eKRS board has anonymized names (contain *), replace with VAT data
+    any_masked = any("*" in (m.get("name", "") or "") for m in board_members)
+    if any_masked and vat_representatives:
+        board_members = vat_representatives
+    elif not board_members and vat_representatives:
+        board_members = vat_representatives
+
     if board_members:
         update_data["board_members"] = board_members
         if not lead.contact_person:

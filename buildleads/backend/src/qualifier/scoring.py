@@ -55,7 +55,7 @@ PKD_TO_CATEGORIES: dict[str, list[str]] = {
     "FALLBACK": ["materiały uniwersalne", "transport", "usługi cięcia/rozładunku"],
 }
 
-POTENTIAL_MODEL = {"base_arpu": 18_000, "multiplier_by_tier": {"S": 30, "A": 12, "B": 5, "C": 2}}
+POTENTIAL_MODEL = {"base_arpu": 60_000, "multiplier_by_tier": {"S": 50, "A": 20, "B": 7, "C": 2.5}}
 
 
 # ── Scoring functions ─────────────────────────────────────────────────
