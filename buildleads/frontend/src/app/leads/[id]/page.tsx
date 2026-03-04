@@ -234,7 +234,9 @@ export default function LeadDetailPage() {
 
   // Board of directors — backend ensures no asterisks are saved
   const boardOrganName = ekrsParsed?.board_organ_name as string || "Zarząd";
-  const supervisory = (ekrsParsed?.supervisory as Array<{name: string; function: string}>) || [];
+  // Supervisory board — filter out RODO-masked names with asterisks
+  const rawSupervisory = (ekrsParsed?.supervisory as Array<{name: string; function: string}>) || [];
+  const supervisory = rawSupervisory.filter(m => !((m.name || "").includes("*")));
   // Shareholders
   const shareholders = (ekrsParsed?.shareholders as Array<{name: string; shares: string}>) || [];
   const shareCapital = ekrsParsed?.capital as string | null;
@@ -246,12 +248,21 @@ export default function LeadDetailPage() {
   // VAT representatives (fallback if board_members not yet populated)
   const vatRepresentatives = (vatSubject?.representatives as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
   const vatPartners = (vatSubject?.partners as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
-  // Board: use saved (clean) board_members, fallback to VAT reps
+  // Build effective board — use saved (clean) board_members, or eKRS board (filtered), or VAT reps
   const savedBoard = (lead.board_members || []).filter(m => !((m.name || "").includes("*")));
-  const vatBoardFallback = vatRepresentatives
-    .map(r => ({ name: (r.companyName || `${r.firstName || ""} ${r.lastName || ""}`.trim()) || "", function: "Reprezentant" }))
-    .filter(m => m.name && !m.name.includes("*"));
-  const board = savedBoard.length > 0 ? savedBoard : vatBoardFallback;
+  const ekrsBoard = ((ekrsParsed?.board as Array<{name: string; function: string}>) || [])
+    .filter(m => !((m.name || "").includes("*")));
+  const vatBoardFallback = [
+    ...vatRepresentatives
+      .map(r => ({ name: (r.companyName || `${r.firstName || ""} ${r.lastName || ""}`.trim()) || "", function: "Reprezentant" }))
+      .filter(m => m.name && !m.name.includes("*")),
+    ...vatPartners
+      .map(p => ({ name: (p.companyName || `${p.firstName || ""} ${p.lastName || ""}`.trim()) || "", function: "Wspólnik" }))
+      .filter(m => m.name && !m.name.includes("*")),
+  ];
+  const board = savedBoard.length > 0 ? savedBoard
+    : ekrsBoard.length > 0 ? ekrsBoard
+    : vatBoardFallback;
   // Bank accounts
   const bankAccounts = Array.isArray(vatSubject?.accountNumbers) ? vatSubject.accountNumbers as string[] : [];
   // Addresses

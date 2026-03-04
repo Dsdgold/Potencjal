@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
+  sources?: string[];
 }
 
 interface AiChatProps {
@@ -32,9 +33,9 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg = input.trim();
+  const send = async (text?: string) => {
+    const userMsg = (text || input).trim();
+    if (!userMsg || loading) return;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
@@ -46,18 +47,21 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
       });
       if (res.ok) {
         const data = await res.json();
-        setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
-      } else {
-        const err = await res.json().catch(() => ({ detail: "Błąd połączenia" }));
         setMessages((prev) => [
           ...prev,
-          { role: "system", content: err.detail || "Błąd AI" },
+          { role: "assistant", content: data.reply, sources: data.web_sources },
+        ]);
+      } else {
+        const err = await res.json().catch(() => ({ detail: "Blad polaczenia" }));
+        setMessages((prev) => [
+          ...prev,
+          { role: "system", content: err.detail || "Blad AI" },
         ]);
       }
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "system", content: "Nie udało się połączyć z AI" },
+        { role: "system", content: "Nie udalo sie polaczyc z AI" },
       ]);
     }
     setLoading(false);
@@ -86,7 +90,7 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 w-96 max-h-[500px] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col z-50 overflow-hidden">
+        <div className="fixed bottom-24 right-6 w-[420px] max-h-[560px] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col z-50 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-b border-slate-700 px-4 py-3 flex items-center gap-3">
             <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
@@ -95,26 +99,29 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-white">Asystent AI</p>
-              <p className="text-xs text-slate-400 truncate">Analiza: {leadName}</p>
+              <p className="text-sm font-semibold text-white">Asystent AI + Web</p>
+              <p className="text-xs text-slate-400 truncate">{leadName}</p>
             </div>
+            <span className="text-[10px] text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full border border-green-400/20">
+              online
+            </span>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px] max-h-[340px]">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px] max-h-[380px]">
             {messages.length === 0 && (
-              <div className="text-center py-6">
-                <p className="text-slate-500 text-sm mb-3">Zapytaj o firmę, np.:</p>
+              <div className="text-center py-4">
+                <p className="text-slate-500 text-sm mb-3">Zapytaj o firme (szukam tez w internecie):</p>
                 <div className="space-y-2">
                   {[
-                    "Jaki jest potencjał tej firmy?",
-                    "Jaką strategię kontaktu proponujesz?",
-                    "Jakie produkty budowlane pasują?",
-                    "Podsumuj kluczowe dane",
+                    "Jaki jest potencjal tej firmy?",
+                    "Znajdz najnowsze informacje o tej firmie",
+                    "Jaka strategie kontaktu proponujesz?",
+                    "Jakie produkty budowlane pasuja do tej firmy?",
                   ].map((q, i) => (
                     <button
                       key={i}
-                      onClick={() => { setInput(q); }}
+                      onClick={() => send(q)}
                       className="block w-full text-left px-3 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-lg text-xs text-slate-300 transition-colors"
                     >
                       {q}
@@ -125,31 +132,58 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
             )}
 
             {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
+              <div key={i}>
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
-                    msg.role === "user"
-                      ? "bg-purple-600 text-white"
-                      : msg.role === "system"
-                      ? "bg-red-500/20 text-red-400 border border-red-500/20"
-                      : "bg-slate-800 text-slate-200 border border-slate-700"
-                  }`}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  {msg.content}
+                  <div
+                    className={`max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+                      msg.role === "user"
+                        ? "bg-purple-600 text-white"
+                        : msg.role === "system"
+                        ? "bg-red-500/20 text-red-400 border border-red-500/20"
+                        : "bg-slate-800 text-slate-200 border border-slate-700"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
                 </div>
+                {/* Web sources */}
+                {msg.sources && msg.sources.length > 0 && (
+                  <div className="mt-1 ml-1">
+                    <p className="text-[10px] text-slate-500 mb-1">Zrodla:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {msg.sources.slice(0, 3).map((url, j) => {
+                        let domain = "";
+                        try { domain = new URL(url).hostname.replace("www.", ""); } catch { domain = url.slice(0, 30); }
+                        return (
+                          <a
+                            key={j}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-blue-400 hover:text-blue-300 bg-blue-400/10 px-2 py-0.5 rounded border border-blue-400/20 truncate max-w-[140px]"
+                          >
+                            {domain}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-xs text-slate-500">szukam w internecie...</span>
                   </div>
                 </div>
               </div>
@@ -165,12 +199,12 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="Zapytaj o firmę..."
+                placeholder="Zapytaj o firme..."
                 className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-purple-500 focus:outline-none"
                 disabled={loading}
               />
               <button
-                onClick={send}
+                onClick={() => send()}
                 disabled={loading || !input.trim()}
                 className="px-3 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-600/50 text-white rounded-lg transition-colors"
               >
@@ -179,7 +213,7 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-slate-600 mt-1 text-center">AI Ollama (lokalne, darmowe)</p>
+            <p className="text-[10px] text-slate-600 mt-1 text-center">Ollama + Web Search (darmowe, lokalne)</p>
           </div>
         </div>
       )}
