@@ -245,13 +245,18 @@ async def enrich(
 
     if board_members:
         update_data["board_members"] = board_members
-        if not lead.contact_person:
+        # Set contact_person if missing or currently contains masked asterisks
+        current_contact = lead.contact_person or ""
+        if not current_contact or "*" in current_contact:
             ceo = next(
                 (m for m in board_members if "prezes" in (m.get("function", "") or "").lower()),
                 board_members[0] if board_members else None,
             )
             if ceo:
-                update_data["contact_person"] = ceo.get("name", "")
+                ceo_name = ceo.get("name", "")
+                # Only update if new name doesn't contain asterisks
+                if ceo_name and "*" not in ceo_name:
+                    update_data["contact_person"] = ceo_name
 
     # Apply partial update before web scraping
     lead = await update_lead(db, lead, **update_data)
@@ -311,8 +316,8 @@ async def enrich(
         )
         web_update["description"] = description
 
-    # ── Geocoding ──
-    if not lead.latitude and (lead.city or lead.street):
+    # ── Geocoding (always refresh on enrichment) ──
+    if lead.city or lead.street:
         try:
             geo = await geocode_address(
                 city=lead.city,

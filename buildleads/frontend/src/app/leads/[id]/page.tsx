@@ -739,11 +739,16 @@ export default function LeadDetailPage() {
                       {sourceLabels[src] || src}
                     </p>
                     {hasError && (
-                      <p className="text-xs text-amber-500/70">{String(raw?.error) === "no_api_key" ? "Brak klucza API" : String(raw?.error)}</p>
+                      <p className="text-xs text-amber-500/70">{
+                        String(raw?.error) === "no_api_key" ? "Brak klucza API"
+                        : String(raw?.error) === "not_found" && src === "ceidg" ? "Nie dotyczy — CEIDG obejmuje tylko jednoosobowe działalności"
+                        : String(raw?.error) === "not_found" ? "Nie znaleziono w rejestrze"
+                        : String(raw?.error)
+                      }</p>
                     )}
                   </div>
                   <span className={`text-xs ${hasData ? "text-emerald-500" : hasError ? "text-amber-500" : "text-slate-600"}`}>
-                    {hasData ? "OK" : hasError ? "Pominięto" : "Brak danych"}
+                    {hasData ? "OK" : (hasError && String(raw?.error) === "not_found" && src === "ceidg") ? "Nie dotyczy" : hasError ? "Pominięto" : "Brak danych"}
                   </span>
                 </div>
               );
