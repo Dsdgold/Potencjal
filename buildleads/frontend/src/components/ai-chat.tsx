@@ -21,6 +21,8 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
   const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState<string | null>(null);
   const [available, setAvailable] = useState<boolean | null>(null);
+  const [queriesUsed, setQueriesUsed] = useState(0);
+  const [queriesLimit, setQueriesLimit] = useState(0);
   const messagesEnd = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,6 +31,8 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
       .then((d) => {
         setAvailable(d.available);
         setProvider(d.provider || "ollama");
+        setQueriesUsed(d.queries_used ?? 0);
+        setQueriesLimit(d.queries_limit ?? 0);
       })
       .catch(() => setAvailable(false));
   }, []);
@@ -37,9 +41,25 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const limitReached = queriesLimit > 0 && queriesUsed >= queriesLimit;
+
   const send = async (text?: string) => {
     const userMsg = (text || input).trim();
     if (!userMsg || loading) return;
+
+    if (limitReached) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: userMsg },
+        {
+          role: "system",
+          content: `Osiagnieto dzienny limit ${queriesLimit} zapytan AI. Zmien pakiet na wyzszy, aby uzyskac wiecej zapytan dziennie.`,
+        },
+      ]);
+      setInput("");
+      return;
+    }
+
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
@@ -55,6 +75,15 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
           ...prev,
           { role: "assistant", content: data.reply, sources: data.web_sources },
         ]);
+        if (data.queries_used != null) setQueriesUsed(data.queries_used);
+        if (data.queries_limit != null) setQueriesLimit(data.queries_limit);
+      } else if (res.status === 429) {
+        const err = await res.json().catch(() => ({ detail: "Limit zapytan AI" }));
+        setMessages((prev) => [
+          ...prev,
+          { role: "system", content: err.detail || "Limit zapytan AI wyczerpany" },
+        ]);
+        setQueriesUsed(queriesLimit); // mark as exhausted
       } else {
         const err = await res.json().catch(() => ({ detail: "Blad polaczenia" }));
         setMessages((prev) => [
@@ -85,6 +114,15 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
   const dotColor = isClaude ? "bg-orange-400" : "bg-purple-400";
   const inputRing = isClaude ? "focus:ring-orange-500" : "focus:ring-purple-500";
 
+  // Usage display
+  const remaining = queriesLimit > 0 ? queriesLimit - queriesUsed : null;
+  const usageLabel =
+    queriesLimit === -1
+      ? null // unlimited — don't show
+      : remaining !== null
+      ? `${remaining}/${queriesLimit}`
+      : null;
+
   return (
     <>
       {/* Floating button */}
@@ -98,7 +136,6 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : isClaude ? (
-          /* Claude sparkle icon */
           <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
           </svg>
@@ -131,9 +168,20 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
               </p>
               <p className="text-xs text-slate-400 truncate">{leadName}</p>
             </div>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isClaude ? "text-orange-400 bg-orange-400/10 border-orange-400/20" : "text-green-400 bg-green-400/10 border-green-400/20"}`}>
-              {isClaude ? "Claude" : "Ollama"}
-            </span>
+            <div className="flex items-center gap-2">
+              {usageLabel && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                  limitReached
+                    ? "text-red-400 bg-red-400/10 border-red-400/20"
+                    : "text-slate-400 bg-slate-400/10 border-slate-400/20"
+                }`}>
+                  {usageLabel}
+                </span>
+              )}
+              <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isClaude ? "text-orange-400 bg-orange-400/10 border-orange-400/20" : "text-green-400 bg-green-400/10 border-green-400/20"}`}>
+                {isClaude ? "Claude" : "Ollama"}
+              </span>
+            </div>
           </div>
 
           {/* Messages */}
@@ -151,7 +199,8 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
                     <button
                       key={i}
                       onClick={() => send(q)}
-                      className="block w-full text-left px-3 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-lg text-xs text-slate-300 transition-colors"
+                      disabled={limitReached}
+                      className="block w-full text-left px-3 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-lg text-xs text-slate-300 transition-colors disabled:opacity-40"
                     >
                       {q}
                     </button>
@@ -211,6 +260,19 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
                 </div>
               </div>
             )}
+
+            {/* Limit reached banner */}
+            {limitReached && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-center">
+                <p className="text-xs text-amber-400 font-medium mb-1">
+                  Wykorzystano limit {queriesLimit} zapytan AI na dzis
+                </p>
+                <p className="text-[10px] text-amber-400/70">
+                  Zmien pakiet na wyzszy, aby uzyskac wiecej zapytan dziennie
+                </p>
+              </div>
+            )}
+
             <div ref={messagesEnd} />
           </div>
 
@@ -222,13 +284,13 @@ export default function AiChat({ leadId, leadName }: AiChatProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="Zapytaj o firme..."
+                placeholder={limitReached ? "Limit zapytan wyczerpany..." : "Zapytaj o firme..."}
                 className={`flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:ring-2 ${inputRing} focus:outline-none`}
-                disabled={loading}
+                disabled={loading || limitReached}
               />
               <button
                 onClick={() => send()}
-                disabled={loading || !input.trim()}
+                disabled={loading || !input.trim() || limitReached}
                 className={`px-3 py-2 ${isClaude ? "bg-orange-600 hover:bg-orange-500" : "bg-purple-600 hover:bg-purple-500"} disabled:opacity-40 text-white rounded-lg transition-colors`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -1,6 +1,7 @@
 """AI Chat endpoint — Claude Haiku (primary) or Ollama (fallback).
 
 Uses Anthropic API when ANTHROPIC_API_KEY is set, otherwise falls back to Ollama.
+Daily query limit per user based on subscription plan.
 Searches the web for current information before answering.
 """
 
@@ -11,12 +12,13 @@ from datetime import date
 from html.parser import HTMLParser
 
 import httpx
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.permissions import get_current_user
-from src.config import settings
+from src.config import settings, PLAN_LIMITS, PlanType
 from src.database import get_db
 from src.leads.service import get_lead
 from src.users.models import User
@@ -52,6 +54,80 @@ class ChatResponse(BaseModel):
     model: str
     available: bool
     web_sources: list[str] | None = None
+    queries_used: int = 0
+    queries_limit: int = 0
+
+
+# ── Rate limiting ──
+
+_redis: aioredis.Redis | None = None
+
+
+async def _get_redis() -> aioredis.Redis:
+    global _redis
+    if _redis is None:
+        _redis = aioredis.from_url(settings.redis_url, decode_responses=True)
+    return _redis
+
+
+def _get_daily_limit(user: User) -> int:
+    """Get AI queries per day limit for user's plan."""
+    try:
+        plan = PlanType(user.plan)
+    except ValueError:
+        plan = PlanType.STARTER
+    return PLAN_LIMITS.get(plan, {}).get("ai_queries_per_day", 10)
+
+
+def _redis_key(user_id: str) -> str:
+    """Redis key for daily AI usage counter."""
+    today = date.today().isoformat()
+    return f"ai_usage:{user_id}:{today}"
+
+
+async def _check_and_increment(user: User) -> tuple[int, int]:
+    """Check rate limit and increment counter. Returns (used, limit).
+
+    Raises HTTPException 429 if limit exceeded.
+    """
+    limit = _get_daily_limit(user)
+    if limit == -1:  # unlimited
+        return 0, -1
+
+    r = await _get_redis()
+    key = _redis_key(str(user.id))
+
+    used = await r.get(key)
+    used = int(used) if used else 0
+
+    if used >= limit:
+        plan_name = user.plan or "starter"
+        raise HTTPException(
+            429,
+            f"Osiagnieto dzienny limit {limit} zapytan AI (pakiet {plan_name}). "
+            f"Zmien pakiet na wyzszy, aby uzyskac wiecej zapytan."
+        )
+
+    pipe = r.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, 86400)  # 24h TTL
+    await pipe.execute()
+
+    return used + 1, limit
+
+
+async def _get_usage(user: User) -> tuple[int, int]:
+    """Get current usage without incrementing."""
+    limit = _get_daily_limit(user)
+    if limit == -1:
+        return 0, -1
+    try:
+        r = await _get_redis()
+        key = _redis_key(str(user.id))
+        used = await r.get(key)
+        return int(used) if used else 0, limit
+    except Exception:
+        return 0, limit
 
 
 # ── AI backends ──
@@ -220,12 +296,25 @@ async def _search_for_lead(company_name: str, nip: str | None, city: str | None,
 # ── Endpoints ──
 
 @router.get("/status")
-async def ai_status():
-    """Check if AI assistant is available."""
+async def ai_status(user: User = Depends(get_current_user)):
+    """Check if AI assistant is available + usage info."""
+    used, limit = await _get_usage(user)
     if _has_claude():
-        return {"available": True, "model": CLAUDE_MODEL, "provider": "claude"}
+        return {
+            "available": True,
+            "model": CLAUDE_MODEL,
+            "provider": "claude",
+            "queries_used": used,
+            "queries_limit": limit,
+        }
     ollama_ok = await _ollama_available()
-    return {"available": ollama_ok, "model": OLLAMA_MODEL, "provider": "ollama"}
+    return {
+        "available": ollama_ok,
+        "model": OLLAMA_MODEL,
+        "provider": "ollama",
+        "queries_used": used,
+        "queries_limit": limit,
+    }
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -241,6 +330,9 @@ async def ai_chat(
         ollama_ok = await _ollama_available()
         if not ollama_ok:
             raise HTTPException(503, "Asystent AI nie jest dostepny — brak klucza Anthropic i Ollama nie uruchomiony")
+
+    # Check daily rate limit (raises 429 if exceeded)
+    used, limit = await _check_and_increment(user)
 
     # Build context from lead data
     lead_context = ""
@@ -289,6 +381,8 @@ async def ai_chat(
             model=model_name,
             available=True,
             web_sources=web_sources if web_sources else None,
+            queries_used=used,
+            queries_limit=limit,
         )
     except Exception as exc:
         logger.warning("AI chat failed (%s): %s", model_name, exc)
@@ -303,6 +397,8 @@ async def ai_chat(
                         model=OLLAMA_MODEL,
                         available=True,
                         web_sources=web_sources if web_sources else None,
+                        queries_used=used,
+                        queries_limit=limit,
                     )
             except Exception:
                 pass

@@ -114,6 +114,7 @@ PLAN_LIMITS = {
         "sources": ["bzp", "gunb"],
         "email_digest": False,
         "duration_days": 14,
+        "ai_queries_per_day": 5,
     },
     PlanType.STARTER: {
         "price": 49,
@@ -121,6 +122,7 @@ PLAN_LIMITS = {
         "max_regions": 1,
         "sources": ["bzp", "gunb", "krs"],
         "email_digest": True,
+        "ai_queries_per_day": 10,
     },
     PlanType.GROWTH: {
         "price": 149,
@@ -128,6 +130,7 @@ PLAN_LIMITS = {
         "max_regions": 3,
         "sources": ["bzp", "gunb", "krs", "ted", "scraping"],
         "email_digest": True,
+        "ai_queries_per_day": 50,
     },
     PlanType.ENTERPRISE: {
         "price": 399,
@@ -137,5 +140,6 @@ PLAN_LIMITS = {
         "email_digest": True,
         "api_access": True,
         "white_label": True,
+        "ai_queries_per_day": -1,  # unlimited
     },
 }
