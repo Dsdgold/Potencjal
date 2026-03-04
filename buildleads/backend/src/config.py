@@ -86,7 +86,8 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "BuildLeads <leads@buildleads.pl>"
 
-    # Ollama
+    # AI — Claude (primary) / Ollama (fallback)
+    anthropic_api_key: str = ""
     ollama_url: str = "http://localhost:11434"
 
     # Frontend

@@ -29,6 +29,7 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@potencjal.pl}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - OLLAMA_URL=http://ollama:11434
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - ENV=production
     depends_on:
       - db

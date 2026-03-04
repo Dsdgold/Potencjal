@@ -1,6 +1,6 @@
-"""AI Chat endpoint — Ollama-powered assistant with web search for lead analysis.
+"""AI Chat endpoint — Claude Haiku (primary) or Ollama (fallback).
 
-Uses gemma2:9b for Polish language support.
+Uses Anthropic API when ANTHROPIC_API_KEY is set, otherwise falls back to Ollama.
 Searches the web for current information before answering.
 """
 
@@ -16,15 +16,16 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.permissions import get_current_user
+from src.config import settings
 from src.database import get_db
 from src.leads.service import get_lead
-from src.qualifier.ollama_client import chat, is_available
 from src.users.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
 
-AI_MODEL = "llama3.1:8b"
+CLAUDE_MODEL = "claude-haiku-4-5-20251001"
+OLLAMA_MODEL = "llama3.1:8b"
 
 SYSTEM_PROMPT = f"""You are a Polish-speaking AI assistant for BuildLeads - a B2B sales lead assessment platform for construction materials in Poland.
 
@@ -53,9 +54,64 @@ class ChatResponse(BaseModel):
     web_sources: list[str] | None = None
 
 
-class _TextExtractor(HTMLParser):
-    """Extract visible text from HTML."""
+# ── AI backends ──
 
+def _has_claude() -> bool:
+    return bool(settings.anthropic_api_key)
+
+
+async def _claude_chat(system: str, user_content: str) -> str:
+    """Call Anthropic Messages API."""
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+        resp = await client.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": settings.anthropic_api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": CLAUDE_MODEL,
+                "max_tokens": 1024,
+                "system": system,
+                "messages": [{"role": "user", "content": user_content}],
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["content"][0]["text"]
+
+
+async def _ollama_available() -> bool:
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
+            resp = await client.get(f"{settings.ollama_url}/api/tags")
+            return resp.status_code == 200
+    except Exception:
+        return False
+
+
+async def _ollama_chat(system: str, user_content: str) -> str:
+    """Call Ollama chat API."""
+    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0)) as client:
+        resp = await client.post(
+            f"{settings.ollama_url}/api/chat",
+            json={
+                "model": OLLAMA_MODEL,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user_content},
+                ],
+                "stream": False,
+            },
+        )
+        resp.raise_for_status()
+        return resp.json().get("message", {}).get("content", "")
+
+
+# ── Web search ──
+
+class _TextExtractor(HTMLParser):
     def __init__(self):
         super().__init__()
         self._text: list[str] = []
@@ -76,8 +132,7 @@ class _TextExtractor(HTMLParser):
                 self._text.append(t)
 
     def get_text(self, limit: int = 3000) -> str:
-        full = " ".join(self._text)
-        return full[:limit]
+        return " ".join(self._text)[:limit]
 
 
 async def _web_search(query: str, num: int = 5) -> tuple[str, list[str]]:
@@ -99,15 +154,12 @@ async def _web_search(query: str, num: int = 5) -> tuple[str, list[str]]:
                 return "", []
 
             html = resp.text
-
-            # Extract URLs from search results
             urls = []
             for m in re.finditer(r'href="/url\?q=([^&"]+)', html):
                 url = m.group(1)
                 if url.startswith("http") and "google" not in url:
                     urls.append(url)
 
-            # Extract text snippets
             parser = _TextExtractor()
             try:
                 parser.feed(html)
@@ -115,13 +167,11 @@ async def _web_search(query: str, num: int = 5) -> tuple[str, list[str]]:
                 pass
 
             body = parser.get_text(3000)
-            # Remove Google boilerplate
             body = re.sub(
                 r"(Szukaj|Ustawienia|Narzędzia|Wszystkie|Grafika|Filmy|Więcej|"
                 r"Zaloguj się|Zaawansowane|Preferencje|Filtruj|Google)[\s,]*",
                 "", body,
             )
-
             return body, urls[:5]
 
     except Exception as exc:
@@ -138,9 +188,7 @@ async def _search_for_lead(company_name: str, nip: str | None, city: str | None,
     if city:
         base += f" {city}"
 
-    # Search 1: company + user's question
     queries.append(f"{base} {user_question}")
-    # Search 2: company general info
     if nip:
         queries.append(f"{company_name} NIP {nip}")
     else:
@@ -158,7 +206,6 @@ async def _search_for_lead(company_name: str, nip: str | None, city: str | None,
             all_text.append(text)
         all_urls.extend(urls)
 
-    # Deduplicate URLs
     seen = set()
     unique_urls = []
     for u in all_urls:
@@ -167,15 +214,18 @@ async def _search_for_lead(company_name: str, nip: str | None, city: str | None,
             unique_urls.append(u)
 
     combined = "\n---\n".join(all_text)
-    # Trim to reasonable size for context
     return combined[:4000], unique_urls[:5]
 
+
+# ── Endpoints ──
 
 @router.get("/status")
 async def ai_status():
     """Check if AI assistant is available."""
-    available = await is_available()
-    return {"available": available, "model": AI_MODEL}
+    if _has_claude():
+        return {"available": True, "model": CLAUDE_MODEL, "provider": "claude"}
+    ollama_ok = await _ollama_available()
+    return {"available": ollama_ok, "model": OLLAMA_MODEL, "provider": "ollama"}
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -185,11 +235,14 @@ async def ai_chat(
     db: AsyncSession = Depends(get_db),
 ):
     """Chat with AI about a lead, with web search for current data."""
-    available = await is_available()
-    if not available:
-        raise HTTPException(503, "Asystent AI nie jest dostępny — Ollama nie uruchomiony")
+    use_claude = _has_claude()
 
-    # Build context from lead data if provided
+    if not use_claude:
+        ollama_ok = await _ollama_available()
+        if not ollama_ok:
+            raise HTTPException(503, "Asystent AI nie jest dostepny — brak klucza Anthropic i Ollama nie uruchomiony")
+
+    # Build context from lead data
     lead_context = ""
     company_name = ""
     nip = ""
@@ -213,12 +266,9 @@ async def ai_chat(
             company_name, nip, city, req.message
         )
     else:
-        # General question — search directly
         web_text, web_sources = await _web_search(req.message)
 
-    # Build chat messages
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-
+    # Build user message with context
     user_content = ""
     if lead_context:
         user_content += f"=== DANE FIRMY Z BAZY ===\n{lead_context}\n\n"
@@ -226,19 +276,37 @@ async def ai_chat(
         user_content += f"=== WYNIKI WYSZUKIWANIA INTERNETOWEGO ===\n{web_text}\n\n"
     user_content += f"Pytanie: {req.message}"
 
-    messages.append({"role": "user", "content": user_content})
-
+    # Call AI
+    model_name = CLAUDE_MODEL if use_claude else OLLAMA_MODEL
     try:
-        reply = await chat(messages, model=AI_MODEL)
+        if use_claude:
+            reply = await _claude_chat(SYSTEM_PROMPT, user_content)
+        else:
+            reply = await _ollama_chat(SYSTEM_PROMPT, user_content)
+
         return ChatResponse(
             reply=reply.strip(),
-            model=AI_MODEL,
+            model=model_name,
             available=True,
             web_sources=web_sources if web_sources else None,
         )
     except Exception as exc:
-        logger.warning("AI chat failed: %s", exc)
-        raise HTTPException(502, f"Błąd AI: {str(exc)[:200]}")
+        logger.warning("AI chat failed (%s): %s", model_name, exc)
+        # If Claude fails, try Ollama as fallback
+        if use_claude:
+            try:
+                ollama_ok = await _ollama_available()
+                if ollama_ok:
+                    reply = await _ollama_chat(SYSTEM_PROMPT, user_content)
+                    return ChatResponse(
+                        reply=reply.strip(),
+                        model=OLLAMA_MODEL,
+                        available=True,
+                        web_sources=web_sources if web_sources else None,
+                    )
+            except Exception:
+                pass
+        raise HTTPException(502, f"Blad AI: {str(exc)[:200]}")
 
 
 def _build_lead_context(lead) -> str:
@@ -263,13 +331,13 @@ def _build_lead_context(lead) -> str:
     if lead.employees:
         lines.append(f"Pracownicy: ok. {lead.employees}")
     if lead.revenue_pln:
-        lines.append(f"Przychód: {lead.revenue_pln / 1_000_000:.1f}M PLN ({lead.revenue_band or ''})")
+        lines.append(f"Przychod: {lead.revenue_pln / 1_000_000:.1f}M PLN ({lead.revenue_band or ''})")
     if lead.years_active:
         lines.append(f"Lata na rynku: {lead.years_active:.1f}")
     if lead.score is not None:
         lines.append(f"Score: {lead.score}/100, Tier: {lead.tier}")
     if lead.annual_potential:
-        lines.append(f"Potencjał roczny: {lead.annual_potential:,} PLN")
+        lines.append(f"Potencjal roczny: {lead.annual_potential:,} PLN")
     if lead.website:
         lines.append(f"Strona WWW: {lead.website}")
     if lead.contact_person:
@@ -285,7 +353,7 @@ def _build_lead_context(lead) -> str:
             if "*" not in m.get("name", "")
         )
         if members:
-            lines.append(f"Zarząd: {members}")
+            lines.append(f"Zarzad: {members}")
     if lead.description:
         lines.append(f"Opis: {lead.description[:500]}")
     if lead.notes:
