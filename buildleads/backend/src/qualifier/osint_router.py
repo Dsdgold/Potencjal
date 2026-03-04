@@ -25,6 +25,8 @@ from src.qualifier.web_enrichment import (
     generate_description_from_data,
     google_search_description,
     scrape_website,
+    search_panoramafirm,
+    search_aleo,
 )
 from src.qualifier.geocoding import geocode_address
 from src.users.models import User
@@ -198,93 +200,162 @@ async def enrich(
             update_data["legal_form"] = str(lf)
             break
 
-    # Extract board members from eKRS + set contact_person to CEO
-    board_members = []
+    # ── Board members: merge eKRS (has functions) with VAT (has full names) ──
+    # eKRS returns board with functions (Prezes, Członek) but RODO-masks names: "J**** K****"
+    # VAT White List returns full names but only as flat "Reprezentant" / "Wspólnik"
+    # Strategy: use eKRS functions + VAT names, matched by count/position
+
+    ekrs_board = []
+    ekrs_organ_name = "Zarząd"
     for r in results:
         if r.source == "ekrs":
             parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
-            board = parsed.get("board", [])
-            if board:
-                board_members = board
-                break
+            ekrs_board = parsed.get("board", [])
+            ekrs_organ_name = parsed.get("board_organ_name", "Zarząd")
+            break
 
-    # VAT White List returns full (non-anonymized) names for representatives.
-    # eKRS API anonymizes personal names (RODO) → "J**** K****".
-    # Prefer VAT names when eKRS names contain asterisks.
     vat_representatives = []
+    vat_partners = []
     for r in results:
         if r.source == "vat_whitelist" and r.raw:
             subject = (r.raw.get("result") or {}).get("subject") or {}
-            reps = subject.get("representatives") or []
-            for rep in reps:
+            for rep in (subject.get("representatives") or []):
                 first = rep.get("firstName", "") or ""
                 last = rep.get("lastName", "") or ""
                 company = rep.get("companyName", "") or ""
                 full = f"{first} {last}".strip() or company
                 if full and "*" not in full:
-                    vat_representatives.append({"name": full, "function": "Reprezentant"})
-            # Also check partners
-            partners = subject.get("partners") or []
-            for p in partners:
+                    vat_representatives.append(full)
+            for p in (subject.get("partners") or []):
                 first = p.get("firstName", "") or ""
                 last = p.get("lastName", "") or ""
                 company = p.get("companyName", "") or ""
                 full = f"{first} {last}".strip() or company
                 if full and "*" not in full:
-                    vat_representatives.append({"name": full, "function": "Wspólnik"})
+                    vat_partners.append(full)
+            break
 
-    # If eKRS board has anonymized names (contain *), replace with VAT data
-    any_masked = any("*" in (m.get("name", "") or "") for m in board_members)
-    if any_masked and vat_representatives:
-        board_members = vat_representatives
-    elif not board_members and vat_representatives:
-        board_members = vat_representatives
+    # Build final board: replace masked eKRS names with VAT names
+    board_members = []
+    any_masked = any("*" in (m.get("name", "") or "") for m in ekrs_board)
+
+    if ekrs_board and not any_masked:
+        # eKRS names are clean — use them directly (they have functions)
+        board_members = ekrs_board
+    elif ekrs_board and vat_representatives:
+        # eKRS has functions but masked names — match with VAT names by position
+        vat_idx = 0
+        for member in ekrs_board:
+            name = member.get("name", "")
+            func = member.get("function", "")
+            if "*" in name and vat_idx < len(vat_representatives):
+                board_members.append({"name": vat_representatives[vat_idx], "function": func})
+                vat_idx += 1
+            elif "*" not in name:
+                board_members.append({"name": name, "function": func})
+            else:
+                # No more VAT names to match — skip masked entry
+                pass
+        # Add remaining VAT reps not matched to eKRS
+        for i in range(vat_idx, len(vat_representatives)):
+            board_members.append({"name": vat_representatives[i], "function": "Reprezentant"})
+    elif vat_representatives:
+        # No eKRS board — use VAT representatives
+        board_members = [{"name": n, "function": "Reprezentant"} for n in vat_representatives]
+
+    # Add VAT partners (wspólnicy) — always useful
+    for p in vat_partners:
+        if not any(m.get("name") == p for m in board_members):
+            board_members.append({"name": p, "function": "Wspólnik"})
+
+    # NEVER save board members with asterisks to DB
+    board_members = [m for m in board_members if "*" not in (m.get("name", "") or "")]
 
     if board_members:
         update_data["board_members"] = board_members
-        # Set contact_person if missing or currently contains masked asterisks
-        current_contact = lead.contact_person or ""
-        if not current_contact or "*" in current_contact:
-            ceo = next(
-                (m for m in board_members if "prezes" in (m.get("function", "") or "").lower()),
-                board_members[0] if board_members else None,
-            )
-            if ceo:
-                ceo_name = ceo.get("name", "")
-                # Only update if new name doesn't contain asterisks
-                if ceo_name and "*" not in ceo_name:
-                    update_data["contact_person"] = ceo_name
+        # Always update contact_person from clean board data
+        ceo = next(
+            (m for m in board_members if "prezes" in (m.get("function", "") or "").lower()),
+            board_members[0] if board_members else None,
+        )
+        if ceo:
+            update_data["contact_person"] = ceo.get("name", "")
 
     # Apply partial update before web scraping
     lead = await update_lead(db, lead, **update_data)
 
-    # ── Web scraping for description, contacts, social media ──
+    # ── Web scraping + external sources for contacts, description ──
+    import asyncio as _aio
+
     website_url = lead.website
     web_result = None
-    if website_url:
-        try:
-            web_result = await scrape_website(website_url)
-        except Exception as exc:
+    pano_result = None
+    aleo_result = None
+
+    # Run website scraping, panoramafirm and aleo in parallel
+    async def _scrape_web():
+        if website_url:
+            return await scrape_website(website_url)
+        return None
+
+    async def _scrape_pano():
+        return await search_panoramafirm(lead.nip, lead.name)
+
+    async def _scrape_aleo():
+        return await search_aleo(lead.nip)
+
+    try:
+        web_result, pano_result, aleo_result = await _aio.gather(
+            _scrape_web(), _scrape_pano(), _scrape_aleo(),
+            return_exceptions=True,
+        )
+        if isinstance(web_result, Exception):
             import logging
-            logging.getLogger(__name__).warning("Web scraping failed: %s", exc)
+            logging.getLogger(__name__).warning("Web scraping failed: %s", web_result)
+            web_result = None
+        if isinstance(pano_result, Exception):
+            pano_result = None
+        if isinstance(aleo_result, Exception):
+            aleo_result = None
+    except Exception:
+        pass
 
     web_update: dict = {}
 
     if web_result and not web_result.error:
-        # Extract emails from website → contact_email (always refresh)
         if web_result.emails:
             web_update["contact_email"] = web_result.emails[0]
-
-        # Extract phones from website → contact_phone (always refresh)
         if web_result.phones:
             web_update["contact_phone"] = web_result.phones[0]
-
-        # Social media links (always refresh)
         if web_result.social_media:
             web_update["social_media"] = web_result.social_media
 
+    # Fill gaps from panoramafirm / aleo
+    if not web_update.get("contact_phone"):
+        for src in [pano_result, aleo_result]:
+            if src and isinstance(src, dict) and src.get("phones"):
+                web_update["contact_phone"] = src["phones"][0]
+                break
+    if not web_update.get("contact_email"):
+        for src in [pano_result, aleo_result]:
+            if src and isinstance(src, dict) and src.get("emails"):
+                web_update["contact_email"] = src["emails"][0]
+                break
+
+    # Employees from aleo (if we only have estimates)
+    if aleo_result and isinstance(aleo_result, dict) and aleo_result.get("employees"):
+        if not lead.employees or lead.employees < aleo_result["employees"]:
+            web_update["employees"] = aleo_result["employees"]
+
     # Always (re-)generate company description on enrichment
-    website_desc = web_result.description if web_result and not web_result.error else None
+    website_desc = web_result.description if web_result and not getattr(web_result, 'error', None) else None
+
+    # Collect all description sources
+    extra_descs = []
+    if pano_result and isinstance(pano_result, dict) and pano_result.get("description"):
+        extra_descs.append(pano_result["description"])
+    if aleo_result and isinstance(aleo_result, dict) and aleo_result.get("description"):
+        extra_descs.append(aleo_result["description"])
 
     # Try Google search for description
     google_desc = None
@@ -293,12 +364,9 @@ async def enrich(
     except Exception:
         pass
 
-    combined_desc = website_desc
-    if google_desc:
-        if combined_desc:
-            combined_desc = f"{combined_desc}\n\n{google_desc}"
-        else:
-            combined_desc = google_desc
+    # Combine all description sources
+    desc_parts = [d for d in [website_desc, google_desc] + extra_descs if d]
+    combined_desc = "\n\n".join(desc_parts) if desc_parts else None
 
     description = generate_description_from_data(
         name=lead.name,

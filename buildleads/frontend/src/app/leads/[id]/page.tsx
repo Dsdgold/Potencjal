@@ -7,6 +7,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 
 const LeadMap = dynamic(() => import("@/components/lead-map"), { ssr: false });
+const AiChat = dynamic(() => import("@/components/ai-chat"), { ssr: false });
 
 interface Lead {
   id: string;
@@ -231,11 +232,8 @@ export default function LeadDetailPage() {
   const gusRaw = lead.osint_raw?.gus as Record<string, unknown> | undefined;
   const gusParsed = gusRaw?._parsed as Record<string, unknown> | undefined;
 
-  // Board of directors — eKRS may return anonymized names (RODO: "J**** K****")
-  // In that case, prefer VAT White List representatives which have full names
-  const ekrsBoard = (ekrsParsed?.board as Array<{name: string; function: string}>) || [];
+  // Board of directors — backend ensures no asterisks are saved
   const boardOrganName = ekrsParsed?.board_organ_name as string || "Zarząd";
-  const ekrsBoardMasked = ekrsBoard.length > 0 && ekrsBoard.some(m => (m.name || "").includes("*"));
   const supervisory = (ekrsParsed?.supervisory as Array<{name: string; function: string}>) || [];
   // Shareholders
   const shareholders = (ekrsParsed?.shareholders as Array<{name: string; shares: string}>) || [];
@@ -245,22 +243,15 @@ export default function LeadDetailPage() {
   // Legal form
   const legalForm = ekrsParsed?.legal_form as string | null;
   const ekrsAddress = ekrsParsed?.full_address as Record<string, string> | undefined;
-  // VAT representatives (always have full, non-anonymized names)
+  // VAT representatives (fallback if board_members not yet populated)
   const vatRepresentatives = (vatSubject?.representatives as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
   const vatPartners = (vatSubject?.partners as Array<{firstName?: string; lastName?: string; companyName?: string}>) || [];
-  // Build effective board: prefer lead.board_members (backend already demasked), then VAT reps, then eKRS
-  const savedBoard = lead.board_members || [];
-  const savedBoardMasked = savedBoard.length > 0 && savedBoard.some(m => (m.name || "").includes("*"));
-  const vatBoardMembers = vatRepresentatives
-    .map(r => ({ name: (r.companyName || `${r.firstName || ""} ${r.lastName || ""}`.trim()) || "—", function: "Reprezentant" }))
-    .filter(m => m.name !== "—" && !m.name.includes("*"));
-  const vatPartnerMembers = vatPartners
-    .map(p => ({ name: (p.companyName || `${p.firstName || ""} ${p.lastName || ""}`.trim()) || "—", function: "Wspólnik" }))
-    .filter(m => m.name !== "—" && !m.name.includes("*"));
-  // Choose the best source of board members
-  const board = (savedBoard.length > 0 && !savedBoardMasked)
-    ? savedBoard
-    : (vatBoardMembers.length > 0 ? [...vatBoardMembers, ...vatPartnerMembers] : (!ekrsBoardMasked ? ekrsBoard : []));
+  // Board: use saved (clean) board_members, fallback to VAT reps
+  const savedBoard = (lead.board_members || []).filter(m => !((m.name || "").includes("*")));
+  const vatBoardFallback = vatRepresentatives
+    .map(r => ({ name: (r.companyName || `${r.firstName || ""} ${r.lastName || ""}`.trim()) || "", function: "Reprezentant" }))
+    .filter(m => m.name && !m.name.includes("*"));
+  const board = savedBoard.length > 0 ? savedBoard : vatBoardFallback;
   // Bank accounts
   const bankAccounts = Array.isArray(vatSubject?.accountNumbers) ? vatSubject.accountNumbers as string[] : [];
   // Addresses
@@ -897,6 +888,9 @@ export default function LeadDetailPage() {
           Panorama Firm
         </a>
       </div>
+
+      {/* AI Chat Assistant */}
+      <AiChat leadId={lead.id} leadName={lead.name} />
     </div>
   );
 }
