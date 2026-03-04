@@ -75,6 +75,13 @@ class LeadOut(BaseModel):
     name: str
     city: str | None
     voivodeship: str | None
+    street: str | None
+    postal_code: str | None
+    latitude: float | None
+    longitude: float | None
+    regon: str | None
+    krs: str | None
+    legal_form: str | None
     employees: int | None
     revenue_pln: float | None
     revenue_band: str | None
@@ -98,6 +105,8 @@ class LeadOut(BaseModel):
     annual_potential: int | None
     status: str
     ai_summary: str | None
+    board_members: list[dict] | None
+    social_media: dict | None
     osint_raw: dict | None
     sources: list[str] | None
     notes: str | None

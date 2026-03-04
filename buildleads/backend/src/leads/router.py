@@ -110,6 +110,19 @@ async def edit_lead(
     return await update_lead(db, lead, **body.model_dump(exclude_unset=True))
 
 
+@router.put("/{lead_id}", response_model=LeadOut)
+async def edit_lead_put(
+    lead_id: uuid.UUID,
+    body: LeadUpdate,
+    user: User = Depends(require_salesperson),
+    db: AsyncSession = Depends(get_db),
+):
+    lead = await get_lead(db, lead_id, user)
+    if not lead:
+        raise HTTPException(404, "Lead not found")
+    return await update_lead(db, lead, **body.model_dump(exclude_unset=True))
+
+
 @router.patch("/{lead_id}/status")
 async def change_status(
     lead_id: uuid.UUID,

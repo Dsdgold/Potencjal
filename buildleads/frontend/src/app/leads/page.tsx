@@ -31,9 +31,9 @@ const steps = [
   "Pobieram dane z eKRS...",
   "Pobieram dane z CEIDG...",
   "Tworzę leada...",
-  "Enrich — uzupełniam dane z OSINT...",
+  "Uzupełniam dane (OSINT + strona WWW + geocoding)...",
   "Obliczam scoring potencjału...",
-  "Gotowe!",
+  "Gotowe! Przekierowuję...",
 ];
 
 export default function LeadsPage() {
