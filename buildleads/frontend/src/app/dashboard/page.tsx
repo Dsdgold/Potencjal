@@ -76,7 +76,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div>
+    <div className="grid-bg min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -85,15 +85,16 @@ export default function DashboardPage() {
         </div>
         <Link
           href="/leads"
-          className="px-4 py-2 bg-[#6366f1] hover:bg-[#818cf8] text-white text-sm font-medium rounded-lg transition-all glow-accent"
+          className="px-5 py-2.5 bg-gradient-to-r from-[#6366f1] to-[#818cf8] hover:from-[#818cf8] hover:to-[#a78bfa] text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6366f1]/20 hover:shadow-[#6366f1]/30 hover:-translate-y-0.5 active:translate-y-0"
         >
           + Sprawdź firmę
         </Link>
       </div>
 
       {/* Quick NIP check */}
-      <div className="bg-[#16161f] border border-[#26263a] rounded-xl p-6 mb-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#6366f1]/3 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3" />
+      <div className="bg-[#16161f] border border-[#26263a] rounded-2xl p-6 mb-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-[#6366f1]/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#8b5cf6]/3 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4" />
         <div className="relative">
           <h2 className="text-base font-semibold text-[#ededf0] mb-1">Szybkie sprawdzenie</h2>
           <p className="text-[#5e5e73] text-sm mb-4">Wpisz NIP — automatycznie pobierzemy dane i policzymy potencjał</p>
@@ -124,20 +125,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Tier Distribution */}
-      <div className="bg-[#16161f] border border-[#26263a] rounded-xl p-5 mb-6">
-        <h2 className="text-sm font-semibold text-[#ededf0] mb-4 uppercase tracking-wider">Rozkład tierów</h2>
+      <div className="bg-[#16161f] border border-[#26263a] rounded-2xl p-5 mb-6">
+        <h2 className="text-sm font-semibold text-[#ededf0] mb-4 uppercase tracking-wider">Rozklad tierow</h2>
         <div className="grid grid-cols-4 gap-3">
           {(["S", "A", "B", "C"] as const).map((tier) => (
-            <div key={tier} className={`text-center p-4 rounded-lg border ${tierColors[tier]}`}>
-              <div className="text-2xl font-bold">{stats.byTier[tier] || 0}</div>
-              <div className="text-xs mt-1 opacity-70">Tier {tier}</div>
+            <div key={tier} className={`text-center p-5 rounded-xl border transition-all hover:scale-105 ${tierColors[tier]}`}>
+              <div className="text-3xl font-bold">{stats.byTier[tier] || 0}</div>
+              <div className="text-xs mt-1.5 opacity-70 font-medium">Tier {tier}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Recent Leads */}
-      <div className="bg-[#16161f] border border-[#26263a] rounded-xl overflow-hidden">
+      <div className="bg-[#16161f] border border-[#26263a] rounded-2xl overflow-hidden">
         <div className="px-5 py-4">
           <h2 className="text-sm font-semibold text-[#ededf0] uppercase tracking-wider">Ostatnie leady</h2>
         </div>
@@ -190,10 +191,10 @@ export default function DashboardPage() {
 
 function KpiCard({ label, value, suffix, accent }: { label: string; value: string; suffix?: string; accent?: boolean }) {
   return (
-    <div className={`p-4 rounded-xl border ${accent ? "bg-[#10b981]/5 border-[#10b981]/20" : "bg-[#16161f] border-[#26263a]"}`}>
-      <p className="text-xs text-[#5e5e73] mb-1 uppercase tracking-wider">{label}</p>
-      <p className={`text-xl font-bold ${accent ? "text-[#10b981]" : "text-[#ededf0]"}`}>
-        {value}<span className="text-sm font-normal text-[#5e5e73]">{suffix}</span>
+    <div className={`p-5 rounded-xl border transition-all hover:translate-y-[-2px] hover:shadow-lg ${accent ? "bg-[#10b981]/5 border-[#10b981]/20 hover:shadow-[#10b981]/5" : "bg-[#16161f] border-[#26263a] hover:border-[#33334d] hover:shadow-[#6366f1]/5"}`}>
+      <p className="text-xs text-[#5e5e73] mb-2 uppercase tracking-wider font-medium">{label}</p>
+      <p className={`text-2xl font-bold ${accent ? "text-[#10b981]" : "text-[#ededf0]"}`}>
+        {value}<span className="text-sm font-normal text-[#5e5e73] ml-0.5">{suffix}</span>
       </p>
     </div>
   );
