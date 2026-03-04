@@ -1,6 +1,6 @@
 function getApiUrl(): string {
-  if (typeof window === "undefined") return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-  // In browser: use /api proxy (Next.js rewrites) to avoid CORS/Codespace port issues
+  if (typeof window === "undefined") return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+  // In browser: use relative paths — nginx proxies /api/ to backend
   return "";
 }
 

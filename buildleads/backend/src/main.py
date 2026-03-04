@@ -32,6 +32,7 @@ from src.admin.router import router as admin_router
 from src.billing.router import router as billing_router
 from src.collectors.router import router as collectors_router
 from src.qualifier.osint_router import router as osint_router
+from src.qualifier.ai_router import router as ai_router
 
 from src.auth.passwords import hash_password
 
@@ -112,6 +113,7 @@ app.include_router(admin_router)
 app.include_router(billing_router)
 app.include_router(collectors_router)
 app.include_router(osint_router)
+app.include_router(ai_router)
 
 
 @app.get("/health")

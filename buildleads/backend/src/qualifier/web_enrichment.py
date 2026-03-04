@@ -133,15 +133,15 @@ async def scrape_website(url: str) -> WebEnrichResult:
                 return result
             html = resp.text
 
-            # Also try /kontakt or /contact page for contact info
+            # Also try subpages for contact info and about
             contact_html = ""
             base = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
-            for path in ["/kontakt", "/contact", "/kontakty", "/o-nas", "/about"]:
+            for path in ["/kontakt", "/contact", "/kontakty", "/o-nas", "/about",
+                         "/o-firmie", "/firma", "/about-us", "/team", "/zespol"]:
                 try:
                     cr = await client.get(urljoin(base, path))
                     if cr.status_code == 200:
-                        contact_html += cr.text
-                        break
+                        contact_html += "\n" + cr.text
                 except Exception:
                     pass
 
@@ -219,9 +219,7 @@ async def google_search_description(company_name: str, city: str | None = None) 
             if resp.status_code != 200:
                 return None
 
-            # Extract text snippets from search results
             html = resp.text
-            # Google wraps snippets in various elements; extract visible text
             parser = _MetaParser()
             try:
                 parser.feed(html)
@@ -229,7 +227,6 @@ async def google_search_description(company_name: str, city: str | None = None) 
                 pass
 
             body = parser.get_body_text(3000)
-            # Remove Google boilerplate
             body = re.sub(r"(Szukaj|Ustawienia|Narzędzia|Wszystkie|Grafika|Filmy|Więcej)[\s,]*", "", body)
             sentences = re.split(r"[.!?]\s", body)
             useful = [s.strip() for s in sentences if len(s.strip()) > 30 and company_name.split()[0].lower() in s.lower()]
@@ -240,6 +237,129 @@ async def google_search_description(company_name: str, city: str | None = None) 
         logger.warning("Google search failed for %s: %s", company_name, exc)
 
     return None
+
+
+async def search_panoramafirm(nip: str, company_name: str) -> dict | None:
+    """Scrape panoramafirm.pl for additional company info (phone, email, description)."""
+    try:
+        async with httpx.AsyncClient(
+            timeout=TIMEOUT,
+            follow_redirects=True,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept-Language": "pl,en;q=0.5",
+            },
+        ) as client:
+            # Search by NIP first
+            resp = await client.get(
+                "https://panoramafirm.pl/szukaj",
+                params={"k": nip},
+            )
+            if resp.status_code != 200:
+                return None
+
+            html = resp.text
+            result: dict = {}
+
+            # Extract phones
+            phones = set()
+            for m in PHONE_RE.finditer(html):
+                phone = m.group().strip()
+                digits = re.sub(r"[^\\d+]", "", phone)
+                if 9 <= len(digits) <= 13:
+                    phones.add(phone)
+            if phones:
+                result["phones"] = sorted(phones)[:3]
+
+            # Extract emails
+            emails = set(EMAIL_RE.findall(html))
+            clean_emails = [e for e in emails if not JUNK_EMAIL_RE.search(e)
+                           and not e.endswith((".png", ".jpg", ".svg"))]
+            if clean_emails:
+                result["emails"] = sorted(clean_emails)[:3]
+
+            # Extract description snippets
+            parser = _MetaParser()
+            try:
+                parser.feed(html)
+            except Exception:
+                pass
+            body = parser.get_body_text(2000)
+            # Look for company-relevant sentences
+            first_word = company_name.split()[0].lower() if company_name else ""
+            sentences = re.split(r"[.!?]\s", body)
+            useful = [s.strip() for s in sentences
+                      if len(s.strip()) > 20
+                      and (first_word in s.lower() or nip in s)]
+            if useful:
+                result["description"] = ". ".join(useful[:2])[:300]
+
+            return result if result else None
+
+    except Exception as exc:
+        logger.warning("Panoramafirm search failed for %s: %s", nip, exc)
+        return None
+
+
+async def search_aleo(nip: str) -> dict | None:
+    """Scrape aleo.com for additional company info."""
+    try:
+        async with httpx.AsyncClient(
+            timeout=TIMEOUT,
+            follow_redirects=True,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept-Language": "pl,en;q=0.5",
+            },
+        ) as client:
+            resp = await client.get(f"https://aleo.com/pl/firma/nip-{nip}")
+            if resp.status_code != 200:
+                return None
+
+            html = resp.text
+            result: dict = {}
+
+            # Extract employees count mentions
+            emp_match = re.search(r"(?:zatrudnienie|pracownik[óo]w|employees?)[:\s]*(\d+)", html, re.I)
+            if emp_match:
+                result["employees"] = int(emp_match.group(1))
+
+            # Extract revenue mentions
+            rev_match = re.search(r"(?:przychod[yó]|revenue)[:\s]*([\d\s,.]+)\s*(?:PLN|zł|tys|mln|mld)", html, re.I)
+            if rev_match:
+                result["revenue_hint"] = rev_match.group(0).strip()
+
+            # Extract phones and emails
+            phones = set()
+            for m in PHONE_RE.finditer(html):
+                phone = m.group().strip()
+                digits = re.sub(r"[^\\d+]", "", phone)
+                if 9 <= len(digits) <= 13:
+                    phones.add(phone)
+            if phones:
+                result["phones"] = sorted(phones)[:3]
+
+            emails = set(EMAIL_RE.findall(html))
+            clean_emails = [e for e in emails if not JUNK_EMAIL_RE.search(e)
+                           and not e.endswith((".png", ".jpg", ".svg"))]
+            if clean_emails:
+                result["emails"] = sorted(clean_emails)[:3]
+
+            # Description
+            parser = _MetaParser()
+            try:
+                parser.feed(html)
+            except Exception:
+                pass
+            desc = parser.meta_description or parser.og_description
+            if desc and len(desc) > 30:
+                result["description"] = desc[:300]
+
+            return result if result else None
+
+    except Exception as exc:
+        logger.warning("Aleo search failed for NIP %s: %s", nip, exc)
+        return None
 
 
 def generate_description_from_data(
@@ -281,17 +401,31 @@ def generate_description_from_data(
             desc += f" Firma działa na rynku od {years_int} lat."
 
     if employees:
-        desc += f" Zatrudnia {employees} pracowników."
+        if employees >= 250:
+            size_label = "duże przedsiębiorstwo"
+        elif employees >= 50:
+            size_label = "średnie przedsiębiorstwo"
+        elif employees >= 10:
+            size_label = "małe przedsiębiorstwo"
+        else:
+            size_label = "mikroprzedsiębiorstwo"
+        desc += f" Zatrudnia ok. {employees} pracowników ({size_label})."
 
     if vat_status:
         desc += f" Status VAT: {vat_status}."
 
     if board_members:
-        ceo = next((m for m in board_members if "prezes" in (m.get("function", "") or "").lower()), None)
-        if ceo:
-            desc += f" Prezes zarządu: {ceo['name']}."
-        elif board_members:
-            desc += f" Zarząd: {', '.join(m['name'] for m in board_members[:3])}."
+        # Filter out masked names
+        clean_board = [m for m in board_members if "*" not in (m.get("name", "") or "")]
+        if clean_board:
+            ceo = next((m for m in clean_board if "prezes" in (m.get("function", "") or "").lower()), None)
+            if ceo:
+                desc += f" Prezes zarządu: {ceo['name']}."
+                others = [m for m in clean_board if m != ceo][:2]
+                if others:
+                    desc += f" W zarządzie również: {', '.join(m['name'] for m in others)}."
+            else:
+                desc += f" Zarząd: {', '.join(m['name'] for m in clean_board[:3])}."
 
     if website_desc:
         desc += f"\n\n{website_desc}"

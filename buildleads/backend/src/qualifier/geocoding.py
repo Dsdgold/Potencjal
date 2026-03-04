@@ -32,26 +32,13 @@ async def geocode_address(
     """Geocode a Polish address using Nominatim.
 
     Tries multiple query strategies:
-    1. Full address (street + city + postal_code)
-    2. City + postal_code
-    3. City only
+    1. Structured search (street + city + postal_code as separate params)
+    2. Free-form full address
+    3. City + postal code
+    4. City only
     """
     if not city:
         return GeoResult(error="no_city")
-
-    queries = []
-
-    # Strategy 1: Full address
-    if street:
-        full = f"{street}, {postal_code + ' ' if postal_code else ''}{city}, Polska"
-        queries.append(full)
-
-    # Strategy 2: City + postal code
-    if postal_code:
-        queries.append(f"{postal_code} {city}, Polska")
-
-    # Strategy 3: City only
-    queries.append(f"{city}, Polska")
 
     async with httpx.AsyncClient(
         timeout=TIMEOUT,
@@ -59,6 +46,40 @@ async def geocode_address(
             "User-Agent": "BuildLeads/2.0 (https://buildleads.pl; contact@buildleads.pl)",
         },
     ) as client:
+        # Strategy 1: Structured search (most accurate for Polish addresses)
+        if street:
+            try:
+                params = {
+                    "street": street,
+                    "city": city,
+                    "country": "Poland",
+                    "format": "json",
+                    "limit": 1,
+                }
+                if postal_code:
+                    params["postalcode"] = postal_code
+                resp = await client.get(NOMINATIM_URL, params=params)
+                if resp.status_code == 200:
+                    results = resp.json()
+                    if results:
+                        hit = results[0]
+                        return GeoResult(
+                            latitude=float(hit["lat"]),
+                            longitude=float(hit["lon"]),
+                            display_name=hit.get("display_name", ""),
+                        )
+            except Exception as exc:
+                logger.warning("Geocoding structured search failed: %s", exc)
+
+        # Strategy 2: Free-form full address
+        queries = []
+        if street:
+            full = f"{street}, {postal_code + ' ' if postal_code else ''}{city}, Polska"
+            queries.append(full)
+        if postal_code:
+            queries.append(f"{postal_code} {city}, Polska")
+        queries.append(f"{city}, Polska")
+
         for query in queries:
             try:
                 resp = await client.get(
