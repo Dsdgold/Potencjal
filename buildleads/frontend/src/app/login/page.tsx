@@ -81,7 +81,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 py-2.5 px-4 bg-[#6366f1] hover:bg-[#818cf8] disabled:opacity-40 text-white font-medium rounded-lg transition-all glow-accent"
+            className="w-full mt-6 py-3 px-4 bg-gradient-to-r from-[#6366f1] to-[#818cf8] hover:from-[#818cf8] hover:to-[#a78bfa] disabled:opacity-40 text-white font-semibold rounded-xl transition-all shadow-lg shadow-[#6366f1]/25"
           >
             {loading ? "Logowanie..." : "Zaloguj się"}
           </button>

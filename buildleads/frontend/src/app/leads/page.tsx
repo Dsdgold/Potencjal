@@ -170,7 +170,7 @@ export default function LeadsPage() {
         <h1 className="text-xl font-bold text-[#ededf0]">Leady</h1>
         <button
           onClick={() => { setShowForm(!showForm); setStep(-1); setProcessing(false); setError(""); setNip(""); }}
-          className="px-4 py-2 bg-[#6366f1] hover:bg-[#818cf8] text-white text-sm font-medium rounded-lg transition-all glow-accent"
+          className="px-5 py-2.5 bg-gradient-to-r from-[#6366f1] to-[#818cf8] hover:from-[#818cf8] hover:to-[#a78bfa] text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-[#6366f1]/20 hover:shadow-[#6366f1]/30 hover:-translate-y-0.5 active:translate-y-0"
         >
           {showForm ? "Anuluj" : "+ Sprawdź firmę"}
         </button>
@@ -178,7 +178,7 @@ export default function LeadsPage() {
 
       {/* NIP Lookup Form */}
       {showForm && (
-        <div className="bg-[#16161f] border border-[#26263a] rounded-xl p-6 mb-6">
+        <div className="bg-[#16161f] border border-[#26263a] rounded-2xl p-6 mb-6">
           <h2 className="text-base font-semibold text-[#ededf0] mb-2">Sprawdź potencjał firmy</h2>
           <p className="text-[#5e5e73] text-sm mb-4">Wpisz NIP — system automatycznie pobierze dane z rejestrów (VAT, eKRS, CEIDG, GUS), utworzy leada i obliczy scoring.</p>
 
@@ -256,7 +256,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#16161f] border border-[#26263a] rounded-xl overflow-hidden">
+      <div className="bg-[#16161f] border border-[#26263a] rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-[#5e5e73]">Ładowanie...</div>
         ) : leads.length === 0 ? (

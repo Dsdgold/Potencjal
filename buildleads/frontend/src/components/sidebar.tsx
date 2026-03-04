@@ -22,9 +22,10 @@ export function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="w-60 bg-[#111118] border-r border-[#26263a] flex flex-col min-h-screen">
+    <aside className="w-60 bg-[#111118] border-r border-[#26263a] flex flex-col min-h-screen relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-[#6366f1]/5 to-transparent pointer-events-none" />
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-[#26263a]">
+      <div className="px-5 py-5 border-b border-[#26263a] relative">
         <h1 className="text-lg font-bold tracking-tight">
           Build<span className="gradient-text">Leads</span>
         </h1>
@@ -39,10 +40,10 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
+              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
                 active
-                  ? "bg-[#6366f1]/10 text-[#a5b4fc] border border-[#6366f1]/20"
-                  : "text-[#9494a8] hover:bg-[#1c1c28] hover:text-[#ededf0] border border-transparent"
+                  ? "bg-[#6366f1]/12 text-[#a5b4fc] border border-[#6366f1]/25 shadow-sm shadow-[#6366f1]/10"
+                  : "text-[#9494a8] hover:bg-[#1c1c28] hover:text-[#ededf0] border border-transparent hover:border-[#26263a]"
               }`}
             >
               <span className={active ? "text-[#6366f1]" : "text-[#5e5e73]"}>{item.icon}</span>
