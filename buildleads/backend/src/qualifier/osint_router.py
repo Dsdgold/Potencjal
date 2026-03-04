@@ -154,52 +154,49 @@ async def enrich(
                 update_data["voivodeship"] = str(voiv)
                 break
 
-    # Extract address from GUS / eKRS / VAT
-    if not lead.street:
+    # Extract address from GUS / eKRS / VAT (always refresh)
+    for r in results:
+        parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
+        street = parsed.get("street")
+        if street:
+            building = parsed.get("building", "")
+            update_data["street"] = f"{street} {building}".strip() if building else str(street)
+            break
+    if "street" not in update_data:
+        # Try eKRS full_address
         for r in results:
-            parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
-            street = parsed.get("street")
-            if street:
-                building = parsed.get("building", "")
-                update_data["street"] = f"{street} {building}".strip() if building else str(street)
-                break
-        if "street" not in update_data:
-            # Try eKRS full_address
-            for r in results:
-                if r.source == "ekrs":
-                    parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
-                    full_addr = parsed.get("full_address", {})
-                    if isinstance(full_addr, dict) and full_addr.get("ulica"):
-                        parts = [full_addr.get("ulica", "")]
-                        if full_addr.get("nrDomu"):
-                            parts.append(full_addr["nrDomu"])
-                        update_data["street"] = " ".join(parts)
-                        break
+            if r.source == "ekrs":
+                parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
+                full_addr = parsed.get("full_address", {})
+                if isinstance(full_addr, dict) and full_addr.get("ulica"):
+                    parts = [full_addr.get("ulica", "")]
+                    if full_addr.get("nrDomu"):
+                        parts.append(full_addr["nrDomu"])
+                    update_data["street"] = " ".join(parts)
+                    break
 
-    if not lead.postal_code:
+    for r in results:
+        parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
+        pc = parsed.get("postal_code") or parsed.get("kodPocztowy")
+        if pc:
+            update_data["postal_code"] = str(pc)
+            break
+    if "postal_code" not in update_data:
         for r in results:
-            parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
-            pc = parsed.get("postal_code") or parsed.get("kodPocztowy")
-            if pc:
-                update_data["postal_code"] = str(pc)
-                break
-        if "postal_code" not in update_data:
-            for r in results:
-                if r.source == "ekrs":
-                    parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
-                    full_addr = parsed.get("full_address", {})
-                    if isinstance(full_addr, dict) and full_addr.get("kodPocztowy"):
-                        update_data["postal_code"] = str(full_addr["kodPocztowy"])
-                        break
+            if r.source == "ekrs":
+                parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
+                full_addr = parsed.get("full_address", {})
+                if isinstance(full_addr, dict) and full_addr.get("kodPocztowy"):
+                    update_data["postal_code"] = str(full_addr["kodPocztowy"])
+                    break
 
-    # Extract legal_form
-    if not lead.legal_form:
-        for r in results:
-            parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
-            lf = parsed.get("legal_form")
-            if lf:
-                update_data["legal_form"] = str(lf)
-                break
+    # Extract legal_form (always refresh from OSINT)
+    for r in results:
+        parsed = (r.raw or {}).get("_parsed", {}) if isinstance(r.raw, dict) else {}
+        lf = parsed.get("legal_form")
+        if lf:
+            update_data["legal_form"] = str(lf)
+            break
 
     # Extract board members from eKRS + set contact_person to CEO
     board_members = []
@@ -274,47 +271,49 @@ async def enrich(
     web_update: dict = {}
 
     if web_result and not web_result.error:
-        # Extract emails from website → contact_email
-        if not lead.contact_email and web_result.emails:
+        # Extract emails from website → contact_email (always refresh)
+        if web_result.emails:
             web_update["contact_email"] = web_result.emails[0]
 
-        # Extract phones from website → contact_phone
-        if not lead.contact_phone and web_result.phones:
+        # Extract phones from website → contact_phone (always refresh)
+        if web_result.phones:
             web_update["contact_phone"] = web_result.phones[0]
 
-        # Social media links
-        if web_result.social_media and not lead.social_media:
+        # Social media links (always refresh)
+        if web_result.social_media:
             web_update["social_media"] = web_result.social_media
 
-    # Generate company description
-    if not lead.description:
-        website_desc = web_result.description if web_result and not web_result.error else None
+    # Always (re-)generate company description on enrichment
+    website_desc = web_result.description if web_result and not web_result.error else None
 
-        # Try Google search for description
-        google_desc = None
-        try:
-            google_desc = await google_search_description(lead.name, lead.city)
-        except Exception:
-            pass
+    # Try Google search for description
+    google_desc = None
+    try:
+        google_desc = await google_search_description(lead.name, lead.city)
+    except Exception:
+        pass
 
-        combined_desc = website_desc
-        if google_desc and not combined_desc:
+    combined_desc = website_desc
+    if google_desc:
+        if combined_desc:
+            combined_desc = f"{combined_desc}\n\n{google_desc}"
+        else:
             combined_desc = google_desc
 
-        description = generate_description_from_data(
-            name=lead.name,
-            city=lead.city,
-            voivodeship=lead.voivodeship,
-            pkd=lead.pkd,
-            pkd_desc=lead.pkd_desc,
-            years_active=lead.years_active,
-            legal_form=lead.legal_form,
-            employees=lead.employees,
-            vat_status=lead.vat_status,
-            board_members=lead.board_members,
-            website_desc=combined_desc,
-        )
-        web_update["description"] = description
+    description = generate_description_from_data(
+        name=lead.name,
+        city=lead.city,
+        voivodeship=lead.voivodeship,
+        pkd=lead.pkd,
+        pkd_desc=lead.pkd_desc,
+        years_active=lead.years_active,
+        legal_form=lead.legal_form,
+        employees=lead.employees,
+        vat_status=lead.vat_status,
+        board_members=lead.board_members,
+        website_desc=combined_desc,
+    )
+    web_update["description"] = description
 
     # ── Geocoding (always refresh on enrichment) ──
     if lead.city or lead.street:

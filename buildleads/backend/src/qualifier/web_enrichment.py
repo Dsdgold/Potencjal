@@ -133,15 +133,15 @@ async def scrape_website(url: str) -> WebEnrichResult:
                 return result
             html = resp.text
 
-            # Also try /kontakt or /contact page for contact info
+            # Also try subpages for contact info and about
             contact_html = ""
             base = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
-            for path in ["/kontakt", "/contact", "/kontakty", "/o-nas", "/about"]:
+            for path in ["/kontakt", "/contact", "/kontakty", "/o-nas", "/about",
+                         "/o-firmie", "/firma", "/about-us", "/team", "/zespol"]:
                 try:
                     cr = await client.get(urljoin(base, path))
                     if cr.status_code == 200:
-                        contact_html += cr.text
-                        break
+                        contact_html += "\n" + cr.text
                 except Exception:
                     pass
 
@@ -281,17 +281,31 @@ def generate_description_from_data(
             desc += f" Firma działa na rynku od {years_int} lat."
 
     if employees:
-        desc += f" Zatrudnia {employees} pracowników."
+        if employees >= 250:
+            size_label = "duże przedsiębiorstwo"
+        elif employees >= 50:
+            size_label = "średnie przedsiębiorstwo"
+        elif employees >= 10:
+            size_label = "małe przedsiębiorstwo"
+        else:
+            size_label = "mikroprzedsiębiorstwo"
+        desc += f" Zatrudnia ok. {employees} pracowników ({size_label})."
 
     if vat_status:
         desc += f" Status VAT: {vat_status}."
 
     if board_members:
-        ceo = next((m for m in board_members if "prezes" in (m.get("function", "") or "").lower()), None)
-        if ceo:
-            desc += f" Prezes zarządu: {ceo['name']}."
-        elif board_members:
-            desc += f" Zarząd: {', '.join(m['name'] for m in board_members[:3])}."
+        # Filter out masked names
+        clean_board = [m for m in board_members if "*" not in (m.get("name", "") or "")]
+        if clean_board:
+            ceo = next((m for m in clean_board if "prezes" in (m.get("function", "") or "").lower()), None)
+            if ceo:
+                desc += f" Prezes zarządu: {ceo['name']}."
+                others = [m for m in clean_board if m != ceo][:2]
+                if others:
+                    desc += f" W zarządzie również: {', '.join(m['name'] for m in others)}."
+            else:
+                desc += f" Zarząd: {', '.join(m['name'] for m in clean_board[:3])}."
 
     if website_desc:
         desc += f"\n\n{website_desc}"

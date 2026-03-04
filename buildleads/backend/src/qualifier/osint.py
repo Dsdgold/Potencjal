@@ -542,8 +542,15 @@ async def enrich_lead(nip: str) -> tuple[list[OsintResult], dict]:
         logger.warning("OSINT fetch ekrs failed for NIP %s: %s", nip, exc)
         results.append(OsintResult(source="ekrs", nip=nip, raw={"error": str(exc)}))
 
-    # Step 4: CEIDG (for sole proprietors)
-    ceidg_result = await _safe_fetch(fetch_ceidg, "ceidg", nip)
+    # Step 4: CEIDG (only for sole proprietors — skip if KRS number exists)
+    if krs_number:
+        # Company registered in KRS = not in CEIDG (it's a spółka, not JDG)
+        ceidg_result = OsintResult(
+            source="ceidg", nip=nip,
+            raw={"error": "not_applicable", "reason": "Firma zarejestrowana w KRS — CEIDG obejmuje tylko jednoosobowe działalności gospodarcze"},
+        )
+    else:
+        ceidg_result = await _safe_fetch(fetch_ceidg, "ceidg", nip)
     results.append(ceidg_result)
 
     merged = _merge_results(results)

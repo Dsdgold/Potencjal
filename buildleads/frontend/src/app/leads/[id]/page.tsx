@@ -308,13 +308,32 @@ export default function LeadDetailPage() {
           </div>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <button onClick={handleEnrichAndScore} disabled={enriching || scoring} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/50 text-white text-sm rounded-lg transition-colors font-medium">
-            {enriching ? "Pobieranie..." : scoring ? "Scoring..." : "Odśwież dane + Score"}
-          </button>
+          <Link href={`/leads/${id}/edit`} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors">
+            Edytuj
+          </Link>
           <button onClick={handleDelete} className="px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-sm rounded-lg border border-red-600/30 transition-colors">
             Usuń
           </button>
         </div>
+      </div>
+
+      {/* Prominent Enrich + Score action bar */}
+      <div className="bg-gradient-to-r from-emerald-900/30 to-blue-900/30 border border-emerald-500/20 rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-emerald-300 font-medium">
+            {enriching ? "Pobieranie danych z rejestrów, stron WWW i map..." : scoring ? "Obliczanie scoringu..." : "Wzbogać dane firmy z rejestrów publicznych, stron WWW i map"}
+          </p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            VAT • eKRS • GUS • CEIDG • Strona WWW • Google • Geolokalizacja
+          </p>
+        </div>
+        <button
+          onClick={handleEnrichAndScore}
+          disabled={enriching || scoring}
+          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-600/50 text-white text-sm rounded-lg transition-colors font-bold whitespace-nowrap shadow-lg shadow-emerald-900/30"
+        >
+          {enriching ? "⟳ Pobieranie danych..." : scoring ? "⟳ Scoring..." : "Wzbogać dane + Scoring"}
+        </button>
       </div>
 
       {/* Row 1: Score + Tier Action + Potential */}
@@ -731,24 +750,34 @@ export default function LeadDetailPage() {
               const raw = lead.osint_raw?.[src] as Record<string, unknown> | undefined;
               const hasData = lead.sources?.includes(src);
               const hasError = raw && "error" in raw;
+              const errStr = raw ? String(raw.error) : "";
+              const isCeidgNA = src === "ceidg" && (errStr === "not_found" || errStr === "not_applicable");
               return (
-                <div key={src} className={`flex items-center gap-3 p-3 rounded-lg ${hasData ? "bg-emerald-500/10 border border-emerald-500/20" : hasError ? "bg-amber-500/10 border border-amber-500/20" : "bg-slate-700/30 border border-slate-700"}`}>
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${hasData ? "bg-emerald-400" : hasError ? "bg-amber-400" : "bg-slate-600"}`} />
+                <div key={src} className={`flex items-center gap-3 p-3 rounded-lg ${hasData ? "bg-emerald-500/10 border border-emerald-500/20" : isCeidgNA ? "bg-slate-700/30 border border-slate-700" : hasError ? "bg-amber-500/10 border border-amber-500/20" : "bg-slate-700/30 border border-slate-700"}`}>
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${hasData ? "bg-emerald-400" : isCeidgNA ? "bg-slate-500" : hasError ? "bg-amber-400" : "bg-slate-600"}`} />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${hasData ? "text-emerald-400" : hasError ? "text-amber-400" : "text-slate-500"}`}>
+                    <p className={`text-sm font-medium ${hasData ? "text-emerald-400" : isCeidgNA ? "text-slate-400" : hasError ? "text-amber-400" : "text-slate-500"}`}>
                       {sourceLabels[src] || src}
                     </p>
                     {hasError && (
                       <p className="text-xs text-amber-500/70">{
                         String(raw?.error) === "no_api_key" ? "Brak klucza API"
-                        : String(raw?.error) === "not_found" && src === "ceidg" ? "Nie dotyczy — CEIDG obejmuje tylko jednoosobowe działalności"
+                        : (String(raw?.error) === "not_found" || String(raw?.error) === "not_applicable") && src === "ceidg"
+                          ? (String(raw?.reason) || "Nie dotyczy — CEIDG obejmuje tylko jednoosobowe działalności")
                         : String(raw?.error) === "not_found" ? "Nie znaleziono w rejestrze"
                         : String(raw?.error)
                       }</p>
                     )}
                   </div>
-                  <span className={`text-xs ${hasData ? "text-emerald-500" : hasError ? "text-amber-500" : "text-slate-600"}`}>
-                    {hasData ? "OK" : (hasError && String(raw?.error) === "not_found" && src === "ceidg") ? "Nie dotyczy" : hasError ? "Pominięto" : "Brak danych"}
+                  {(() => {
+                    const errStr = String(raw?.error);
+                    const isCeidgNA = src === "ceidg" && (errStr === "not_found" || errStr === "not_applicable");
+                    return (
+                      <span className={`text-xs ${hasData ? "text-emerald-500" : isCeidgNA ? "text-slate-500" : hasError ? "text-amber-500" : "text-slate-600"}`}>
+                        {hasData ? "OK" : isCeidgNA ? "Nie dotyczy" : hasError ? "Pominięto" : "Brak danych"}
+                      </span>
+                    );
+                  })()}
                   </span>
                 </div>
               );
